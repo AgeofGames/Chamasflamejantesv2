@@ -1,4 +1,4 @@
-import os, sqlite3, uuid, re
+import os, sqlite3, uuid, re, urllib.request, html
 from datetime import datetime
 from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify, send_from_directory, abort
@@ -49,12 +49,27 @@ def avatar_from_url(url):
  m=re.search(r'https://avatars\.steamstatic\.com/[A-Za-z0-9_./-]+',url)
  return m.group(0) if m else None
 
+def lookup_aomstats(url):
+ if not re.match(r'^https://(?:www\.)?aomstats\.io/profile/\d+',url or ''): raise ValueError('Link do AoMStats inválido.')
+ req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0 ChamasFlamejantes/11','Accept':'text/html'})
+ raw=urllib.request.urlopen(req,timeout=15).read().decode('utf-8','ignore')
+ def meta(prop):
+  m=re.search(r'<meta[^>]+property=["\']'+re.escape(prop)+r'["\'][^>]+content=["\']([^"\']+)',raw,re.I)
+  return html.unescape(m.group(1)) if m else ''
+ title=meta('og:title').replace(' - aomstats','').strip(); photo=meta('og:image'); desc=meta('og:description')
+ rating=re.search(r'\((\d+) Elo\)',desc); record=re.search(r'(\d+)W-(\d+)L',desc)
+ return {'nick':title,'photo':photo if 'avatars.steamstatic.com' in photo else '','elo':int(rating.group(1)) if rating else None,'wins':int(record.group(1)) if record else 0,'losses':int(record.group(2)) if record else 0,'profile':url}
+
 @app.context_processor
 def ctx():
  with db() as c: settings={r['key']:r['value'] for r in c.execute('SELECT * FROM settings')}
  return dict(settings=settings,admin=bool(session.get('admin')))
 @app.route('/health')
 def health():return jsonify(version='11-clean',database='ok')
+@app.route('/api/aomstats')
+def aomstats_lookup():
+ try:return jsonify(ok=True,**lookup_aomstats(request.args.get('url','')))
+ except Exception as e:return jsonify(ok=False,error='Não foi possível consultar o perfil agora. Confira o link ou preencha manualmente.'),422
 @app.route('/')
 def home():
  with db() as c:
@@ -80,8 +95,12 @@ def tournament(i):
   if not t:abort(404)
   if request.method=='POST':
    if t['status']!='Aberto':flash('Inscrições fechadas.','error');return redirect(request.url)
-   f=request.files.get('photo'); photo=save_file(f,'profiles',{'jpg','jpeg','png','webp'}) if f and f.filename else avatar_from_url(request.form.get('photo_url'))
-   cur=c.execute('INSERT OR IGNORE INTO players(nick,photo,aomstats,steam,discord) VALUES(?,?,?,?,?)',(request.form['nick'],photo,request.form['aomstats'],request.form.get('steam'),request.form['discord']))
+   f=request.files.get('photo'); photo=save_file(f,'profiles',{'jpg','jpeg','png','webp'}) if f and f.filename else avatar_from_url(request.form.get('photo_url')); nick=request.form['nick']; elo=None; wins=losses=0
+   if not photo:
+    try:
+     found=lookup_aomstats(request.form['aomstats']);photo=found['photo'];nick=found['nick'] or nick;elo=found['elo'];wins=found['wins'];losses=found['losses']
+    except Exception:pass
+   cur=c.execute('INSERT OR IGNORE INTO players(nick,photo,aomstats,steam,discord,elo,normal_wins,normal_losses) VALUES(?,?,?,?,?,?,?,?)',(nick,photo,request.form['aomstats'],request.form.get('steam'),request.form['discord'],elo,wins,losses))
    p=c.execute('SELECT id FROM players WHERE aomstats=?',(request.form['aomstats'],)).fetchone(); c.execute('INSERT OR IGNORE INTO tournament_players VALUES(?,?,?)',(i,p['id'],request.form.get('team_name')));flash('Inscrição realizada!','ok')
   players=c.execute('SELECT p.*,tp.team_name FROM tournament_players tp JOIN players p ON p.id=tp.player_id WHERE tp.tournament_id=?',(i,)).fetchall(); matches=c.execute('SELECT * FROM matches WHERE tournament_id=? ORDER BY id DESC',(i,)).fetchall()
  return render_template('detail.html',page='tournaments',t=t,players=players,matches=matches)
