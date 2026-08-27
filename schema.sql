@@ -210,7 +210,8 @@ CREATE TABLE IF NOT EXISTS duels (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     challenger_id INTEGER NOT NULL, challenged_id INTEGER NOT NULL,
     status TEXT NOT NULL DEFAULT 'solicitado' CHECK(status IN ('solicitado','em_curso','finalizado')),
-    winner_id INTEGER, requested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, finished_at TEXT DEFAULT '',
+    winner_id INTEGER, challenged_accepted INTEGER NOT NULL DEFAULT 0, accepted_at TEXT DEFAULT '',
+    requested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, finished_at TEXT DEFAULT '',
     FOREIGN KEY(challenger_id) REFERENCES players(id), FOREIGN KEY(challenged_id) REFERENCES players(id),
     FOREIGN KEY(winner_id) REFERENCES players(id), CHECK(challenger_id <> challenged_id)
 );
@@ -224,3 +225,37 @@ CREATE TABLE IF NOT EXISTS community_links (
     key TEXT PRIMARY KEY, value TEXT NOT NULL DEFAULT ''
 );
 INSERT OR IGNORE INTO community_links(key,value) VALUES ('whatsapp',''),('discord',''),('telegram',''),('youtube','');
+
+-- V12: contas verificadas e mini rede social.
+CREATE TABLE IF NOT EXISTS member_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL,
+    email_verified INTEGER NOT NULL DEFAULT 0, steam_id TEXT UNIQUE, steam_profile_url TEXT DEFAULT '',
+    player_id INTEGER UNIQUE, description TEXT DEFAULT '', instagram TEXT DEFAULT '', youtube TEXT DEFAULT '',
+    twitch TEXT DEFAULT '', discord_social TEXT DEFAULT '', last_seen TEXT DEFAULT '',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(player_id) REFERENCES players(id) ON DELETE SET NULL
+);
+CREATE TABLE IF NOT EXISTS email_verification_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, token_hash TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL, used_at TEXT DEFAULT '', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(account_id) REFERENCES member_accounts(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS private_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, sender_id INTEGER NOT NULL, recipient_id INTEGER NOT NULL,
+    body TEXT NOT NULL, read_at TEXT DEFAULT '', sender_deleted INTEGER NOT NULL DEFAULT 0,
+    recipient_deleted INTEGER NOT NULL DEFAULT 0, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(sender_id) REFERENCES member_accounts(id) ON DELETE CASCADE,
+    FOREIGN KEY(recipient_id) REFERENCES member_accounts(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS member_notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, account_id INTEGER NOT NULL, kind TEXT NOT NULL,
+    text TEXT NOT NULL, link TEXT DEFAULT '', read_at TEXT DEFAULT '', created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(account_id) REFERENCES member_accounts(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS duel_watchers (
+    duel_id INTEGER NOT NULL, account_id INTEGER NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(duel_id,account_id), FOREIGN KEY(duel_id) REFERENCES duels(id) ON DELETE CASCADE,
+    FOREIGN KEY(account_id) REFERENCES member_accounts(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_messages_recipient ON private_messages(recipient_id,created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_account ON member_notifications(account_id,created_at DESC);
