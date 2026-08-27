@@ -1,6 +1,6 @@
-# 🔥 CHAMAS FLAMEJANTES V12 — SOCIAL + STEAM
+# 🔥 CHAMAS FLAMEJANTES V11 — VISUAL V7.5
 
-Base visual e cadastro de jogadores preservados do projeto V7.5, agora com os recursos sociais V12 integrados.
+Base visual e cadastro de jogadores preservados do projeto V7.5, com recursos V11 integrados.
 
 ## Railway
 
@@ -14,9 +14,7 @@ O SQLite é criado automaticamente na primeira inicialização.
 
 ## Administrador
 
-O login administrativo não aparece no menu público. Digite `/admin/login` no final do endereço do site.
-
-O endereço `/login` agora pertence às contas dos jogadores.
+O login não aparece no menu público. Digite `/login` no final do endereço do site.
 
 - Usuário inicial: `yukinochannyan`
 - Senha inicial: `yukinochannyan60`
@@ -35,26 +33,6 @@ Altere a senha no painel após o primeiro acesso.
 - Links oficiais para WhatsApp, Discord e Telegram.
 - Busca de mapas por nome, criador ou categoria, com listas separadas e imagens completas.
 - Links oficiais com logos de WhatsApp, Discord e YouTube.
-- Contas de membros com e-mail confirmado e senha criptografada.
-- Vinculação segura pela autenticação oficial Steam OpenID.
-- Validação de propriedade entre Steam e perfil AoMStats.
-- Presença on-line, perfil social, mensagens privadas e notificações.
-- Desafios X1 com aceite do jogador e aprovação do administrador.
-- Convites para acompanhar duelos e card PNG compartilhável do vencedor.
-
-## E-mail de confirmação no Railway
-
-Adicione estas variáveis no serviço:
-
-- `PUBLIC_BASE_URL=https://SEU-DOMINIO.com.br/`
-- `SMTP_HOST` — servidor SMTP do seu provedor de e-mail
-- `SMTP_PORT=587`
-- `SMTP_USER` — usuário/login SMTP
-- `SMTP_PASSWORD` — senha SMTP
-- `SMTP_FROM` — endereço que enviará as confirmações
-- `SMTP_TLS=1`
-
-Se seu provedor exigir SSL direto, use `SMTP_PORT=465`, `SMTP_SSL=1` e `SMTP_TLS=0`.
 
 ## Atualização sem perder dados
 
