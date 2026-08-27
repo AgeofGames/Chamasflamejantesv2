@@ -24,7 +24,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = Path(os.environ.get("DATABASE_PATH", str(BASE_DIR / "data" / "chamas_flamejantes.sqlite")))
 SCHEMA_PATH = BASE_DIR / "schema.sql"
-UPLOAD_DIR = BASE_DIR / "static" / "uploads"
+UPLOAD_DIR = DB_PATH.parent / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
@@ -617,7 +617,7 @@ def _safe_image_extension(filename: str):
 def remove_local_avatar(relative_file: str):
     if not relative_file or not relative_file.startswith("uploads/"):
         return
-    target = (BASE_DIR / "static" / relative_file).resolve()
+    target = (UPLOAD_DIR / Path(relative_file).name).resolve()
     uploads = UPLOAD_DIR.resolve()
     try:
         target.relative_to(uploads)
@@ -2796,6 +2796,9 @@ def x1_challenge():
 @app.get('/mapas')
 def maps_page():return render_template('maps.html',maps=get_db().execute("SELECT * FROM community_maps ORDER BY id DESC").fetchall())
 
+@app.get('/static/uploads/<path:filename>')
+def persistent_upload(filename):return send_from_directory(UPLOAD_DIR,filename)
+
 @app.get('/mapas/<int:map_id>/baixar')
 def map_download(map_id):
     db=get_db();row=db.execute('SELECT * FROM community_maps WHERE id=?',(map_id,)).fetchone()
@@ -2829,7 +2832,7 @@ def admin_map_remove(map_id):
 @admin_required
 def admin_groups():
     require_csrf()
-    for key in ('whatsapp','discord','telegram'):get_db().execute('INSERT OR REPLACE INTO community_links(key,value) VALUES(?,?)',(key,request.form.get(key,'')[:500]))
+    for key in ('whatsapp','discord','telegram','youtube'):get_db().execute('INSERT OR REPLACE INTO community_links(key,value) VALUES(?,?)',(key,request.form.get(key,'')[:500]))
     get_db().commit();flash('Links oficiais atualizados.','success');return redirect(url_for('admin'))
 
 

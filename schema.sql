@@ -223,4 +223,4 @@ CREATE TABLE IF NOT EXISTS community_maps (
 CREATE TABLE IF NOT EXISTS community_links (
     key TEXT PRIMARY KEY, value TEXT NOT NULL DEFAULT ''
 );
-INSERT OR IGNORE INTO community_links(key,value) VALUES ('whatsapp',''),('discord',''),('telegram','');
+INSERT OR IGNORE INTO community_links(key,value) VALUES ('whatsapp',''),('discord',''),('telegram',''),('youtube','');

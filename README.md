@@ -31,6 +31,22 @@ Altere a senha no painel após o primeiro acesso.
 - Arena X1 com aprovação e ranking público.
 - Upload e download de mapas ZIP, RAR e 7Z.
 - Links oficiais para WhatsApp, Discord e Telegram.
+- Busca de mapas por nome, criador ou categoria, com listas separadas e imagens completas.
+- Links oficiais com logos de WhatsApp, Discord e YouTube.
+
+## Atualização sem perder dados
+
+Mantenha o volume montado em `/app/data` e a variável:
+
+`DATABASE_PATH=/app/data/chamas_flamejantes.sqlite`
+
+Antes do primeiro deploy desta atualização, abra o Console do serviço atual e copie uploads antigos para o volume:
+
+```bash
+mkdir -p /app/data/uploads && cp -a /app/static/uploads/. /app/data/uploads/ 2>/dev/null || true
+```
+
+Depois faça o novo deploy. Banco e uploads passarão a permanecer no mesmo volume.
 
 ## Execução local
 
