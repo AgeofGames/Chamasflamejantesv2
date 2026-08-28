@@ -150,32 +150,3 @@ document.addEventListener("DOMContentLoaded", () => {
   mode.addEventListener("change", () => { if (maxInput) { maxInput.dataset.touched = ""; maxInput.value = defaults[mode.value] || 12; } });
   refresh();
 });
-
-// V12.1: presença e contador de notificações por HTTPS, compatível com Railway Trial.
-document.addEventListener("DOMContentLoaded", () => {
-  const memberNodes = [...document.querySelectorAll("[data-member-id]")];
-  const unreadNode = document.querySelector("[data-unread-count]");
-  if (!memberNodes.length && !unreadNode) return;
-
-  const refreshSocialStatus = async () => {
-    try {
-      const response = await fetch("/api/comunidade/status", { cache: "no-store", headers: { Accept: "application/json" } });
-      if (!response.ok) return;
-      const data = await response.json();
-      const online = new Set((data.online_ids || []).map(Number));
-      memberNodes.forEach((node) => {
-        const isOnline = online.has(Number(node.dataset.memberId));
-        const dot = node.querySelector("[data-online-dot]");
-        const label = node.querySelector("[data-online-label]");
-        if (dot) dot.classList.toggle("is-online", isOnline);
-        if (label) label.textContent = node.classList.contains("member-hero")
-          ? (isOnline ? "ONLINE AGORA" : "OFFLINE")
-          : (isOnline ? "ONLINE" : "OFFLINE");
-      });
-      if (unreadNode) unreadNode.textContent = Number(data.unread || 0);
-    } catch (_) { /* a navegação continua funcionando mesmo sem atualização ao vivo */ }
-  };
-
-  refreshSocialStatus();
-  window.setInterval(refreshSocialStatus, 25000);
-});

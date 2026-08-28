@@ -1,21 +1,17 @@
 from __future__ import annotations
 
 import csv
-import hashlib
 import html as html_lib
 import io
 import math
 import os
 import re
 import secrets
-import smtplib
 import sqlite3
 import uuid
-from datetime import datetime, timedelta, timezone
-from email.message import EmailMessage
 from functools import wraps
 from pathlib import Path
-from urllib.parse import quote_plus, urlencode, urljoin, urlparse
+from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -24,8 +20,6 @@ from flask import (
     request, send_file, send_from_directory, session, url_for
 )
 from werkzeug.security import check_password_hash, generate_password_hash
-from werkzeug.middleware.proxy_fix import ProxyFix
-from PIL import Image, ImageDraw, ImageFont
 
 BASE_DIR = Path(__file__).resolve().parent
 DB_PATH = Path(os.environ.get("DATABASE_PATH", str(BASE_DIR / "data" / "chamas_flamejantes.sqlite")))
@@ -34,7 +28,6 @@ UPLOAD_DIR = DB_PATH.parent / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.secret_key = os.environ.get("FFA_SECRET_KEY", secrets.token_hex(32))
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
@@ -234,123 +227,12 @@ def csrf_token():
 
 
 app.jinja_env.globals["csrf_token"] = csrf_token
-app.jinja_env.filters["urlencode"] = quote_plus
 
 
 def require_csrf():
     token = request.form.get("_csrf", "")
     if not token or token != session.get("_csrf"):
         abort(400, "Token de segurança inválido. Atualize a página e tente novamente.")
-
-def current_member():
-    member_id=session.get('member_id')
-    if not member_id:return None
-    return get_db().execute("""SELECT a.*,p.nickname,p.avatar_url,p.avatar_file,p.aomstats_url,p.elo_1v1,p.elo_team,p.quote FROM member_accounts a LEFT JOIN players p ON p.id=a.player_id WHERE a.id=?""",(member_id,)).fetchone()
-
-def member_required(view):
-    @wraps(view)
-    def wrapped(*args,**kwargs):
-        if not current_member():flash('Entre na sua conta para continuar.','error');return redirect(url_for('member_login',next=request.path))
-        return view(*args,**kwargs)
-    return wrapped
-
-def send_confirmation_email(email, token):
-    """Envia confirmação por HTTPS no Railway Trial, com SMTP apenas opcional."""
-    public_base = (os.environ.get('PUBLIC_BASE_URL') or request.url_root).rstrip('/') + '/'
-    link = urljoin(public_base, url_for('member_confirm', token=token).lstrip('/'))
-    provider = (os.environ.get('EMAIL_PROVIDER') or ('brevo' if os.environ.get('BREVO_API_KEY') else 'none')).strip().lower()
-
-    if provider == 'brevo':
-        api_key = os.environ.get('BREVO_API_KEY', '').strip()
-        sender_email = (os.environ.get('BREVO_SENDER_EMAIL') or os.environ.get('SMTP_FROM') or '').strip()
-        sender_name = (os.environ.get('BREVO_SENDER_NAME') or 'Chamas Flamejantes').strip()[:70]
-        if not api_key or not sender_email:
-            app.logger.error('EMAIL_SEND_FAILED provider=brevo reason=missing_configuration')
-            return False
-        payload = {
-            'sender': {'name': sender_name, 'email': sender_email},
-            'to': [{'email': email}],
-            'subject': 'Confirme sua conta • Chamas Flamejantes',
-            'textContent': (
-                'Bem-vindo ao Chamas Flamejantes!\n\n'
-                f'Confirme sua conta neste link:\n{link}\n\n'
-                'O link expira em 24 horas.'
-            ),
-            'htmlContent': (
-                '<div style="background:#090c12;color:#f4ede6;padding:32px;font-family:Arial,sans-serif">'
-                '<h1 style="color:#f06d3d">🔥 CHAMAS FLAMEJANTES</h1>'
-                '<p>Bem-vindo à comunidade de Age of Mythology: Retold.</p>'
-                f'<p><a href="{html_lib.escape(link, quote=True)}" style="display:inline-block;background:#d9532f;color:#fff;padding:14px 22px;text-decoration:none;font-weight:bold">CONFIRMAR MINHA CONTA</a></p>'
-                '<p>O link expira em 24 horas.</p></div>'
-            ),
-        }
-        try:
-            response = requests.post(
-                'https://api.brevo.com/v3/smtp/email',
-                headers={'accept': 'application/json', 'api-key': api_key, 'content-type': 'application/json'},
-                json=payload,
-                timeout=20,
-            )
-            if response.status_code not in (200, 201, 202):
-                raise RuntimeError(f'Brevo HTTP {response.status_code}: {response.text[:240]}')
-            app.logger.info('EMAIL_SENT provider=brevo recipient_domain=%s', email.rsplit('@', 1)[-1])
-            return True
-        except Exception as exc:
-            app.logger.error('EMAIL_SEND_FAILED provider=brevo error=%s', str(exc)[:350])
-            return False
-
-    # Alternativa exclusiva para quem estiver em um plano que libere SMTP.
-    if provider == 'smtp':
-        host = os.environ.get('SMTP_HOST', '').strip()
-        user = os.environ.get('SMTP_USER', '').strip()
-        password = os.environ.get('SMTP_PASSWORD', '').replace(' ', '')
-        sender = (os.environ.get('SMTP_FROM') or user).strip()
-        if not host or not sender:
-            app.logger.error('EMAIL_SEND_FAILED provider=smtp reason=missing_configuration')
-            return False
-        msg = EmailMessage(); msg['Subject'] = 'Confirme sua conta • Chamas Flamejantes'; msg['From'] = sender; msg['To'] = email
-        msg.set_content(f'Bem-vindo ao Chamas Flamejantes!\n\nConfirme sua conta neste link:\n{link}\n\nO link expira em 24 horas.')
-        port = int(os.environ.get('SMTP_PORT', '587')); use_ssl = os.environ.get('SMTP_SSL', '0') == '1'
-        try:
-            smtp = smtplib.SMTP_SSL(host, port, timeout=15) if use_ssl else smtplib.SMTP(host, port, timeout=15)
-            if not use_ssl and os.environ.get('SMTP_TLS', '1') == '1': smtp.starttls()
-            if user: smtp.login(user, password)
-            smtp.send_message(msg); smtp.quit()
-            app.logger.info('EMAIL_SENT provider=smtp recipient_domain=%s', email.rsplit('@', 1)[-1])
-            return True
-        except Exception as exc:
-            app.logger.error('EMAIL_SEND_FAILED provider=smtp error=%s', str(exc)[:350])
-            return False
-
-    app.logger.error('EMAIL_SEND_FAILED provider=none reason=provider_not_configured')
-    return False
-
-def notification(account_id,kind,text_value,link=''):
-    get_db().execute('INSERT INTO member_notifications(account_id,kind,text,link) VALUES(?,?,?,?)',(account_id,kind,text_value[:300],link[:500]))
-
-def steam_id_from_profile(profile_url):
-    m=re.search(r'steamcommunity\.com/profiles/(\d+)',profile_url or '')
-    if m:return m.group(1)
-    if not profile_url:return ''
-    sep='&' if '?' in profile_url else '?'
-    try:
-        xml=requests.get(profile_url+sep+'xml=1',headers={'User-Agent':'Mozilla/5.0'},timeout=10).text
-        m=re.search(r'<steamID64>(\d+)</steamID64>',xml);return m.group(1) if m else ''
-    except Exception:return ''
-
-@app.before_request
-def member_presence():
-    if session.get('member_id') and request.endpoint not in ('static','persistent_upload'):
-        try:get_db().execute('UPDATE member_accounts SET last_seen=CURRENT_TIMESTAMP WHERE id=?',(session['member_id'],));get_db().commit()
-        except sqlite3.Error:pass
-
-@app.context_processor
-def inject_member_social():
-    try:
-        member=current_member();unread=0
-        if member:unread=get_db().execute("SELECT COUNT(*) c FROM member_notifications WHERE account_id=? AND read_at=''",(member['id'],)).fetchone()['c']+get_db().execute("SELECT COUNT(*) c FROM private_messages WHERE recipient_id=? AND read_at='' AND recipient_deleted=0",(member['id'],)).fetchone()['c']
-        return {'current_member':member,'member_unread':unread}
-    except Exception:return {'current_member':None,'member_unread':0}
 
 
 def log_action(action: str, details: str = ""):
@@ -810,24 +692,10 @@ def avatar_src(participant):
         return url_for("static", filename=local)
     if remote:
         return remote
-    return url_for("static", filename="avatar-default.svg")
+    return ""
 
 
 app.jinja_env.globals["avatar_src"] = avatar_src
-
-def profile_social_url(kind, value):
-    value=(value or '').strip()
-    if not value:return ''
-    if value.startswith(('https://','http://')):return value
-    handle=value.lstrip('@').strip('/')
-    routes={
-        'Instagram':f'https://instagram.com/{handle}',
-        'YouTube':f'https://youtube.com/@{handle}',
-        'Twitch':f'https://twitch.tv/{handle}',
-    }
-    return routes.get(kind,'')
-
-app.jinja_env.globals["profile_social_url"] = profile_social_url
 
 def sponsor_avatar_src(sponsor):
     """Usa a mesma regra de avatar dos jogadores: Steam/AoMStats direto primeiro."""
@@ -1620,14 +1488,19 @@ def migrate_v6_db():
     if not _has_column(db, "players", "quote"):
         db.execute("ALTER TABLE players ADD COLUMN quote TEXT NOT NULL DEFAULT ''")
 
-    # V12 — aceite do jogador desafiado sem recriar a tabela de duelos.
-    if not _has_column(db, "duels", "challenged_accepted"):
-        db.execute("ALTER TABLE duels ADD COLUMN challenged_accepted INTEGER NOT NULL DEFAULT 0")
-    if not _has_column(db, "duels", "accepted_at"):
-        db.execute("ALTER TABLE duels ADD COLUMN accepted_at TEXT DEFAULT ''")
-
-    # V12 é uma atualização aditiva: nenhuma instância de torneio existente é
-    # removida durante a inicialização, mesmo quando ainda não possui inscrições.
+    # As 7 modalidades são MODELOS de criação, não 7 torneios automaticamente abertos.
+    # Remove somente instâncias padrão totalmente vazias; nunca toca em torneios usados.
+    default_slugs = ("ffa","food-wood-gold","1v1","2v2","md3-1v1","md3-2v2","md3-3v3")
+    for slug in default_slugs:
+        row = db.execute("SELECT id FROM tournaments WHERE slug=?", (slug,)).fetchone()
+        if not row:
+            continue
+        tid = row["id"]
+        entries = db.execute("SELECT COUNT(*) c FROM tournament_entries WHERE tournament_id=?", (tid,)).fetchone()["c"]
+        matches = db.execute("SELECT COUNT(*) c FROM matches WHERE tournament_id=?", (tid,)).fetchone()["c"]
+        winners = db.execute("SELECT COUNT(*) c FROM tournament_winners WHERE tournament_id=?", (tid,)).fetchone()["c"]
+        if entries == 0 and matches == 0 and winners == 0:
+            db.execute("DELETE FROM tournaments WHERE id=?", (tid,))
 
     db.execute("INSERT OR REPLACE INTO site_meta(key,value) VALUES ('v6_migrated','1')")
     db.commit()
@@ -1886,150 +1759,6 @@ def api_aomstats():
         }), 502
 
 
-@app.route('/cadastro',methods=['GET','POST'])
-def member_register():
-    if request.method=='POST':
-        require_csrf();email=(request.form.get('email') or '').strip().lower();password=request.form.get('password','');confirm=request.form.get('confirm','')
-        if not re.match(r'^[^@\s]+@[^@\s]+\.[^@\s]+$',email):flash('Informe um e-mail válido.','error')
-        elif len(password)<8:flash('A senha precisa ter pelo menos 8 caracteres.','error')
-        elif password!=confirm:flash('As senhas não coincidem.','error')
-        elif get_db().execute('SELECT 1 FROM member_accounts WHERE email=?',(email,)).fetchone():flash('Este e-mail já está cadastrado.','error')
-        else:
-            cur=get_db().execute('INSERT INTO member_accounts(email,password_hash) VALUES(?,?)',(email,generate_password_hash(password)));token=secrets.token_urlsafe(32);token_hash=hashlib.sha256(token.encode()).hexdigest();expires=(datetime.now(timezone.utc)+timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S');get_db().execute('INSERT INTO email_verification_tokens(account_id,token_hash,expires_at) VALUES(?,?,?)',(cur.lastrowid,token_hash,expires));get_db().commit()
-            sent=send_confirmation_email(email,token)
-            if sent:flash('Cadastro criado! Enviamos um link de confirmação para seu e-mail.','success')
-            else:flash('Conta criada, mas a API de e-mail não conseguiu enviar a confirmação. Avise o administrador.','error')
-            return redirect(url_for('member_login'))
-    return render_template('member_register.html')
-
-@app.get('/confirmar-email/<token>')
-def member_confirm(token):
-    token_hash=hashlib.sha256(token.encode()).hexdigest();row=get_db().execute("SELECT * FROM email_verification_tokens WHERE token_hash=? AND used_at='' AND expires_at>CURRENT_TIMESTAMP",(token_hash,)).fetchone()
-    if not row:flash('Link inválido ou expirado.','error');return redirect(url_for('member_login'))
-    get_db().execute('UPDATE member_accounts SET email_verified=1 WHERE id=?',(row['account_id'],));get_db().execute('UPDATE email_verification_tokens SET used_at=CURRENT_TIMESTAMP WHERE id=?',(row['id'],));get_db().commit();flash('E-mail confirmado! Agora você pode entrar.','success');return redirect(url_for('member_login'))
-
-@app.route('/login',methods=['GET','POST'])
-def member_login():
-    if request.method=='POST':
-        require_csrf();email=(request.form.get('email') or '').strip().lower();account=get_db().execute('SELECT * FROM member_accounts WHERE email=?',(email,)).fetchone()
-        if account and check_password_hash(account['password_hash'],request.form.get('password','')):
-            if not account['email_verified']:flash('Confirme seu e-mail antes de entrar.','error')
-            else:session.clear();session['member_id']=account['id'];csrf_token();return redirect(request.args.get('next') or url_for('member_dashboard'))
-        else:flash('E-mail ou senha incorretos.','error')
-    return render_template('member_login.html')
-
-@app.post('/reenviar-confirmacao')
-def member_resend_confirmation():
-    require_csrf();email=(request.form.get('email') or '').strip().lower();account=get_db().execute('SELECT * FROM member_accounts WHERE email=?',(email,)).fetchone()
-    if account and not account['email_verified']:
-        token=secrets.token_urlsafe(32);token_hash=hashlib.sha256(token.encode()).hexdigest();expires=(datetime.now(timezone.utc)+timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S');get_db().execute('INSERT INTO email_verification_tokens(account_id,token_hash,expires_at) VALUES(?,?,?)',(account['id'],token_hash,expires));get_db().commit()
-        send_confirmation_email(email,token)
-    flash('Se a conta existir e estiver pendente, um novo link será enviado.','success');return redirect(url_for('member_login'))
-
-@app.get('/sair')
-def member_logout():session.clear();return redirect(url_for('home'))
-
-@app.get('/conta/steam')
-@member_required
-def steam_connect():
-    return_to=url_for('steam_callback',_external=True);realm=request.url_root
-    params={'openid.ns':'http://specs.openid.net/auth/2.0','openid.mode':'checkid_setup','openid.return_to':return_to,'openid.realm':realm,'openid.identity':'http://specs.openid.net/auth/2.0/identifier_select','openid.claimed_id':'http://specs.openid.net/auth/2.0/identifier_select'}
-    return redirect('https://steamcommunity.com/openid/login?'+urlencode(params))
-
-@app.get('/conta/steam/retorno')
-@member_required
-def steam_callback():
-    payload={k:v for k,v in request.args.items() if k.startswith('openid.')};payload['openid.mode']='check_authentication'
-    try:valid='is_valid:true' in requests.post('https://steamcommunity.com/openid/login',data=payload,timeout=15).text
-    except Exception:valid=False
-    claimed=request.args.get('openid.claimed_id','');m=re.search(r'/openid/id/(\d+)$',claimed)
-    if not valid or not m:flash('Não foi possível confirmar a Steam.','error');return redirect(url_for('member_dashboard'))
-    steam_id=m.group(1);other=get_db().execute('SELECT id FROM member_accounts WHERE steam_id=? AND id<>?',(steam_id,session['member_id'])).fetchone()
-    if other:flash('Esta Steam já está vinculada a outra conta.','error')
-    else:get_db().execute('UPDATE member_accounts SET steam_id=?,steam_profile_url=?,updated_at=CURRENT_TIMESTAMP WHERE id=?',(steam_id,f'https://steamcommunity.com/profiles/{steam_id}',session['member_id']));get_db().commit();flash('Steam vinculada e identidade confirmada!','success')
-    return redirect(url_for('member_dashboard'))
-
-@app.post('/conta/vincular-aomstats')
-@member_required
-def member_link_aomstats():
-    require_csrf();member=current_member()
-    if not member['steam_id']:flash('Vincule sua Steam primeiro.','error');return redirect(url_for('member_dashboard'))
-    profile_url,profile_id=normalize_profile_url(request.form.get('aomstats_url',''))
-    if not profile_url:flash('Link AoMStats inválido.','error');return redirect(url_for('member_dashboard'))
-    try:info=fetch_aomstats(profile_url);aom_steam=steam_id_from_profile(info.get('steam_profile_url',''))
-    except Exception:flash('Não foi possível consultar o AoMStats agora.','error');return redirect(url_for('member_dashboard'))
-    if not aom_steam or aom_steam!=member['steam_id']:flash('Este perfil AoMStats não pertence à Steam autenticada.','error');return redirect(url_for('member_dashboard'))
-    existing=get_db().execute('SELECT * FROM players WHERE aomstats_profile_id=?',(profile_id,)).fetchone()
-    linked=get_db().execute('SELECT id FROM member_accounts WHERE player_id=? AND id<>?',(existing['id'],member['id'])).fetchone() if existing else None
-    if linked:flash('Este jogador já pertence a outra conta.','error');return redirect(url_for('member_dashboard'))
-    if existing:
-        player_id=existing['id'];get_db().execute('UPDATE players SET nickname=?,aomstats_url=?,elo_1v1=?,elo_team=?,avatar_url=?,updated_at=CURRENT_TIMESTAMP WHERE id=?',(info['nickname'][:80],profile_url,info['elo_1v1'],info['elo_team'],info['avatar_url'],player_id))
-    else:
-        cur=get_db().execute('INSERT INTO players(nickname,aomstats_url,aomstats_profile_id,elo_1v1,elo_team,elo_verified,avatar_url) VALUES(?,?,?,?,?,1,?)',(info['nickname'][:80],profile_url,profile_id,info['elo_1v1'],info['elo_team'],info['avatar_url']));player_id=cur.lastrowid
-    get_db().execute('UPDATE member_accounts SET player_id=?,updated_at=CURRENT_TIMESTAMP WHERE id=?',(player_id,member['id']));get_db().commit();flash('AoMStats vinculado! Seu perfil usa a foto oficial da Steam.','success');return redirect(url_for('member_dashboard'))
-
-@app.route('/conta',methods=['GET','POST'])
-@member_required
-def member_dashboard():
-    if request.method=='POST':
-        require_csrf();get_db().execute('UPDATE member_accounts SET description=?,instagram=?,youtube=?,twitch=?,discord_social=?,updated_at=CURRENT_TIMESTAMP WHERE id=?',tuple((request.form.get(k) or '')[:500] for k in ('description','instagram','youtube','twitch','discord_social'))+(session['member_id'],));get_db().commit();flash('Perfil atualizado.','success')
-    member=current_member();messages=get_db().execute("""SELECT m.*,s.email sender_email,p.nickname sender_name,p.avatar_url sender_avatar FROM private_messages m JOIN member_accounts s ON s.id=m.sender_id LEFT JOIN players p ON p.id=s.player_id WHERE m.recipient_id=? AND m.recipient_deleted=0 ORDER BY m.id DESC LIMIT 20""",(member['id'],)).fetchall();sent_messages=get_db().execute("""SELECT m.*,r.email recipient_email,p.nickname recipient_name FROM private_messages m JOIN member_accounts r ON r.id=m.recipient_id LEFT JOIN players p ON p.id=r.player_id WHERE m.sender_id=? AND m.sender_deleted=0 ORDER BY m.id DESC LIMIT 20""",(member['id'],)).fetchall();notifications=get_db().execute('SELECT * FROM member_notifications WHERE account_id=? ORDER BY id DESC LIMIT 20',(member['id'],)).fetchall();pending=[]
-    if member['player_id']:pending=get_db().execute("""SELECT d.*,p.nickname challenger FROM duels d JOIN players p ON p.id=d.challenger_id WHERE d.challenged_id=? AND d.status='solicitado' AND d.challenged_accepted=0 ORDER BY d.id DESC""",(member['player_id'],)).fetchall()
-    get_db().execute("UPDATE private_messages SET read_at=CURRENT_TIMESTAMP WHERE recipient_id=? AND read_at=''",(member['id'],));get_db().execute("UPDATE member_notifications SET read_at=CURRENT_TIMESTAMP WHERE account_id=? AND read_at=''",(member['id'],));get_db().commit();return render_template('member_dashboard.html',member=member,messages=messages,sent_messages=sent_messages,notifications=notifications,pending_duels=pending)
-
-@app.get('/membro/<int:account_id>')
-def member_profile(account_id):
-    member=get_db().execute("""SELECT a.*,p.nickname,p.avatar_url,p.avatar_file,p.aomstats_url,
-        p.elo_1v1,p.elo_team,p.quote,p.discord player_discord,p.normal_wins,p.normal_losses,
-        p.normal_games,p.normal_win_rate,p.normal_level,p.normal_level_label,p.normal_stats_available
-        FROM member_accounts a LEFT JOIN players p ON p.id=a.player_id
-        WHERE a.id=? AND a.email_verified=1""",(account_id,)).fetchone()
-    if not member:abort(404)
-    online=get_db().execute("SELECT last_seen>=datetime('now','-5 minutes') online FROM member_accounts WHERE id=?",(account_id,)).fetchone()['online'];history=[]
-    x1_stats={'wins':0,'losses':0,'games':0,'rate':0,'streak':0}
-    if member['player_id']:
-        history=get_db().execute("""SELECT d.*,a.nickname challenger,b.nickname challenged,w.nickname winner
-            FROM duels d JOIN players a ON a.id=d.challenger_id JOIN players b ON b.id=d.challenged_id
-            LEFT JOIN players w ON w.id=d.winner_id WHERE d.challenger_id=? OR d.challenged_id=? ORDER BY d.id DESC""",(member['player_id'],member['player_id'])).fetchall()
-        finished=[d for d in history if d['status']=='finalizado']
-        wins=sum(1 for d in finished if d['winner_id']==member['player_id']);losses=max(len(finished)-wins,0)
-        streak=0
-        for duel in finished:
-            if duel['winner_id']==member['player_id']:streak+=1
-            else:break
-        x1_stats={'wins':wins,'losses':losses,'games':len(finished),'rate':round(wins*100/len(finished),1) if finished else 0,'streak':streak}
-    return render_template('member_profile.html',member=member,online=online,history=history,x1_stats=x1_stats)
-
-@app.post('/mensagem/enviar/<int:recipient_id>')
-@member_required
-def message_send(recipient_id):
-    require_csrf();body=(request.form.get('body') or '').strip()
-    if recipient_id==session['member_id'] or not body:flash('Mensagem inválida.','error')
-    else:get_db().execute('INSERT INTO private_messages(sender_id,recipient_id,body) VALUES(?,?,?)',(session['member_id'],recipient_id,body[:1000]));notification(recipient_id,'message','Você recebeu uma nova mensagem.',url_for('member_dashboard'));get_db().commit();flash('Mensagem enviada!','success')
-    return redirect(request.referrer or url_for('community_hub'))
-
-@app.post('/mensagem/<int:message_id>/excluir')
-@member_required
-def message_delete(message_id):
-    require_csrf();get_db().execute('UPDATE private_messages SET recipient_deleted=CASE WHEN recipient_id=? THEN 1 ELSE recipient_deleted END,sender_deleted=CASE WHEN sender_id=? THEN 1 ELSE sender_deleted END WHERE id=?',(session['member_id'],session['member_id'],message_id));get_db().commit();return redirect(url_for('member_dashboard'))
-
-@app.get('/comunidade/painel')
-def community_hub():
-    members=get_db().execute("""SELECT a.id,a.player_id,a.description,a.last_seen,p.nickname,p.avatar_url,
-        p.avatar_file,p.elo_1v1,p.quote,p.normal_level_label,(a.last_seen>=datetime('now','-5 minutes')) online
-        FROM member_accounts a LEFT JOIN players p ON p.id=a.player_id WHERE a.email_verified=1
-        ORDER BY online DESC,LOWER(COALESCE(p.nickname,a.email))""").fetchall();duels=get_db().execute("""SELECT d.*,a.nickname challenger,b.nickname challenged,w.nickname winner,ca.id challenger_account,cb.id challenged_account FROM duels d JOIN players a ON a.id=d.challenger_id JOIN players b ON b.id=d.challenged_id LEFT JOIN players w ON w.id=d.winner_id LEFT JOIN member_accounts ca ON ca.player_id=d.challenger_id LEFT JOIN member_accounts cb ON cb.player_id=d.challenged_id ORDER BY CASE d.status WHEN 'em_curso' THEN 0 WHEN 'solicitado' THEN 1 ELSE 2 END,d.id DESC LIMIT 50""").fetchall();return render_template('community_hub.html',members=members,duels=duels)
-
-@app.get('/api/comunidade/status')
-def community_live_status():
-    online_ids=[r['id'] for r in get_db().execute("SELECT id FROM member_accounts WHERE email_verified=1 AND last_seen>=datetime('now','-5 minutes')").fetchall()]
-    unread=0
-    if session.get('member_id'):
-        unread=get_db().execute("""SELECT
-            (SELECT COUNT(*) FROM private_messages WHERE recipient_id=? AND recipient_deleted=0 AND read_at='')+
-            (SELECT COUNT(*) FROM member_notifications WHERE account_id=? AND read_at='') total""",(session['member_id'],session['member_id'])).fetchone()['total']
-    return jsonify({'online_ids':online_ids,'unread':unread})
-
 @app.route("/setup", methods=["GET", "POST"])
 def setup():
     if has_admin():
@@ -2052,6 +1781,7 @@ def setup():
     return render_template("setup.html")
 
 
+@app.route("/login", methods=["GET", "POST"])
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     if not has_admin():
@@ -3051,69 +2781,17 @@ def duel_ranking():
 
 @app.get('/x1')
 def x1_page():
-    db=get_db();players=db.execute("SELECT p.*,a.id account_id FROM players p JOIN member_accounts a ON a.player_id=p.id WHERE a.email_verified=1 ORDER BY p.nickname").fetchall();ranking=duel_ranking();duels=db.execute("""SELECT d.*,a.nickname challenger,b.nickname challenged,w.nickname winner FROM duels d JOIN players a ON a.id=d.challenger_id JOIN players b ON b.id=d.challenged_id LEFT JOIN players w ON w.id=d.winner_id ORDER BY d.id DESC LIMIT 100""").fetchall()
+    db=get_db();players=db.execute("SELECT * FROM players WHERE aomstats_url<>'' ORDER BY nickname").fetchall();ranking=duel_ranking();duels=db.execute("""SELECT d.*,a.nickname challenger,b.nickname challenged,w.nickname winner FROM duels d JOIN players a ON a.id=d.challenger_id JOIN players b ON b.id=d.challenged_id LEFT JOIN players w ON w.id=d.winner_id ORDER BY d.id DESC LIMIT 100""").fetchall()
     return render_template('x1.html',players=players,ranking=ranking,duels=duels)
 
 @app.post('/x1/desafiar')
-@member_required
 def x1_challenge():
-    require_csrf();me=current_member();a=int(me['player_id'] or 0);b=int(request.form.get('challenged_id',0));db=get_db()
+    require_csrf();a=int(request.form.get('challenger_id',0));b=int(request.form.get('challenged_id',0));db=get_db()
     if not a or not b or a==b:flash('Escolha dois jogadores diferentes.','error');return redirect(url_for('x1_page'))
     active=db.execute("SELECT 1 FROM duels WHERE status<>'finalizado' AND (challenger_id IN (?,?) OR challenged_id IN (?,?))",(a,b,a,b)).fetchone()
     if active:flash('Um dos jogadores já possui um duelo ativo.','error')
-    else:
-        db.execute("INSERT INTO duels(challenger_id,challenged_id) VALUES(?,?)",(a,b));target=db.execute('SELECT id FROM member_accounts WHERE player_id=?',(b,)).fetchone()
-        if target:notification(target['id'],'duel',f"{me['nickname']} desafiou você para um X1!",url_for('member_dashboard'))
-        db.commit();flash('Desafio enviado! O jogador precisa aceitar.','success')
+    else:db.execute("INSERT INTO duels(challenger_id,challenged_id) VALUES(?,?)",(a,b));db.commit();flash('Desafio enviado para aprovação do administrador.','success')
     return redirect(url_for('x1_page'))
-
-@app.post('/membro/<int:account_id>/desafiar')
-@member_required
-def member_challenge(account_id):
-    require_csrf();me=current_member();target=get_db().execute('SELECT * FROM member_accounts WHERE id=?',(account_id,)).fetchone()
-    if not me['player_id'] or not target or not target['player_id']:flash('Os dois jogadores precisam vincular Steam e AoMStats.','error');return redirect(request.referrer or url_for('community_hub'))
-    if me['id']==account_id:flash('Você não pode desafiar a si mesmo.','error');return redirect(url_for('community_hub'))
-    a=me['player_id'];b=target['player_id'];active=get_db().execute("SELECT 1 FROM duels WHERE status<>'finalizado' AND (challenger_id IN (?,?) OR challenged_id IN (?,?))",(a,b,a,b)).fetchone()
-    if active:flash('Um dos jogadores já possui duelo ativo.','error')
-    else:
-        get_db().execute('INSERT INTO duels(challenger_id,challenged_id) VALUES(?,?)',(a,b));notification(account_id,'duel',f"{me['nickname']} desafiou você para um X1!",url_for('member_dashboard'));get_db().commit();flash('Desafio enviado! O jogador precisa aceitar.','success')
-    return redirect(request.referrer or url_for('community_hub'))
-
-@app.post('/x1/<int:duel_id>/responder')
-@member_required
-def duel_respond(duel_id):
-    require_csrf();me=current_member();duel=get_db().execute('SELECT * FROM duels WHERE id=?',(duel_id,)).fetchone()
-    if not duel or not me['player_id'] or duel['challenged_id']!=me['player_id']:abort(403)
-    if request.form.get('decision')=='accept':
-        get_db().execute("UPDATE duels SET challenged_accepted=1,accepted_at=CURRENT_TIMESTAMP WHERE id=? AND status='solicitado'",(duel_id,));challenger=get_db().execute('SELECT id FROM member_accounts WHERE player_id=?',(duel['challenger_id'],)).fetchone()
-        if challenger:notification(challenger['id'],'duel','Seu desafio foi aceito e aguarda aprovação do administrador.',url_for('community_hub'))
-        flash('Desafio aceito! Agora o administrador poderá iniciar o duelo.','success')
-    else:get_db().execute('DELETE FROM duels WHERE id=? AND status="solicitado"',(duel_id,));flash('Desafio recusado.','success')
-    get_db().commit();return redirect(url_for('member_dashboard'))
-
-@app.post('/x1/<int:duel_id>/acompanhar')
-@member_required
-def duel_watch(duel_id):
-    require_csrf();get_db().execute('INSERT OR IGNORE INTO duel_watchers(duel_id,account_id) VALUES(?,?)',(duel_id,session['member_id']));get_db().commit();flash('Você foi marcado para acompanhar este duelo!','success');return redirect(request.referrer or url_for('community_hub'))
-
-@app.post('/x1/<int:duel_id>/convidar')
-@member_required
-def duel_invite_watcher(duel_id):
-    require_csrf();me=current_member();duel=get_db().execute('SELECT * FROM duels WHERE id=?',(duel_id,)).fetchone();guest_id=int(request.form.get('account_id',0))
-    if not duel or not me['player_id'] or me['player_id'] not in (duel['challenger_id'],duel['challenged_id']):abort(403)
-    guest=get_db().execute('SELECT id FROM member_accounts WHERE id=? AND email_verified=1',(guest_id,)).fetchone()
-    if guest:
-        get_db().execute('INSERT OR IGNORE INTO duel_watchers(duel_id,account_id) VALUES(?,?)',(duel_id,guest_id));notification(guest_id,'duel_invite',f"{me['nickname']} marcou você para acompanhar um duelo X1.",url_for('community_hub'));get_db().commit();flash('Pessoa marcada para acompanhar o duelo!','success')
-    return redirect(url_for('community_hub'))
-
-@app.get('/x1/<int:duel_id>/card.png')
-def duel_share_card(duel_id):
-    duel=get_db().execute("""SELECT d.*,a.nickname challenger,b.nickname challenged,w.nickname winner FROM duels d JOIN players a ON a.id=d.challenger_id JOIN players b ON b.id=d.challenged_id LEFT JOIN players w ON w.id=d.winner_id WHERE d.id=? AND d.status='finalizado'""",(duel_id,)).fetchone()
-    if not duel:abort(404)
-    img=Image.new('RGB',(1200,630),(8,10,15));draw=ImageDraw.Draw(img);draw.ellipse((760,-220,1350,370),fill=(84,24,20));draw.rectangle((35,35,1165,595),outline=(244,96,45),width=5)
-    try:title=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',62);big=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',88);normal=ImageFont.truetype('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',34)
-    except Exception:title=big=normal=ImageFont.load_default()
-    draw.text((70,75),'CHAMAS FLAMEJANTES',font=title,fill=(245,111,55));draw.text((70,190),'VENCEDOR DO X1',font=normal,fill=(225,205,175));draw.text((70,245),duel['winner'] or 'CAMPEÃO',font=big,fill=(255,245,225));draw.text((70,390),f"{duel['challenger']}  VS  {duel['challenged']}",font=normal,fill=(205,205,210));draw.text((70,515),'A LENDA FOI FORJADA NA ARENA',font=normal,fill=(245,160,95));buf=io.BytesIO();img.save(buf,'PNG');buf.seek(0);return send_file(buf,mimetype='image/png',download_name=f"x1-{duel_id}-vencedor.png")
 
 @app.get('/mapas')
 def maps_page():return render_template('maps.html',maps=get_db().execute("SELECT * FROM community_maps ORDER BY id DESC").fetchall())
@@ -3131,15 +2809,9 @@ def map_download(map_id):
 @app.post('/admin/x1/<int:duel_id>')
 @admin_required
 def admin_duel_update(duel_id):
-    require_csrf();status=request.form.get('status');winner=request.form.get('winner_id') or None;duel=get_db().execute('SELECT * FROM duels WHERE id=?',(duel_id,)).fetchone()
+    require_csrf();status=request.form.get('status');winner=request.form.get('winner_id') or None
     if status not in ('solicitado','em_curso','finalizado'):abort(400)
-    if status in ('em_curso','finalizado') and duel and not duel['challenged_accepted']:flash('O jogador desafiado ainda não aceitou.','error');return redirect(url_for('admin'))
-    get_db().execute("UPDATE duels SET status=?,winner_id=?,finished_at=CASE WHEN ?='finalizado' THEN CURRENT_TIMESTAMP ELSE '' END WHERE id=?",(status,winner,status,duel_id))
-    if status=='finalizado' and winner:
-        winner_row=get_db().execute('SELECT nickname FROM players WHERE id=?',(winner,)).fetchone();text_value=f"{winner_row['nickname'] if winner_row else 'Um jogador'} venceu o duelo X1!"
-        account_ids=[r['id'] for r in get_db().execute('SELECT id FROM member_accounts WHERE player_id IN (?,?)',(duel['challenger_id'],duel['challenged_id'])).fetchall()]+[r['account_id'] for r in get_db().execute('SELECT account_id FROM duel_watchers WHERE duel_id=?',(duel_id,)).fetchall()]
-        for account_id in set(account_ids):notification(account_id,'duel_result',text_value,url_for('community_hub'))
-    get_db().commit();flash('Duelo atualizado.','success');return redirect(url_for('admin'))
+    get_db().execute("UPDATE duels SET status=?,winner_id=?,finished_at=CASE WHEN ?='finalizado' THEN CURRENT_TIMESTAMP ELSE '' END WHERE id=?",(status,winner,status,duel_id));get_db().commit();flash('Duelo atualizado.','success');return redirect(url_for('admin'))
 
 @app.post('/admin/mapas/adicionar')
 @admin_required
@@ -3166,14 +2838,13 @@ def admin_groups():
 
 @app.get("/health")
 def health():
-    email_ready=bool(os.environ.get('BREVO_API_KEY') and (os.environ.get('BREVO_SENDER_EMAIL') or os.environ.get('SMTP_FROM')))
-    return {"version":"12.1-social-trial","database":"ok","email_api":"configured" if email_ready else "not-configured"}
+    return {"version":"11-v75-visual","database":"ok"}
 
 
 init_db()
 migrate_v6_db()
 ensure_default_admin()
-print("🔥 CHAMAS FLAMEJANTES V12.1 — SOCIAL TRIAL + STEAM\nDATABASE: SQLITE\nEMAIL: BREVO HTTPS API\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V11 — VISUAL V7.5\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
