@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V11.2.1 — VISUAL V7.5 + CONHECIMENTO
+# 🔥 CHAMAS FLAMEJANTES V11.2.2 — VISUAL V7.5 + CONHECIMENTO
 
 Base visual e cadastro de jogadores preservados do projeto V7.5, com recursos V11 integrados.
 

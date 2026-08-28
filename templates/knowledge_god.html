@@ -38,11 +38,11 @@
 
   <div class="build-library-grid" id="build-library-grid">
     {% for build in builds %}
-    <article class="build-library-card" data-build-card data-tags="{{ build.tags|join(' ') }}" data-search="{{ build.title|lower }} {{ build.source_title|lower }} {{ build.author|lower }} {{ build.tags|join(' ') }}">
+    <article class="build-library-card" data-build-card data-tags="{{ build.tags|join(' ') }}" data-search="{{ build.title|lower }} {{ build.source_title|lower }} {{ build.tags|join(' ') }}">
       <div class="build-card-top"><span class="build-number">{{ '%02d'|format(loop.index) }}</span><div class="build-badges">{% for tag in build.tags %}{% if tag_meta[tag] %}<span class="build-tag tag-{{tag}}">{{tag_meta[tag].icon}} {{tag_meta[tag].name}}</span>{% endif %}{% endfor %}</div></div>
       <h2>{{ build.title }}</h2>
       <p>{{ build.objective }}</p>
-      <dl><div><dt>Dificuldade</dt><dd>{{ build.difficulty }}</dd></div><div><dt>Etapas</dt><dd>{{ build.phases|length }} idades</dd></div><div><dt>Autor</dt><dd>{{ build.author }}</dd></div></dl>
+      <dl><div><dt>Dificuldade</dt><dd>{{ build.difficulty }}</dd></div><div><dt>Etapas</dt><dd>{{ build.phases|length }} idades</dd></div></dl>
       <a class="open-build" href="{{ url_for('knowledge_build_page',god_slug=god_slug,build_id=build.id) }}">ABRIR PASSO A PASSO <b>→</b></a>
     </article>
     {% endfor %}

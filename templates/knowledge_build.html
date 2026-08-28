@@ -24,7 +24,7 @@
       <small>IR PARA A IDADE</small>
       {% for phase in build.phases %}<a href="#fase-{{loop.index}}"><b>{{loop.index}}</b><span>{{phase.name}}{% if phase.timing %}<em>{{phase.timing}}</em>{% endif %}</span></a>{% endfor %}
     </nav>
-    <div class="guide-source"><small>ESTRATÉGIA DA COMUNIDADE</small><b>{{ build.author }}</b><a href="{{ build.source_url }}" target="_blank" rel="noopener">Consultar fonte original ↗</a></div>
+    <div class="guide-source"><small>FONTE DA BUILD</small><a href="{{ build.source_url }}" target="_blank" rel="noopener">Consultar biblioteca original ↗</a></div>
   </aside>
 
   <div class="build-timeline">
@@ -46,7 +46,7 @@
           <span class="phase-tip-icon">💡</span>
           {% endif %}
           <ol class="action-list">
-            {% for action in row.actions %}<li{% if action.startswith('Assista ao vídeo') %} class="video-action"{% endif %}>{{ action|urlize(target='_blank',rel='noopener') }}</li>{% endfor %}
+            {% for action in row.actions %}<li>{{ action|urlize(target='_blank',rel='noopener') }}</li>{% endfor %}
           </ol>
         </article>
         {% endfor %}

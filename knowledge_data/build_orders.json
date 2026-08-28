@@ -1,5 +1,5 @@
 {
-  "version": "2026.08",
+  "version": "2026.08.2",
   "source": "Kries-Dev BuildOrders",
   "source_url": "https://kries-dev.github.io/BuildOrders/",
   "build_count": 113,
@@ -49,7 +49,6 @@
       "pantheon": "asteca",
       "title": "1 Calpulli 3:16",
       "source_title": "1 Calpulli 3:16",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -118,14 +117,7 @@
         {
           "name": "Idade Clássica",
           "timing": "3:16",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/In5_TKjs2hQ?si=YKLtuDLLJLQSueCd&t=584"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -135,7 +127,6 @@
       "pantheon": "asteca",
       "title": "1 Calpulli Duplo Scout 3:37",
       "source_title": "1 Calpulli Double Scout 3:37",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -219,14 +210,7 @@
         {
           "name": "Idade Clássica",
           "timing": "3:37",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/In5_TKjs2hQ?si=zFSVqNPOUbm-Nh8B&t=1100"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -236,7 +220,6 @@
       "pantheon": "asteca",
       "title": "3 Calpulli 4:07",
       "source_title": "3 Calpulli 4:07",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -336,14 +319,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:07",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/In5_TKjs2hQ?si=bm7INR2iCTmu3sr9&t=66"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -353,7 +329,6 @@
       "pantheon": "asteca",
       "title": "Abertura padrão",
       "source_title": "Standard Opening",
-      "author": "HUSKSUPPE",
       "tags": [
         "economia"
       ],
@@ -466,14 +441,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:07",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/o2omgjgnB28"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -483,7 +451,6 @@
       "pantheon": "asteca",
       "title": "Blood Pact Opening",
       "source_title": "Blood Pact Opening",
-      "author": "TheRapl",
       "tags": [
         "economia"
       ],
@@ -609,12 +576,6 @@
                 "treinar 👨‍🌾 para 🍖",
                 "construir casas adicionais"
               ]
-            },
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=11ywODZ3SmM"
-              ]
             }
           ]
         }
@@ -626,7 +587,6 @@
       "pantheon": "asteca",
       "title": "Boom naval",
       "source_title": "Water Boom",
-      "author": "[DoD]Mirez",
       "tags": [
         "agua",
         "economia"
@@ -736,14 +696,7 @@
         {
           "name": "Idade Clássica",
           "timing": "5:07",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=uta5kYGfN3w"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -753,7 +706,6 @@
       "pantheon": "asteca",
       "title": "Curral antecipado 4:07",
       "source_title": "Early Livestock Pen 4:07",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -856,14 +808,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:07",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/In5_TKjs2hQ?si=pCaY2uHVY2GUBgiu&t=232"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -873,7 +818,6 @@
       "pantheon": "asteca",
       "title": "Lurable Hunt 1 Calpulli 4:07",
       "source_title": "Lurable Hunt 1 Calpulli 4:07",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -965,14 +909,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:07",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/In5_TKjs2hQ?si=5ME40mW9piKENV6f&t=930"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -982,7 +919,6 @@
       "pantheon": "asteca",
       "title": "Lurable Hunt 2 Calpulli 4:07",
       "source_title": "Lurable Hunt 2 Calpulli 4:07",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -1076,14 +1012,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:07",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/In5_TKjs2hQ?si=5ME40mW9piKENV6f&t=930"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -1093,7 +1022,6 @@
       "pantheon": "asteca",
       "title": "Rush",
       "source_title": "Rush",
-      "author": "HUSKSUPPE",
       "tags": [
         "rush"
       ],
@@ -1197,12 +1125,6 @@
               "actions": [
                 "Opcional: acompanhamento com um Centro Urbano"
               ]
-            },
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/o2omgjgnB28?si=Ko4DJ-QsI2TKFDbQ&t=430"
-              ]
             }
           ]
         }
@@ -1214,7 +1136,6 @@
       "pantheon": "asteca",
       "title": "Segundo Centro Urbano rápido - DoD]Mirez",
       "source_title": "Fast 2TC - DoD]Mirez",
-      "author": "ECO",
       "tags": [
         "economia"
       ],
@@ -1229,7 +1150,6 @@
       "pantheon": "asteca",
       "title": "4:07 Abertura padrão",
       "source_title": "4:07 Standard Opening",
-      "author": "TheRapl",
       "tags": [
         "economia",
         "rush"
@@ -1338,12 +1258,6 @@
                 "treinar 👨‍🌾 para 🍖",
                 "construir uma cabana nobre e uma cabana de guerra"
               ]
-            },
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=TutR7UkuliY"
-              ]
             }
           ]
         }
@@ -1355,7 +1269,6 @@
       "pantheon": "asteca",
       "title": "4:07 Boom econômico",
       "source_title": "4:07 Eco Boom",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -1472,14 +1385,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:07",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/WFT_ZSTIecQ"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -1489,7 +1395,6 @@
       "pantheon": "asteca",
       "title": "Boom econômico",
       "source_title": "Eco Boom",
-      "author": "HUSKSUPPE",
       "tags": [
         "economia"
       ],
@@ -1606,12 +1511,6 @@
                 "adicione aldeões a 🪙",
                 "Construa 2 Cabanas Nobres"
               ]
-            },
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/o2omgjgnB28?si=6fvPUIU6ksPnPoK6&t=843"
-              ]
             }
           ]
         }
@@ -1623,7 +1522,6 @@
       "pantheon": "asteca",
       "title": "Boom naval",
       "source_title": "Water Boom",
-      "author": "[DoD]Mirez",
       "tags": [
         "agua",
         "economia"
@@ -1745,14 +1643,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:42",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/mNvC2QQagU4"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -1762,7 +1653,6 @@
       "pantheon": "asteca",
       "title": "Segundo Centro Urbano rápido - [DoD]Mirez",
       "source_title": "Fast 2TC - [DoD]Mirez",
-      "author": "ECO",
       "tags": [
         "economia"
       ],
@@ -1777,7 +1667,6 @@
       "pantheon": "asteca",
       "title": "1 Calpulli 3:16",
       "source_title": "1 Calpulli 3:16",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia",
         "rush"
@@ -1847,14 +1736,7 @@
         {
           "name": "Idade Clássica",
           "timing": "3:16",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/In5_TKjs2hQ?si=YKLtuDLLJLQSueCd&t=584"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -1864,7 +1746,6 @@
       "pantheon": "asteca",
       "title": "1 Calpulli Duplo Scout 3:37",
       "source_title": "1 Calpulli Double Scout 3:37",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -1948,14 +1829,7 @@
         {
           "name": "Idade Clássica",
           "timing": "3:37",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/In5_TKjs2hQ?si=zFSVqNPOUbm-Nh8B&t=1100"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -1965,7 +1839,6 @@
       "pantheon": "asteca",
       "title": "3 Calpulli 4:07",
       "source_title": "3 Calpulli 4:07",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -2065,14 +1938,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:07",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/In5_TKjs2hQ?si=bm7INR2iCTmu3sr9&t=66"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -2082,7 +1948,6 @@
       "pantheon": "asteca",
       "title": "4:07 Abertura padrão",
       "source_title": "4:07 Standard Opening",
-      "author": "TheRapl",
       "tags": [
         "economia"
       ],
@@ -2189,12 +2054,6 @@
                 "treinar 👨‍🌾 para 🍖",
                 "construir uma cabana nobre e uma cabana de guerra"
               ]
-            },
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=1XK2gUC-UE8"
-              ]
             }
           ]
         }
@@ -2206,7 +2065,6 @@
       "pantheon": "asteca",
       "title": "Abertura padrão",
       "source_title": "Standard Opening",
-      "author": "HUSKSUPPE",
       "tags": [
         "economia"
       ],
@@ -2319,14 +2177,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:07",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/o2omgjgnB28"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -2336,7 +2187,6 @@
       "pantheon": "asteca",
       "title": "Boom naval",
       "source_title": "Water Boom",
-      "author": "[DoD]Mirez",
       "tags": [
         "agua",
         "economia"
@@ -2446,14 +2296,7 @@
         {
           "name": "Idade Clássica",
           "timing": "5:07",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=uta5kYGfN3w"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -2463,7 +2306,6 @@
       "pantheon": "asteca",
       "title": "Curral antecipado 4:07",
       "source_title": "Early Livestock Pen 4:07",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -2566,14 +2408,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:07",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/In5_TKjs2hQ?si=pCaY2uHVY2GUBgiu&t=232"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -2583,7 +2418,6 @@
       "pantheon": "asteca",
       "title": "Lurable Hunt 1 Calpulli 4:07",
       "source_title": "Lurable Hunt 1 Calpulli 4:07",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -2675,14 +2509,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:07",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/In5_TKjs2hQ?si=5ME40mW9piKENV6f&t=930"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -2692,7 +2519,6 @@
       "pantheon": "asteca",
       "title": "Lurable Hunt 2 Calpulli 4:07",
       "source_title": "Lurable Hunt 2 Calpulli 4:07",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -2786,14 +2612,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:07",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://youtu.be/In5_TKjs2hQ?si=5ME40mW9piKENV6f&t=930"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -2803,7 +2622,6 @@
       "pantheon": "asteca",
       "title": "Segundo Centro Urbano rápido - DoD]Mirez",
       "source_title": "Fast 2TC - DoD]Mirez",
-      "author": "ECO",
       "tags": [
         "economia"
       ],
@@ -2818,7 +2636,6 @@
       "pantheon": "atlante",
       "title": "10 Hero Citizens",
       "source_title": "10 Hero Citizens",
-      "author": "[DoD]Léonce & [DoD]Godschalk",
       "tags": [
         "economia",
         "rush"
@@ -2959,7 +2776,6 @@
       "pantheon": "atlante",
       "title": "9 Citizens mais rápido Oracle",
       "source_title": "9 Citizens Fastest Oracle",
-      "author": "[DoD]DarthNox",
       "tags": [
         "economia"
       ],
@@ -3114,7 +2930,6 @@
       "pantheon": "atlante",
       "title": "9 Hero Citizens",
       "source_title": "9 Hero Citizens",
-      "author": "[DoD]Léonce & [DoD]Godschalk",
       "tags": [
         "economia"
       ],
@@ -3263,7 +3078,6 @@
       "pantheon": "atlante",
       "title": "Padrão Water",
       "source_title": "Standard Water",
-      "author": "[DoD]DarthNox & [DoD]Godschalk",
       "tags": [
         "agua",
         "economia"
@@ -3401,7 +3215,6 @@
       "pantheon": "atlante",
       "title": "Segundo Centro Urbano",
       "source_title": "2 TC",
-      "author": "[DoD]Léonce & [DoD]Godschalk",
       "tags": [
         "economia"
       ],
@@ -3536,7 +3349,6 @@
       "pantheon": "atlante",
       "title": "Krush",
       "source_title": "Krush",
-      "author": "Cajocu",
       "tags": [
         "rush"
       ],
@@ -3665,7 +3477,6 @@
       "pantheon": "atlante",
       "title": "Padrão 3:30",
       "source_title": "Standard 3:30",
-      "author": "Cajocu",
       "tags": [
         "economia"
       ],
@@ -3781,7 +3592,6 @@
       "pantheon": "atlante",
       "title": "Padrão Water",
       "source_title": "Standard Water",
-      "author": "[DoD]DarthNox & [DoD]Godschalk",
       "tags": [
         "agua",
         "economia"
@@ -3919,7 +3729,6 @@
       "pantheon": "atlante",
       "title": "Fast Oracle",
       "source_title": "Fast Oracle",
-      "author": "[DoD]DarthNox",
       "tags": [
         "economia",
         "rush"
@@ -4032,7 +3841,6 @@
       "pantheon": "atlante",
       "title": "Padrão 3:30",
       "source_title": "Standard 3:30",
-      "author": "Cajocu",
       "tags": [
         "economia"
       ],
@@ -4148,7 +3956,6 @@
       "pantheon": "atlante",
       "title": "Padrão Water",
       "source_title": "Standard Water",
-      "author": "[DoD]DarthNox & [DoD]Godschalk",
       "tags": [
         "agua",
         "economia"
@@ -4286,7 +4093,6 @@
       "pantheon": "chines",
       "title": "3:24 Duplo Kuafu",
       "source_title": "3:24 Double Kuafu",
-      "author": "[DoD]Mirez",
       "tags": [
         "rush"
       ],
@@ -4361,7 +4167,6 @@
       "pantheon": "chines",
       "title": "4:06 Triplo Kuafu",
       "source_title": "4:06 Triple Kuafu",
-      "author": "[DoD]Mirez",
       "tags": [
         "rush"
       ],
@@ -4451,7 +4256,6 @@
       "pantheon": "chines",
       "title": "4:23 Picareta antecipada 3x Kuafu",
       "source_title": "4:23 Early Pickaxe 3x Kuafu",
-      "author": "[DoD]Mirez",
       "tags": [
         "rush",
         "economia"
@@ -4554,7 +4358,6 @@
       "pantheon": "chines",
       "title": "Abertura naval",
       "source_title": "Water Build",
-      "author": "[DoD]Mirez",
       "tags": [
         "agua"
       ],
@@ -4671,7 +4474,6 @@
       "pantheon": "chines",
       "title": "3:24 Duplo Kuafu",
       "source_title": "3:24 Double Kuafu",
-      "author": "[DoD]Mirez",
       "tags": [
         "rush"
       ],
@@ -4746,7 +4548,6 @@
       "pantheon": "chines",
       "title": "3:39 early Chieftain",
       "source_title": "3:39 early Chieftain",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -4822,7 +4623,6 @@
       "pantheon": "chines",
       "title": "4:23 Picareta antecipada 3x Kuafu",
       "source_title": "4:23 Early Pickaxe 3x Kuafu",
-      "author": "[DoD]Mirez",
       "tags": [
         "rush",
         "economia"
@@ -4925,7 +4725,6 @@
       "pantheon": "chines",
       "title": "Abertura naval",
       "source_title": "Water Build",
-      "author": "[DoD]Mirez",
       "tags": [
         "agua"
       ],
@@ -5042,7 +4841,6 @@
       "pantheon": "chines",
       "title": "Duplo Dock Build",
       "source_title": "Double Dock Build",
-      "author": "[DoD]Mirez",
       "tags": [
         "agua"
       ],
@@ -5185,7 +4983,6 @@
       "pantheon": "chines",
       "title": "3:24 Duplo Kuafu",
       "source_title": "3:24 Double Kuafu",
-      "author": "[DoD]Mirez",
       "tags": [
         "rush"
       ],
@@ -5260,7 +5057,6 @@
       "pantheon": "chines",
       "title": "3:58 Fazendas antecipadas 2x Kuafu",
       "source_title": "3:58 Early Farms 2x Kuafu",
-      "author": "[DoD]Mirez",
       "tags": [
         "rush",
         "economia"
@@ -5390,14 +5186,7 @@
         {
           "name": "Idade Clássica",
           "timing": "3:58",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=N2kvhh75I-Q"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -5407,7 +5196,6 @@
       "pantheon": "chines",
       "title": "4:23 Fazendas antecipadas 3x Kuafu",
       "source_title": "4:23 Early Farms 3x Kuafu",
-      "author": "[DoD]Mirez",
       "tags": [
         "rush",
         "economia"
@@ -5548,14 +5336,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:23",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=N2kvhh75I-Q"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -5565,7 +5346,6 @@
       "pantheon": "chines",
       "title": "4:23 Picareta antecipada 3x Kuafu",
       "source_title": "4:23 Early Pickaxe 3x Kuafu",
-      "author": "[DoD]Mirez",
       "tags": [
         "rush",
         "economia"
@@ -5668,7 +5448,6 @@
       "pantheon": "chines",
       "title": "Abertura naval",
       "source_title": "Water Build",
-      "author": "[DoD]Mirez",
       "tags": [
         "agua"
       ],
@@ -5785,7 +5564,6 @@
       "pantheon": "egipcio",
       "title": "4:07 Segundo Centro Urbano + 2 Anubites",
       "source_title": "4:07 2 TC + 2 Anubites",
-      "author": "[DoD]Firefox & [DoD]Godschalk",
       "tags": [
         "rush",
         "economia"
@@ -5982,7 +5760,6 @@
       "pantheon": "egipcio",
       "title": "7:21 Heroica rápida (Ancestors Eclipse)",
       "source_title": "7:21 Fast Heroic (Ancestors Eclipse)",
-      "author": "[DoD]Firefox & [DoD]Godschalk",
       "tags": [
         "heroico"
       ],
@@ -6219,7 +5996,6 @@
       "pantheon": "egipcio",
       "title": "7:21 Water Heroica rápida",
       "source_title": "7:21 Water Fast Heroic",
-      "author": "[DoD]Firefox & [DoD]Godschalk",
       "tags": [
         "agua",
         "heroico"
@@ -6424,7 +6200,6 @@
       "pantheon": "egipcio",
       "title": "Abertura naval padrão",
       "source_title": "Standard Water Build",
-      "author": "[DoD]BqvH & [DoD]Godschalk",
       "tags": [
         "agua",
         "economia"
@@ -6571,7 +6346,6 @@
       "pantheon": "egipcio",
       "title": "Padrão Early Flood + Segundo Centro Urbano",
       "source_title": "Standard Early Flood + 2TC",
-      "author": "Kvoth & [DoD]BqvH",
       "tags": [
         "economia"
       ],
@@ -6708,7 +6482,6 @@
       "pantheon": "egipcio",
       "title": "rápido Classical Segundo Centro Urbano",
       "source_title": "Speedy Classical 2 TC",
-      "author": "[DoD]BqvH",
       "tags": [
         "economia"
       ],
@@ -6832,7 +6605,6 @@
       "pantheon": "egipcio",
       "title": "4:07 1 TC Pressão agressiva",
       "source_title": "4:07 1 TC Aggression",
-      "author": "[DoD]Firefox & [DoD]Godschalk",
       "tags": [
         "rush"
       ],
@@ -6996,7 +6768,6 @@
       "pantheon": "egipcio",
       "title": "7:21 Water Heroica rápida",
       "source_title": "7:21 Water Fast Heroic",
-      "author": "Soka & [DoD]Godschalk",
       "tags": [
         "agua",
         "heroico"
@@ -7228,7 +6999,6 @@
       "pantheon": "egipcio",
       "title": "Avanço rápido (contra Kronos)",
       "source_title": "Fast Advance (Anti-Kronos)",
-      "author": "Cajocu",
       "tags": [
         "rush"
       ],
@@ -7367,7 +7137,6 @@
       "pantheon": "egipcio",
       "title": "FH",
       "source_title": "FH",
-      "author": "Jollyman & [DoD]Godschalk",
       "tags": [
         "heroico"
       ],
@@ -7592,7 +7361,6 @@
       "pantheon": "egipcio",
       "title": "Padrão Water",
       "source_title": "Standard Water",
-      "author": "Cajocu & [DoD]Godschalk",
       "tags": [
         "agua",
         "economia"
@@ -7746,7 +7514,6 @@
       "pantheon": "egipcio",
       "title": "Segundo Centro Urbano or Pressão agressiva",
       "source_title": "2TC or Aggro",
-      "author": "Jollyman & [DoD]Godschalk",
       "tags": [
         "rush",
         "economia"
@@ -7888,7 +7655,6 @@
       "pantheon": "egipcio",
       "title": "6:13 Heroica rápida",
       "source_title": "6:13 Fast Heroic",
-      "author": "[DoD]Zoltraak & [DoD]Godschalk",
       "tags": [
         "heroico"
       ],
@@ -8125,7 +7891,6 @@
       "pantheon": "egipcio",
       "title": "Abertura econômica segura",
       "source_title": "Basic Chill",
-      "author": "[DoD]Zoltraak & [DoD]Godschalk",
       "tags": [
         "economia"
       ],
@@ -8383,7 +8148,6 @@
       "pantheon": "egipcio",
       "title": "Abertura naval padrão",
       "source_title": "Standard Water Build",
-      "author": "[DoD]BqvH & [DoD]Godschalk",
       "tags": [
         "agua",
         "economia"
@@ -8527,7 +8291,6 @@
       "pantheon": "egipcio",
       "title": "Avanço rápido (contra Kronos)",
       "source_title": "Fast Advance (Anti-Kronos)",
-      "author": "Cajocu",
       "tags": [
         "rush"
       ],
@@ -8670,7 +8433,6 @@
       "pantheon": "grego",
       "title": "3:50 Fast Pickaxe",
       "source_title": "3:50 Fast Pickaxe",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia",
         "rush"
@@ -8760,7 +8522,6 @@
       "pantheon": "grego",
       "title": "Boom naval padrão",
       "source_title": "Standard Water Boom",
-      "author": "Boit, [DoD]Mirez & [DoD]Godschalk",
       "tags": [
         "agua",
         "economia"
@@ -8904,7 +8665,6 @@
       "pantheon": "grego",
       "title": "Segundo Centro Urbano Pan's Pioneers",
       "source_title": "2TC Pan's Pioneers",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -9023,7 +8783,6 @@
       "pantheon": "grego",
       "title": "3:50 Vault of Erebus",
       "source_title": "3:50 Vault of Erebus",
-      "author": "[DoD]Firefox & HUSKSUPPE",
       "tags": [
         "economia",
         "rush"
@@ -9109,14 +8868,7 @@
         {
           "name": "Idade Clássica",
           "timing": "3:50",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=AJfPlsJwGPE"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -9126,7 +8878,6 @@
       "pantheon": "grego",
       "title": "4:07 Vault of Erebus para segundo Centro Urbano (sem atrair caça)",
       "source_title": "4:07 Vault of Erebus Into 2 TC (Without Herding)",
-      "author": "[DoD]Godschalk",
       "tags": [
         "economia"
       ],
@@ -9288,7 +9039,6 @@
       "pantheon": "grego",
       "title": "Boom naval padrão",
       "source_title": "Standard Water Boom",
-      "author": "Boit, [DoD]Mirez & [DoD]Godschalk",
       "tags": [
         "agua",
         "economia"
@@ -9432,7 +9182,6 @@
       "pantheon": "grego",
       "title": "1 TC Cavalry Raid",
       "source_title": "1 TC Cavalry Raid",
-      "author": "[CBB]Mosca & [DoD]Godschalk",
       "tags": [
         "economia",
         "rush"
@@ -9559,7 +9308,6 @@
       "pantheon": "grego",
       "title": "13 Pop Fast Atalanta para segundo Centro Urbano",
       "source_title": "13 Pop Fast Atalanta into 2 TC",
-      "author": "[CBB]Mosca & [DoD]Godschalk",
       "tags": [
         "economia"
       ],
@@ -9693,7 +9441,6 @@
       "pantheon": "grego",
       "title": "14 Pop para segundo Centro Urbano",
       "source_title": "14 Pop into 2 TC",
-      "author": "[CBB]Mosca & [DoD]Godschalk",
       "tags": [
         "economia"
       ],
@@ -9832,7 +9579,6 @@
       "pantheon": "grego",
       "title": "Boom naval padrão",
       "source_title": "Standard Water Boom",
-      "author": "Boit, [DoD]Mirez & [DoD]Godschalk",
       "tags": [
         "agua",
         "economia"
@@ -9976,7 +9722,6 @@
       "pantheon": "grego",
       "title": "Padrão",
       "source_title": "Standard",
-      "author": "[DoD]SJO",
       "tags": [
         "economia"
       ],
@@ -10056,7 +9801,6 @@
       "pantheon": "grego",
       "title": "Picareta antecipada",
       "source_title": "Early Pickaxe",
-      "author": "[DoD]SJO",
       "tags": [
         "economia"
       ],
@@ -10159,7 +9903,6 @@
       "pantheon": "grego",
       "title": "Segundo Centro Urbano rápido",
       "source_title": "Fast 2TC",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -10276,7 +10019,6 @@
       "pantheon": "grego",
       "title": "3:50 Fast Pickaxe",
       "source_title": "3:50 Fast Pickaxe",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -10363,7 +10105,6 @@
       "pantheon": "grego",
       "title": "3:50 Ideal para iniciantes and Strong- By [DoD]CraggHack",
       "source_title": "3:50 Beginner Friendly and Strong- By [DoD]CraggHack",
-      "author": "Comunidade AoM Retold",
       "tags": [
         "economia"
       ],
@@ -10503,7 +10244,6 @@
       "pantheon": "grego",
       "title": "4:07 Pickaxe & Hand Axe",
       "source_title": "4:07 Pickaxe & Hand Axe",
-      "author": "[DoD]CraggHack & [DoD]Godschalk",
       "tags": [
         "economia"
       ],
@@ -10676,7 +10416,6 @@
       "pantheon": "grego",
       "title": "Boom naval padrão",
       "source_title": "Standard Water Boom",
-      "author": "Boit, [DoD]Mirez & [DoD]Godschalk",
       "tags": [
         "agua",
         "economia"
@@ -10820,7 +10559,6 @@
       "pantheon": "grego",
       "title": "Foco militar",
       "source_title": "Military Focus",
-      "author": "[DoD]Cod1eh",
       "tags": [
         "rush"
       ],
@@ -10995,7 +10733,6 @@
       "pantheon": "grego",
       "title": "Segundo Centro Urbano rápido",
       "source_title": "Fast 2TC",
-      "author": "[Keen]Pegasus",
       "tags": [
         "economia"
       ],
@@ -11101,7 +10838,6 @@
       "pantheon": "japones",
       "title": "3 Miko 4:10",
       "source_title": "3 Miko 4:10",
-      "author": "Cajocu",
       "tags": [
         "rush"
       ],
@@ -11258,7 +10994,6 @@
       "pantheon": "japones",
       "title": "Kamaitachi Rush",
       "source_title": "Kamaitachi Rush",
-      "author": "[DoD]Wuilfor",
       "tags": [
         "rush"
       ],
@@ -11382,7 +11117,6 @@
       "pantheon": "japones",
       "title": "Padrão 3:30 1 Miko",
       "source_title": "Standard 3:30 1 Miko",
-      "author": "Cajocu",
       "tags": [
         "rush",
         "economia"
@@ -11518,7 +11252,6 @@
       "pantheon": "japones",
       "title": "Padrão Water",
       "source_title": "Standard Water",
-      "author": "Cajocu & [DoD]Godschalk",
       "tags": [
         "agua",
         "economia"
@@ -11654,7 +11387,6 @@
       "pantheon": "japones",
       "title": "3 Miko 4:25",
       "source_title": "3 Miko 4:25",
-      "author": "Cajocu",
       "tags": [
         "rush"
       ],
@@ -11821,7 +11553,6 @@
       "pantheon": "japones",
       "title": "4:19 Duplo Miko",
       "source_title": "4:19 Double Miko",
-      "author": "[DoD]Mirez",
       "tags": [
         "rush"
       ],
@@ -11924,14 +11655,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:19",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=lKGpGUhKB-s"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -11941,7 +11665,6 @@
       "pantheon": "japones",
       "title": "Padrão 3:40 1 Miko",
       "source_title": "Standard 3:40 1 Miko",
-      "author": "Cajocu",
       "tags": [
         "rush",
         "economia"
@@ -12070,7 +11793,6 @@
       "pantheon": "japones",
       "title": "Padrão Water",
       "source_title": "Standard Water",
-      "author": "Cajocu & [DoD]Godschalk",
       "tags": [
         "agua",
         "economia"
@@ -12248,7 +11970,6 @@
       "pantheon": "japones",
       "title": "3:25 1 Miko",
       "source_title": "3:25 1 Miko",
-      "author": "Cajocu",
       "tags": [
         "rush"
       ],
@@ -12376,7 +12097,6 @@
       "pantheon": "japones",
       "title": "4:04 Duplo Miko",
       "source_title": "4:04 Double Miko",
-      "author": "[DoD]Mirez",
       "tags": [
         "rush"
       ],
@@ -12479,14 +12199,7 @@
         {
           "name": "Idade Clássica",
           "timing": "4:04",
-          "rows": [
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=lKGpGUhKB-s"
-              ]
-            }
-          ]
+          "rows": []
         }
       ]
     },
@@ -12496,7 +12209,6 @@
       "pantheon": "japones",
       "title": "4:10 3 Miko",
       "source_title": "4:10 3 Miko",
-      "author": "Cajocu",
       "tags": [
         "rush"
       ],
@@ -12658,7 +12370,6 @@
       "pantheon": "japones",
       "title": "Padrão Water",
       "source_title": "Standard Water",
-      "author": "Cajocu & [DoD]Godschalk",
       "tags": [
         "agua",
         "economia"
@@ -12831,7 +12542,6 @@
       "pantheon": "nordico",
       "title": "Boom naval",
       "source_title": "Water Boom",
-      "author": "HUSKSUPPE & [DoD]Mirez",
       "tags": [
         "agua",
         "economia"
@@ -12989,7 +12699,6 @@
       "pantheon": "nordico",
       "title": "Hill Fort Rush",
       "source_title": "Hill Fort Rush",
-      "author": "HUSKSUPPE",
       "tags": [
         "rush"
       ],
@@ -13109,12 +12818,6 @@
                 "Colocar automaticamente na fila tanto o coletor quanto o anão",
                 "Use o Bastião Asgardiano perto da mina de 🪙 inimiga"
               ]
-            },
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=OvXfAAcfKZA"
-              ]
             }
           ]
         }
@@ -13126,7 +12829,6 @@
       "pantheon": "nordico",
       "title": "Segundo Centro Urbano",
       "source_title": "2 TC",
-      "author": "[DoD]Léonce & [DoD]Godschalk",
       "tags": [
         "economia"
       ],
@@ -13309,7 +13011,6 @@
       "pantheon": "nordico",
       "title": "1 TC Picareta antecipada + Classic Fight",
       "source_title": "1 TC Early Pickaxe + Classic Fight",
-      "author": "Jollyman",
       "tags": [
         "economia",
         "rush"
@@ -13439,7 +13140,6 @@
       "pantheon": "nordico",
       "title": "Boom naval",
       "source_title": "Water Boom",
-      "author": "HUSKSUPPE & [DoD]Mirez",
       "tags": [
         "agua",
         "economia"
@@ -13597,7 +13297,6 @@
       "pantheon": "nordico",
       "title": "Segundo Centro Urbano Heimdall Boom",
       "source_title": "2TC Heimdall Boom",
-      "author": "HUSKSUPPE & [DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -13768,12 +13467,6 @@
                 "Treine Arremessadores de Machado para ajudar a construir o Centro Urbano",
                 "Deixe pré-enfileirado Rigsthula"
               ]
-            },
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=6Zx8_uHtV9Y"
-              ]
             }
           ]
         }
@@ -13785,7 +13478,6 @@
       "pantheon": "nordico",
       "title": "3:30",
       "source_title": "3:30",
-      "author": "[DoD]Léonce & [DoD]Godschalk",
       "tags": [
         "economia",
         "rush"
@@ -13902,7 +13594,6 @@
       "pantheon": "nordico",
       "title": "Boom naval",
       "source_title": "Water Boom",
-      "author": "HUSKSUPPE & [DoD]Mirez",
       "tags": [
         "agua",
         "economia"
@@ -14060,7 +13751,6 @@
       "pantheon": "nordico",
       "title": "Heroica rápida (Anti-China)",
       "source_title": "Fast Heroic (Anti-China)",
-      "author": "[DoD]GoldenRoyal",
       "tags": [
         "heroico"
       ],
@@ -14281,7 +13971,6 @@
       "pantheon": "nordico",
       "title": "3:34 contra Kronos",
       "source_title": "3:34 Anti-Kronos",
-      "author": "[DoD]Mirez",
       "tags": [
         "rush"
       ],
@@ -14388,7 +14077,6 @@
       "pantheon": "nordico",
       "title": "3:34 Duplo Ox Cart",
       "source_title": "3:34 Double Ox Cart",
-      "author": "[DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -14515,7 +14203,6 @@
       "pantheon": "nordico",
       "title": "4:07 Armory Opening",
       "source_title": "4:07 Armory Opening",
-      "author": "[DoD]Cragghack & [DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -14636,12 +14323,6 @@
               "actions": [
                 "Adicione alguns anões a 🪙"
               ]
-            },
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=VYM048Ql11Q"
-              ]
             }
           ]
         }
@@ -14653,7 +14334,6 @@
       "pantheon": "nordico",
       "title": "4:24 Full Bronze Armory",
       "source_title": "4:24 Full Bronze Armory",
-      "author": "[DoD]Cragghack & [DoD]Mirez",
       "tags": [
         "economia"
       ],
@@ -14786,12 +14466,6 @@
               "actions": [
                 "Adicione alguns anões a 🪙"
               ]
-            },
-            {
-              "allocation": null,
-              "actions": [
-                "Assista ao vídeo de referência: https://www.youtube.com/watch?v=VYM048Ql11Q"
-              ]
             }
           ]
         }
@@ -14803,7 +14477,6 @@
       "pantheon": "nordico",
       "title": "Abertura naval",
       "source_title": "Water Build",
-      "author": "[DoD]Mirez",
       "tags": [
         "agua"
       ],
@@ -14901,7 +14574,6 @@
       "pantheon": "nordico",
       "title": "Boom naval",
       "source_title": "Water Boom",
-      "author": "HUSKSUPPE & [DoD]Mirez",
       "tags": [
         "agua",
         "economia"
