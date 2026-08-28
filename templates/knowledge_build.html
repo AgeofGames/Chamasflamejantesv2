@@ -24,7 +24,6 @@
       <small>IR PARA A IDADE</small>
       {% for phase in build.phases %}<a href="#fase-{{loop.index}}"><b>{{loop.index}}</b><span>{{phase.name}}{% if phase.timing %}<em>{{phase.timing}}</em>{% endif %}</span></a>{% endfor %}
     </nav>
-    <div class="guide-source"><small>FONTE DA BUILD</small><a href="{{ build.source_url }}" target="_blank" rel="noopener">Consultar biblioteca original ↗</a></div>
   </aside>
 
   <div class="build-timeline">

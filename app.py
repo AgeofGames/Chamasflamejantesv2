@@ -2959,13 +2959,13 @@ def knowledge_build_page(god_slug, build_id):
 
 @app.get("/health")
 def health():
-    return {"version":"11.2.2-v75-conhecimento","database":"ok"}
+    return {"version":"11.2.3-v75-conhecimento","database":"ok"}
 
 
 init_db()
 migrate_v6_db()
 ensure_default_admin()
-print("🔥 CHAMAS FLAMEJANTES V11.2.2 — VISUAL V7.5 + CONHECIMENTO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V11.2.3 — VISUAL V7.5 + CONHECIMENTO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
