@@ -93,7 +93,7 @@ STATIC_PAGE_BG_INDEX = {
     "setup": 15,
 }
 
-KNOWLEDGE_DATA_PATH = BASE_DIR / "data" / "build_orders.json"
+KNOWLEDGE_DATA_PATH = BASE_DIR / "knowledge_data" / "build_orders.json"
 PANTHEON_META = {
     "grego": {"name": "Grego", "symbol": "Ω", "description": "Heróis, infantaria e poder divino do Olimpo."},
     "egipcio": {"name": "Egípcio", "symbol": "𓂀", "description": "Monumentos, sacerdotes e economia protegida."},
@@ -2959,13 +2959,13 @@ def knowledge_build_page(god_slug, build_id):
 
 @app.get("/health")
 def health():
-    return {"version":"11.2-v75-conhecimento","database":"ok"}
+    return {"version":"11.2.1-v75-conhecimento","database":"ok"}
 
 
 init_db()
 migrate_v6_db()
 ensure_default_admin()
-print("🔥 CHAMAS FLAMEJANTES V11.2 — VISUAL V7.5 + CONHECIMENTO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V11.2.1 — VISUAL V7.5 + CONHECIMENTO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)

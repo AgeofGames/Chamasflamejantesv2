@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V11.2 — VISUAL V7.5 + CONHECIMENTO
+# 🔥 CHAMAS FLAMEJANTES V11.2.1 — VISUAL V7.5 + CONHECIMENTO
 
 Base visual e cadastro de jogadores preservados do projeto V7.5, com recursos V11 integrados.
 
@@ -53,7 +53,7 @@ mkdir -p /app/data/uploads && cp -a /app/static/uploads/. /app/data/uploads/ 2>/
 
 Depois faça o novo deploy. Banco e uploads passarão a permanecer no mesmo volume.
 
-A Área de Conhecimento é estática e não cria tabelas, não altera cadastros e não modifica o SQLite existente.
+A Área de Conhecimento é estática e não cria tabelas, não altera cadastros e não modifica o SQLite existente. O catálogo fica em `knowledge_data/build_orders.json`, fora do volume `/app/data`, para permanecer disponível no Railway.
 
 ## Execução local
 
