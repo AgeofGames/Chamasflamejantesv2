@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Área de Conhecimento • Chamas Flamejantes{% endblock %}
+{% block content %}
+<section class="knowledge-hero">
+  <div class="knowledge-hero-copy">
+    <span class="eyebrow">ESTRATÉGIA • AGE OF MYTHOLOGY: RETOLD</span>
+    <h1>Área de<br><em>Conhecimento</em></h1>
+    <p>Build orders organizadas por deus, idade e objetivo. Escolha uma estratégia, acompanhe a distribuição de aldeões e saiba exatamente o que fazer em cada etapa.</p>
+    <div class="knowledge-stats">
+      <div><strong>{{ gods|length }}</strong><span>deuses atuais</span></div>
+      <div><strong>{{ build_count }}</strong><span>build orders</span></div>
+      <div><strong>3</strong><span>rotas mínimas por deus</span></div>
+    </div>
+  </div>
+  <aside class="resource-legend hero-legend" aria-label="Legenda de recursos">
+    <span><i>👨‍🌾</i><b>Aldeão</b><small>quem será direcionado</small></span>
+    <span><i>🍖</i><b>Comida</b><small>população e avanço</small></span>
+    <span><i>🪵</i><b>Madeira</b><small>casas e produção</small></span>
+    <span><i>🪙</i><b>Ouro</b><small>tecnologia e exército</small></span>
+    <span><i>✨</i><b>Favor</b><small>poder mitológico</small></span>
+  </aside>
+</section>
+
+<section class="knowledge-shell">
+  <div class="knowledge-toolbar">
+    <label class="knowledge-search">
+      <span>🔎</span>
+      <input id="knowledge-search" type="search" placeholder="Pesquisar Zeus, rush, água, economia..." autocomplete="off">
+    </label>
+    <div class="knowledge-filter-row" role="group" aria-label="Filtrar por panteão">
+      <button class="knowledge-filter active" type="button" data-knowledge-pantheon="all">Todos</button>
+      {% for key, pantheon in pantheons.items() %}
+      <button class="knowledge-filter" type="button" data-knowledge-pantheon="{{ key }}"><span>{{ pantheon.symbol }}</span>{{ pantheon.name }}</button>
+      {% endfor %}
+    </div>
+    <small id="knowledge-result-count">{{ gods|length }} deuses disponíveis</small>
+  </div>
+
+  <div class="god-card-grid" id="knowledge-god-grid">
+    {% for god in gods %}
+    <a class="god-knowledge-card" data-knowledge-card data-pantheon="{{ god.pantheon_key }}" data-search="{{ god.name|lower }} {{ god.pantheon.name|lower }} economia rush água" href="{{ url_for('knowledge_god_page',god_slug=god.slug) }}">
+      <div class="god-portrait-wrap">
+        <span class="god-symbol">{{ god.pantheon.symbol }}</span>
+        <img src="{{ url_for('static',filename='knowledge/gods/'~god.image_name~'.webp') }}" alt="Retrato de {{ god.name }} em Age of Mythology: Retold" loading="lazy">
+        <div class="god-card-shade"></div>
+        <span class="pantheon-pill">{{ god.pantheon.name }}</span>
+      </div>
+      <div class="god-card-body">
+        <div class="god-card-title"><div><small>DEUS MAIOR</small><h2>{{ god.name }}</h2></div><b>{{ god.build_count }}<small>builds</small></b></div>
+        <p>{{ god.pantheon.description }}</p>
+        <div class="strategy-routes">
+          {% for tag in ['economia','rush','agua'] %}
+          {% set item=god.featured[tag] %}
+          <span class="strategy-route route-{{tag}}"><i>{{ tag_meta[tag].icon }}</i><b>{{ tag_meta[tag].name }}</b><small>{{ item.title if item else 'Disponível' }}</small></span>
+          {% endfor %}
+        </div>
+        <span class="open-god">VER TODAS AS BUILDS <b>→</b></span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  <div class="knowledge-empty" id="knowledge-empty" hidden><span>🏺</span><h2>Nenhum deus encontrado</h2><p>Tente outro nome, panteão ou tipo de estratégia.</p></div>
+  <p class="knowledge-credit">Retratos do jogo exibidos a partir de recursos disponibilizados pelo <a href="https://aomstats.io/" target="_blank" rel="noopener">AoMStats</a>. Build orders reorganizadas e traduzidas para estudo da comunidade.</p>
+</section>
+{% endblock %}

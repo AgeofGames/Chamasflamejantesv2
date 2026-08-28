@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}{{ build.title }} • {{ build.god }}{% endblock %}
+{% block content %}
+<section class="build-detail-hero">
+  <div class="build-detail-god"><img src="{{ url_for('static',filename='knowledge/gods/'~image_name~'.webp') }}" alt="{{ build.god }}"><span>{{ pantheon.symbol }}</span></div>
+  <div class="build-detail-title">
+    <a class="knowledge-back" href="{{ url_for('knowledge_god_page',god_slug=god_slug) }}">← Builds de {{ build.god }}</a>
+    <span class="eyebrow">{{ pantheon.name }} • {{ build.difficulty }}</span>
+    <h1>{{ build.title }}</h1>
+    <p>{{ build.objective }}</p>
+    <div class="build-badges large">{% for tag in build.tags %}{% if tag_meta[tag] %}<span class="build-tag tag-{{tag}}">{{tag_meta[tag].icon}} {{tag_meta[tag].name}}</span>{% endif %}{% endfor %}</div>
+  </div>
+</section>
+
+<section class="build-detail-shell">
+  <aside class="build-guide-sidebar">
+    <div class="guide-card">
+      <span class="guide-label">COMO LER ESTA BUILD</span>
+      <p>Cada linha mostra quantos trabalhadores devem estar em cada recurso naquele momento.</p>
+      <div class="mini-resource-order"><span>🍖<small>Comida</small></span><i>→</i><span>🪵<small>Madeira</small></span><i>→</i><span>🪙<small>Ouro</small></span><i>→</i><span>✨<small>Favor</small></span></div>
+      <p class="fishing-note">🎣 Barcos de pesca aparecem separados dos aldeões.</p>
+    </div>
+    <nav class="phase-nav" aria-label="Etapas da build">
+      <small>IR PARA A IDADE</small>
+      {% for phase in build.phases %}<a href="#fase-{{loop.index}}"><b>{{loop.index}}</b><span>{{phase.name}}{% if phase.timing %}<em>{{phase.timing}}</em>{% endif %}</span></a>{% endfor %}
+    </nav>
+    <div class="guide-source"><small>ESTRATÉGIA DA COMUNIDADE</small><b>{{ build.author }}</b><a href="{{ build.source_url }}" target="_blank" rel="noopener">Consultar fonte original ↗</a></div>
+  </aside>
+
+  <div class="build-timeline">
+    {% for phase in build.phases %}
+    <section class="build-phase" id="fase-{{loop.index}}">
+      <header><span class="phase-index">{{ '%02d'|format(loop.index) }}</span><div><small>ETAPA DA BUILD</small><h2>{{phase.name}}</h2></div>{% if phase.timing %}<time>⏱ {{phase.timing}}</time>{% endif %}</header>
+      <div class="phase-rows">
+        {% for row in phase.rows %}
+        <article class="phase-step{% if not row.allocation %} phase-note-step{% endif %}">
+          {% if row.allocation %}
+          <div class="resource-board">
+            <div class="resource food"><i>🍖</i><span><small>Comida</small><strong>{{row.allocation.food}}</strong></span></div>
+            <div class="resource wood"><i>🪵</i><span><small>Madeira</small><strong>{{row.allocation.wood}}</strong></span></div>
+            <div class="resource gold"><i>🪙</i><span><small>Ouro</small><strong>{{row.allocation.gold}}</strong></span></div>
+            <div class="resource favor"><i>✨</i><span><small>Favor</small><strong>{{row.allocation.favor}}</strong></span></div>
+            {% if row.allocation.fishing is defined %}<div class="resource fishing"><i>🎣</i><span><small>Pesca</small><strong>{{row.allocation.fishing}}</strong></span></div>{% endif %}
+          </div>
+          {% else %}
+          <span class="phase-tip-icon">💡</span>
+          {% endif %}
+          <ol class="action-list">
+            {% for action in row.actions %}<li{% if action.startswith('Assista ao vídeo') %} class="video-action"{% endif %}>{{ action|urlize(target='_blank',rel='noopener') }}</li>{% endfor %}
+          </ol>
+        </article>
+        {% endfor %}
+      </div>
+    </section>
+    {% endfor %}
+    <div class="build-finish"><span>🔥</span><div><small>BUILD CONCLUÍDA</small><h2>Agora adapte ao mapa e ao adversário</h2><p>Build order é um guia de abertura. Caça, pressão inimiga e posição dos recursos podem exigir uma redistribuição.</p></div></div>
+  </div>
+</section>
+{% endblock %}

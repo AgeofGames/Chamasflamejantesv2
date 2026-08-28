@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import html as html_lib
 import io
+import json
 import math
 import os
 import re
@@ -84,9 +85,29 @@ STATIC_PAGE_BG_INDEX = {
     "community_page": 12,
     "x1_page": 16,
     "maps_page": 9,
+    "knowledge_page": 17,
+    "knowledge_god_page": 10,
+    "knowledge_build_page": 13,
     "admin": 6,
     "admin_login": 14,
     "setup": 15,
+}
+
+KNOWLEDGE_DATA_PATH = BASE_DIR / "data" / "build_orders.json"
+PANTHEON_META = {
+    "grego": {"name": "Grego", "symbol": "Ω", "description": "Heróis, infantaria e poder divino do Olimpo."},
+    "egipcio": {"name": "Egípcio", "symbol": "𓂀", "description": "Monumentos, sacerdotes e economia protegida."},
+    "nordico": {"name": "Nórdico", "symbol": "ᚱ", "description": "Mobilidade, combate constante e construção guerreira."},
+    "atlante": {"name": "Atlante", "symbol": "Ψ", "description": "Cidadãos poderosos, heróis flexíveis e controle de mapa."},
+    "chines": {"name": "Chinês", "symbol": "龍", "description": "Terra Favorecida, Kuafu e crescimento coordenado."},
+    "japones": {"name": "Japonês", "symbol": "⛩", "description": "Miko, santuários e pressão guiada pelo Bushidō."},
+    "asteca": {"name": "Asteca", "symbol": "☀", "description": "Calpulli, sacerdotes guerreiros e agressão ritual."},
+}
+KNOWLEDGE_TAG_META = {
+    "economia": {"name": "Economia", "icon": "🏛️"},
+    "rush": {"name": "Rush", "icon": "⚔️"},
+    "agua": {"name": "Economia de água", "icon": "🌊"},
+    "heroico": {"name": "Heroica rápida", "icon": "🦅"},
 }
 
 TOURNAMENT_PAGE_BG_OFFSET = {
@@ -2836,15 +2857,115 @@ def admin_groups():
     get_db().commit();flash('Links oficiais atualizados.','success');return redirect(url_for('admin'))
 
 
+# ============================================================
+# V11.2 — ÁREA DE CONHECIMENTO / BUILD ORDERS
+# Conteúdo estático: não altera o SQLite nem os uploads.
+# ============================================================
+def knowledge_catalog():
+    try:
+        with KNOWLEDGE_DATA_PATH.open("r", encoding="utf-8") as source:
+            return json.load(source)
+    except (OSError, ValueError):
+        return {"version": "", "build_count": 0, "gods": {}, "builds": []}
+
+
+def knowledge_god_slug(god_name):
+    return slugify(god_name)
+
+
+def knowledge_image_name(god_name):
+    return "nuwa" if god_name.lower() in ("nüwa", "nuwa") else slugify(god_name)
+
+
+@app.get("/conhecimento")
+def knowledge_page():
+    catalog = knowledge_catalog()
+    gods = []
+    for pantheon_key, god_names in catalog.get("gods", {}).items():
+        for god_name in god_names:
+            god_builds = [build for build in catalog.get("builds", []) if build.get("god") == god_name]
+            featured = {}
+            for tag in ("economia", "rush", "agua"):
+                featured[tag] = next((build for build in god_builds if tag in build.get("tags", [])), None)
+            gods.append({
+                "name": god_name,
+                "slug": knowledge_god_slug(god_name),
+                "image_name": knowledge_image_name(god_name),
+                "pantheon_key": pantheon_key,
+                "pantheon": PANTHEON_META.get(pantheon_key, {"name": pantheon_key.title(), "symbol": "✦", "description": ""}),
+                "build_count": len(god_builds),
+                "featured": featured,
+            })
+    return render_template(
+        "knowledge.html",
+        gods=gods,
+        pantheons=PANTHEON_META,
+        tag_meta=KNOWLEDGE_TAG_META,
+        build_count=len(catalog.get("builds", [])),
+    )
+
+
+@app.get("/conhecimento/<god_slug>")
+def knowledge_god_page(god_slug):
+    catalog = knowledge_catalog()
+    god_name = next(
+        (name for names in catalog.get("gods", {}).values() for name in names if knowledge_god_slug(name) == god_slug),
+        None,
+    )
+    if not god_name:
+        abort(404)
+    builds = [build for build in catalog.get("builds", []) if build.get("god") == god_name]
+    if not builds:
+        abort(404)
+    pantheon_key = builds[0].get("pantheon", "")
+    featured = {
+        tag: next((build for build in builds if tag in build.get("tags", [])), None)
+        for tag in ("economia", "rush", "agua")
+    }
+    return render_template(
+        "knowledge_god.html",
+        god_name=god_name,
+        god_slug=god_slug,
+        image_name=knowledge_image_name(god_name),
+        pantheon=PANTHEON_META.get(pantheon_key, {"name": pantheon_key.title(), "symbol": "✦", "description": ""}),
+        builds=builds,
+        featured=featured,
+        tag_meta=KNOWLEDGE_TAG_META,
+    )
+
+
+@app.get("/conhecimento/<god_slug>/<build_id>")
+def knowledge_build_page(god_slug, build_id):
+    catalog = knowledge_catalog()
+    build = next(
+        (
+            item for item in catalog.get("builds", [])
+            if item.get("id") == build_id and knowledge_god_slug(item.get("god", "")) == god_slug
+        ),
+        None,
+    )
+    if not build:
+        abort(404)
+    pantheon = PANTHEON_META.get(build.get("pantheon", ""), {"name": "", "symbol": "✦", "description": ""})
+    return render_template(
+        "knowledge_build.html",
+        build=build,
+        god_slug=god_slug,
+        image_name=knowledge_image_name(build.get("god", "")),
+        pantheon=pantheon,
+        tag_meta=KNOWLEDGE_TAG_META,
+    )
+
+
 @app.get("/health")
 def health():
-    return {"version":"11-v75-visual","database":"ok"}
+    return {"version":"11.2-v75-conhecimento","database":"ok"}
 
 
 init_db()
 migrate_v6_db()
 ensure_default_admin()
-print("🔥 CHAMAS FLAMEJANTES V11 — VISUAL V7.5\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V11.2 — VISUAL V7.5 + CONHECIMENTO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)

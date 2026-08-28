@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Build Orders de {{ god_name }} • Chamas Flamejantes{% endblock %}
+{% block content %}
+<section class="god-knowledge-hero">
+  <div class="god-hero-portrait">
+    <span>{{ pantheon.symbol }}</span>
+    <img src="{{ url_for('static',filename='knowledge/gods/'~image_name~'.webp') }}" alt="{{ god_name }} em Age of Mythology: Retold">
+  </div>
+  <div class="god-hero-copy">
+    <a class="knowledge-back" href="{{ url_for('knowledge_page') }}">← Todos os deuses</a>
+    <span class="eyebrow">{{ pantheon.name }} • BIBLIOTECA DE ESTRATÉGIAS</span>
+    <h1>{{ god_name }}</h1>
+    <p>{{ pantheon.description }} Escolha abaixo uma rota completa e abra o passo a passo por idade.</p>
+    <div class="god-hero-stats"><span><strong>{{ builds|length }}</strong> build orders</span><span><strong>3</strong> rotas essenciais</span></div>
+  </div>
+</section>
+
+<section class="knowledge-shell god-library">
+  <div class="essential-routes">
+    {% for tag in ['economia','rush','agua'] %}
+    {% set item=featured[tag] %}
+    {% if item %}
+    <a class="essential-route route-{{tag}}" href="{{ url_for('knowledge_build_page',god_slug=god_slug,build_id=item.id) }}">
+      <i>{{ tag_meta[tag].icon }}</i><span><small>ROTA ESSENCIAL</small><b>{{ tag_meta[tag].name }}</b><em>{{ item.title }}</em></span><strong>→</strong>
+    </a>
+    {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="knowledge-toolbar compact">
+    <label class="knowledge-search"><span>🔎</span><input id="build-search" type="search" placeholder="Pesquisar uma build de {{ god_name }}..." autocomplete="off"></label>
+    <div class="knowledge-filter-row">
+      <button class="knowledge-filter active" type="button" data-build-tag="all">Todas</button>
+      {% for key in ['economia','rush','agua','heroico'] %}<button class="knowledge-filter" type="button" data-build-tag="{{key}}">{{tag_meta[key].icon}} {{tag_meta[key].name}}</button>{% endfor %}
+    </div>
+    <small id="build-result-count">{{ builds|length }} builds encontradas</small>
+  </div>
+
+  <div class="build-library-grid" id="build-library-grid">
+    {% for build in builds %}
+    <article class="build-library-card" data-build-card data-tags="{{ build.tags|join(' ') }}" data-search="{{ build.title|lower }} {{ build.source_title|lower }} {{ build.author|lower }} {{ build.tags|join(' ') }}">
+      <div class="build-card-top"><span class="build-number">{{ '%02d'|format(loop.index) }}</span><div class="build-badges">{% for tag in build.tags %}{% if tag_meta[tag] %}<span class="build-tag tag-{{tag}}">{{tag_meta[tag].icon}} {{tag_meta[tag].name}}</span>{% endif %}{% endfor %}</div></div>
+      <h2>{{ build.title }}</h2>
+      <p>{{ build.objective }}</p>
+      <dl><div><dt>Dificuldade</dt><dd>{{ build.difficulty }}</dd></div><div><dt>Etapas</dt><dd>{{ build.phases|length }} idades</dd></div><div><dt>Autor</dt><dd>{{ build.author }}</dd></div></dl>
+      <a class="open-build" href="{{ url_for('knowledge_build_page',god_slug=god_slug,build_id=build.id) }}">ABRIR PASSO A PASSO <b>→</b></a>
+    </article>
+    {% endfor %}
+  </div>
+  <div class="knowledge-empty" id="build-empty" hidden><span>📜</span><h2>Nenhuma build encontrada</h2><p>Altere o texto ou selecione outra categoria.</p></div>
+</section>
+{% endblock %}

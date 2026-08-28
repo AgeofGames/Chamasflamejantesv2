@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V11 — VISUAL V7.5
+# 🔥 CHAMAS FLAMEJANTES V11.2 — VISUAL V7.5 + CONHECIMENTO
 
 Base visual e cadastro de jogadores preservados do projeto V7.5, com recursos V11 integrados.
 
@@ -33,6 +33,11 @@ Altere a senha no painel após o primeiro acesso.
 - Links oficiais para WhatsApp, Discord e Telegram.
 - Busca de mapas por nome, criador ou categoria, com listas separadas e imagens completas.
 - Links oficiais com logos de WhatsApp, Discord e YouTube.
+- Área de Conhecimento com 113 build orders de 23 deuses atuais.
+- Pesquisa e filtros por panteão, deus e tipo de estratégia.
+- Rotas essenciais de economia, rush e economia de água para cada deus.
+- Passo a passo em português por idade, com 🍖 comida, 🪵 madeira, 🪙 ouro, ✨ favor, 👨‍🌾 aldeões e 🎣 pesca.
+- Retratos do Age of Mythology: Retold obtidos separadamente pelo AoMStats; nenhuma imagem do site de build orders foi reutilizada.
 
 ## Atualização sem perder dados
 
@@ -47,6 +52,8 @@ mkdir -p /app/data/uploads && cp -a /app/static/uploads/. /app/data/uploads/ 2>/
 ```
 
 Depois faça o novo deploy. Banco e uploads passarão a permanecer no mesmo volume.
+
+A Área de Conhecimento é estática e não cria tabelas, não altera cadastros e não modifica o SQLite existente.
 
 ## Execução local
 
