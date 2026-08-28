@@ -1,3 +1,70 @@
-{% extends 'base.html' %}{% block title %}{{member.nickname or 'Jogador'}} • Comunidade{% endblock %}{% block content %}<section class="member-hero"><div class="member-avatar-wrap"><img src="{{avatar_src(member)}}"><i class="online-dot {% if online %}is-online{% endif %}"></i></div><div><span class="eyebrow">PERFIL VERIFICADO PELA STEAM</span><h1>{{member.nickname or 'AGUARDANDO AOMSTATS'}}</h1><p class="member-status">{% if online %}ONLINE AGORA{% else %}OFFLINE{% endif %}</p><blockquote>{{member.quote or member.description or 'Uma nova lenda chegou à comunidade.'}}</blockquote><div class="profile-socials">{% for label,value in [('Instagram',member.instagram),('YouTube',member.youtube),('Twitch',member.twitch),('Discord',member.discord_social)] %}{% if value %}<a href="{{value}}" target="_blank">{{label}}</a>{% endif %}{% endfor %}</div></div></section>
-{% if current_member and current_member.id!=member.id %}<section class="profile-actions"><form method="post" action="{{url_for('message_send',recipient_id=member.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><textarea name="body" placeholder="Escreva uma mensagem..." required></textarea><button class="btn secondary">ENVIAR MENSAGEM</button></form><form method="post" action="{{url_for('member_challenge',account_id=member.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn primary big">⚔️ DESAFIAR PARA X1</button></form></section>{% endif %}
-<section class="section"><h2>HISTÓRICO X1</h2>{% for d in history %}<div class="x1-duel"><strong>{{d.challenger}}</strong><span>{{d.status}}{% if d.winner %} • Vencedor: {{d.winner}}{% endif %}</span><strong>{{d.challenged}}</strong></div>{% else %}<div class="empty"><h3>Sem duelos registrados.</h3></div>{% endfor %}</section>{% endblock %}
+{% extends 'base.html' %}
+{% block title %}{{member.nickname or 'Jogador'}} • Comunidade{% endblock %}
+{% block content %}
+<section class="member-hero" data-member-id="{{member.id}}">
+  <div class="member-avatar-wrap">
+    <img src="{{avatar_src(member)}}" alt="Foto de {{member.nickname or 'jogador'}}">
+    <i class="online-dot {% if online %}is-online{% endif %}" data-online-dot></i>
+  </div>
+  <div class="member-hero-copy">
+    <span class="eyebrow">{% if member.steam_id %}✓ IDENTIDADE VERIFICADA PELA STEAM{% else %}MEMBRO DA COMUNIDADE{% endif %}</span>
+    <h1>{{member.nickname or 'AGUARDANDO AOMSTATS'}}</h1>
+    <p class="member-status" data-online-label>{{'ONLINE AGORA' if online else 'OFFLINE'}}</p>
+    <blockquote>{{member.quote or member.description or 'Uma nova lenda chegou à comunidade.'}}</blockquote>
+    <div class="profile-socials">
+      {% for label,value in [('Instagram',member.instagram),('YouTube',member.youtube),('Twitch',member.twitch),('Discord',member.discord_social or member.player_discord)] %}
+        {% if value %}{% set social_link=profile_social_url(label,value) %}
+          {% if social_link %}<a href="{{social_link}}" target="_blank" rel="noopener">{{label}}</a>{% else %}<span><b>{{label}}:</b> {{value}}</span>{% endif %}
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="profile-stat-grid">
+  <article><span>ELO 1X1</span><strong>{{member.elo_1v1 or 'SEM ELO'}}</strong></article>
+  <article><span>ELO EQUIPE</span><strong>{{member.elo_team or 'SEM ELO'}}</strong></article>
+  <article><span>VITÓRIAS X1</span><strong>{{x1_stats.wins}}</strong></article>
+  <article><span>DERROTAS X1</span><strong>{{x1_stats.losses}}</strong></article>
+  <article><span>WIN RATE X1</span><strong>{{x1_stats.rate}}%</strong></article>
+  <article><span>SEQUÊNCIA</span><strong>⚡ {{x1_stats.streak}}</strong></article>
+</section>
+
+<div class="profile-info-grid">
+  <section class="panel profile-about">
+    <span class="eyebrow">SOBRE O JOGADOR</span><h2>PERFIL DA LENDA</h2>
+    <p>{{member.description or 'Este jogador ainda não escreveu uma descrição.'}}</p>
+    <dl>
+      <div><dt>Membro desde</dt><dd>{{member.created_at[:10] if member.created_at else '—'}}</dd></div>
+      <div><dt>Nível normal</dt><dd>{{member.normal_level_label or 'Não consultado'}}</dd></div>
+      <div><dt>Discord</dt><dd>{{member.discord_social or member.player_discord or 'Não informado'}}</dd></div>
+    </dl>
+    <div class="profile-official-links">
+      {% if member.aomstats_url %}<a class="btn secondary" href="{{member.aomstats_url}}" target="_blank" rel="noopener">VER AOMSTATS</a>{% endif %}
+      {% if member.steam_profile_url %}<a class="btn steam" href="{{member.steam_profile_url}}" target="_blank" rel="noopener">VER STEAM</a>{% endif %}
+    </div>
+  </section>
+  <section class="panel normal-stats">
+    <span class="eyebrow">PARTIDAS NORMAIS AOMSTATS</span><h2>DESEMPENHO</h2>
+    {% if member.normal_stats_available %}
+      <div class="normal-stat-row"><span>Partidas</span><strong>{{member.normal_games}}</strong></div>
+      <div class="normal-stat-row"><span>Vitórias</span><strong>{{member.normal_wins}}</strong></div>
+      <div class="normal-stat-row"><span>Derrotas</span><strong>{{member.normal_losses}}</strong></div>
+      <div class="normal-stat-row"><span>Win Rate</span><strong>{{member.normal_win_rate}}%</strong></div>
+    {% else %}<p>As estatísticas normais ainda não foram sincronizadas pelo AoMStats.</p>{% endif %}
+  </section>
+</div>
+
+{% if current_member and current_member.id!=member.id %}
+<section class="profile-actions">
+  <form method="post" action="{{url_for('message_send',recipient_id=member.id)}}">
+    <input type="hidden" name="_csrf" value="{{csrf_token()}}"><textarea name="body" maxlength="1000" placeholder="Escreva uma mensagem para {{member.nickname or 'este jogador'}}..." required></textarea><button class="btn secondary">✉️ ENVIAR MENSAGEM</button>
+  </form>
+  <form method="post" action="{{url_for('member_challenge',account_id=member.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn primary big">⚔️ DESAFIAR PARA X1</button></form>
+</section>
+{% elif not current_member %}<section class="section profile-login-callout"><a class="btn primary" href="{{url_for('member_login',next=request.path)}}">ENTRE PARA INTERAGIR</a></section>{% endif %}
+
+<section class="section"><div class="section-head"><div><span class="eyebrow">ARENA X1</span><h2>HISTÓRICO DE DUELOS</h2></div></div>
+  {% for d in history %}<div class="x1-duel"><strong>{{d.challenger}}</strong><span>{{'AGUARDANDO ACEITE' if d.status=='solicitado' and not d.challenged_accepted else ('AGUARDANDO ADMIN' if d.status=='solicitado' else ('EM CURSO' if d.status=='em_curso' else 'FINALIZADO'))}}{% if d.winner %} • Vencedor: {{d.winner}}{% endif %}</span><strong>{{d.challenged}}</strong></div>{% else %}<div class="empty"><h3>Sem duelos registrados.</h3></div>{% endfor %}
+</section>
+{% endblock %}

@@ -1,52 +1,73 @@
-# 🔥 CHAMAS FLAMEJANTES V11 — VISUAL V7.5
+# 🔥 CHAMAS FLAMEJANTES V12.1 — SOCIAL TRIAL + STEAM
 
-Base visual e cadastro de jogadores preservados do projeto V7.5, com recursos V11 integrados.
+Base visual V11.1/V7.5 com mini rede social da comunidade Age of Mythology: Retold.
 
 ## Railway
 
-1. Envie todo o projeto ao GitHub e conecte o repositório ao Railway.
-2. Crie um volume persistente montado em `/app/data`.
-3. Configure a variável `FFA_SECRET_KEY` com uma chave longa e secreta.
-4. Opcional: configure `DATABASE_PATH=/app/data/chamas_flamejantes.sqlite`.
-5. O Railway inicia pelo `railway.json` e verifica `/health`.
+1. Publique os arquivos no mesmo serviço Railway.
+2. Mantenha o volume persistente montado em `/app/data`.
+3. Mantenha `DATABASE_PATH=/app/data/chamas_flamejantes.sqlite`.
+4. Configure uma `FFA_SECRET_KEY` longa e secreta.
+5. O Railway inicia pelo `railway.json` e verifica a rota `/health`.
 
-O SQLite é criado automaticamente na primeira inicialização.
+O banco é atualizado de forma aditiva. Jogadores, mapas, torneios e uploads existentes não são removidos.
 
-## Administrador
+## Confirmação de e-mail no Railway Trial
 
-O login não aparece no menu público. Digite `/login` no final do endereço do site.
+Esta versão usa a API HTTPS do Brevo. Não usa SMTP por padrão.
 
-- Usuário inicial: `yukinochannyan`
-- Senha inicial: `yukinochannyan60`
+1. Crie uma conta no Brevo.
+2. Cadastre e confirme um remetente no painel do Brevo.
+3. Crie uma chave em `SMTP & API` → `API Keys`.
+4. Adicione no Railway:
 
-Altere a senha no painel após o primeiro acesso.
+```env
+EMAIL_PROVIDER=brevo
+BREVO_API_KEY=xkeysib-SUA-CHAVE
+BREVO_SENDER_EMAIL=seu-email-confirmado@exemplo.com
+BREVO_SENDER_NAME=Chamas Flamejantes
+PUBLIC_BASE_URL=https://web-production-c5fb8.up.railway.app
+```
 
-## Recursos
+As variáveis antigas `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` e `SMTP_TLS` podem ser removidas no Railway.
 
-- Cadastro original V7.5 com busca AoMStats e foto Steam automática.
-- Inscrição individual e de equipes, incluindo FOOD/WOOD/GOLD.
-- Torneios FFA, 1x1, 2x2, 3x3 e Melhor de 3.
-- Classificação, confrontos, vencedores e histórico.
-- Elo da Comunidade, frases e patrocinadores.
-- Arena X1 com aprovação e ranking público.
-- Upload e download de mapas ZIP, RAR e 7Z.
-- Links oficiais para WhatsApp, Discord e Telegram.
-- Busca de mapas por nome, criador ou categoria, com listas separadas e imagens completas.
-- Links oficiais com logos de WhatsApp, Discord e YouTube.
+## Rede social
+
+- Cadastro com e-mail e senha criptografada.
+- Confirmação por e-mail usando API HTTPS.
+- Steam OpenID para confirmar a identidade do jogador.
+- AoMStats aceito somente quando pertence à Steam autenticada.
+- Foto oficial Steam/AoMStats.
+- Perfis públicos completos com descrição, redes, Elo, estatísticas normais e X1.
+- Presença online com atualização automática.
+- Mensagens recebidas e enviadas com exclusão individual.
+- Notificações e contador de itens não lidos.
+- Desafios X1 com aceite do jogador e aprovação do administrador.
+- Convites para acompanhar duelos.
+- Painel público mostrando quem desafia quem.
+- Card PNG do vencedor para WhatsApp e Discord.
+
+## Endereços
+
+- Cadastro de jogador: `/cadastro`
+- Login de jogador: `/login`
+- Comunidade: `/comunidade/painel`
+- Administrador oculto: `/admin/login`
+
+Administrador inicial:
+
+- Usuário: `yukinochannyan`
+- Senha: `yukinochannyan60`
+
+Altere a senha administrativa depois do primeiro acesso.
 
 ## Atualização sem perder dados
 
-Mantenha o volume montado em `/app/data` e a variável:
-
-`DATABASE_PATH=/app/data/chamas_flamejantes.sqlite`
-
-Antes do primeiro deploy desta atualização, abra o Console do serviço atual e copie uploads antigos para o volume:
+Não apague o volume. Antes do primeiro deploy que usa uploads persistentes, execute uma vez no Console:
 
 ```bash
 mkdir -p /app/data/uploads && cp -a /app/static/uploads/. /app/data/uploads/ 2>/dev/null || true
 ```
-
-Depois faça o novo deploy. Banco e uploads passarão a permanecer no mesmo volume.
 
 ## Execução local
 

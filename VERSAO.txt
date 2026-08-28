@@ -1,3 +1,5 @@
-CHAMAS FLAMEJANTES V11.1 — MAPAS E REDES SOCIAIS
-Elo da Comunidade mais escuro • frases pessoais • edição posterior de foto e frase.
-Admin padrão: yukinochannyan / yukinochannyan60
+CHAMAS FLAMEJANTES V12.1 — SOCIAL TRIAL + STEAM
+
+Base visual V11.1/V7.5 preservada.
+Confirmação de e-mail pela API HTTPS do Brevo, compatível com Railway Trial.
+Perfis públicos completos, presença online, mensagens, notificações, X1 social, espectadores e cards.
