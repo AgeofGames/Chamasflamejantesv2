@@ -97,6 +97,7 @@ STATIC_PAGE_BG_INDEX = {
     "knowledge_page": 17,
     "knowledge_god_page": 10,
     "knowledge_build_page": 13,
+    "feedback_page": 11,
     "admin": 6,
     "admin_login": 14,
     "setup": 15,
@@ -719,7 +720,10 @@ def avatar_src(participant):
 
     remote = _normalize_external_image_url(remote)
     if local:
-        return url_for("static", filename=local)
+        normalized_local = str(local).replace("\\", "/").lstrip("/")
+        if normalized_local.startswith("uploads/"):
+            normalized_local = normalized_local[len("uploads/"):]
+        return url_for("persistent_upload", filename=normalized_local)
     if remote:
         return remote
     return ""
@@ -1479,6 +1483,35 @@ def migrate_v6_db():
         FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
     );
     CREATE INDEX IF NOT EXISTS idx_community_elo ON community_members(community_elo DESC);
+
+    CREATE TABLE IF NOT EXISTS feedback_entries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        aomstats_url TEXT NOT NULL,
+        aomstats_profile_id TEXT NOT NULL,
+        nickname TEXT NOT NULL DEFAULT '',
+        avatar_url TEXT NOT NULL DEFAULT '',
+        avatar_file TEXT NOT NULL DEFAULT '',
+        message TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'novo' CHECK(status IN ('novo','lido')),
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_feedback_status_created
+        ON feedback_entries(status,created_at DESC);
+
+    CREATE TABLE IF NOT EXISTS map_requests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        aomstats_url TEXT NOT NULL,
+        aomstats_profile_id TEXT NOT NULL,
+        nickname TEXT NOT NULL DEFAULT '',
+        avatar_url TEXT NOT NULL DEFAULT '',
+        avatar_file TEXT NOT NULL DEFAULT '',
+        category TEXT NOT NULL DEFAULT 'Outro' CHECK(category IN ('FFA','1x1','2x2','3x3','Outro')),
+        message TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'novo' CHECK(status IN ('novo','em_analise','concluido')),
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_map_requests_status_created
+        ON map_requests(status,created_at DESC);
     """)
 
 
@@ -1911,10 +1944,13 @@ def admin():
     pending_duels=db.execute("""SELECT d.*,a.nickname challenger,b.nickname challenged FROM duels d JOIN players a ON a.id=d.challenger_id JOIN players b ON b.id=d.challenged_id WHERE d.status<>'finalizado' ORDER BY d.id DESC""").fetchall()
     maps=db.execute("SELECT * FROM community_maps ORDER BY id DESC").fetchall()
     programs=db.execute("SELECT * FROM official_programs ORDER BY id DESC").fetchall()
+    feedback_entries=db.execute("SELECT * FROM feedback_entries ORDER BY CASE status WHEN 'novo' THEN 0 ELSE 1 END,id DESC").fetchall()
+    map_requests=db.execute("SELECT * FROM map_requests ORDER BY CASE status WHEN 'novo' THEN 0 WHEN 'em_analise' THEN 1 ELSE 2 END,id DESC").fetchall()
     community_links={r['key']:r['value'] for r in db.execute("SELECT * FROM community_links")}
     return render_template("admin.html", tournaments=cards, open_tournaments=open_cards, running_tournaments=running_cards,
                            history_tournaments=history_cards, player_count=player_count, templates=TOURNAMENT_TEMPLATES,
                            x1_players=x1_players,pending_duels=pending_duels,maps=maps,programs=programs,
+                           feedback_entries=feedback_entries,map_requests=map_requests,
                            max_upload_mb=MAX_UPLOAD_MB,community_links=community_links)
 
 
@@ -2891,10 +2927,102 @@ def x1_challenge():
     else:db.execute("INSERT INTO duels(challenger_id,challenged_id) VALUES(?,?)",(a,b));db.commit();flash('Desafio enviado para aprovação do administrador.','success')
     return redirect(url_for('x1_page'))
 
+
+def public_submission_identity(raw_url):
+    """Valida o AoMStats e obtém uma identificação amigável sem criar jogador."""
+    profile_url, profile_id = normalize_profile_url(raw_url)
+    if not profile_url:
+        raise ValueError("Informe um link válido do AoMStats (aomstats.io/profile/ID).")
+
+    player = get_db().execute(
+        "SELECT nickname,avatar_url,avatar_file FROM players WHERE aomstats_profile_id=? LIMIT 1",
+        (profile_id,),
+    ).fetchone()
+    if player:
+        return {
+            "profile_url": profile_url,
+            "profile_id": profile_id,
+            "nickname": (player["nickname"] or "").strip()[:120],
+            "avatar_url": (player["avatar_url"] or "").strip()[:1000],
+            "avatar_file": (player["avatar_file"] or "").strip()[:255],
+        }
+
+    nickname = ""
+    avatar_url = ""
+    try:
+        info = fetch_aomstats(profile_url)
+        nickname = (info.get("nickname") or "").strip()[:120]
+        avatar_url = (info.get("avatar_url") or "").strip()[:1000]
+    except Exception:
+        # O pedido continua válido mesmo se o AoMStats estiver temporariamente fora do ar.
+        pass
+    return {
+        "profile_url": profile_url,
+        "profile_id": profile_id,
+        "nickname": nickname or f"Perfil AoMStats {profile_id}",
+        "avatar_url": avatar_url,
+        "avatar_file": "",
+    }
+
+
+@app.route('/feedback', methods=['GET', 'POST'])
+def feedback_page():
+    if request.method == 'POST':
+        require_csrf()
+        message = (request.form.get('message') or '').strip()
+        if len(message) < 5:
+            flash('Escreva um feedback com pelo menos 5 caracteres.', 'error')
+            return redirect(url_for('feedback_page'))
+        try:
+            sender = public_submission_identity(request.form.get('aomstats_url', ''))
+        except ValueError as exc:
+            flash(str(exc), 'error')
+            return redirect(url_for('feedback_page'))
+        db = get_db()
+        db.execute(
+            """INSERT INTO feedback_entries
+               (aomstats_url,aomstats_profile_id,nickname,avatar_url,avatar_file,message)
+               VALUES (?,?,?,?,?,?)""",
+            (sender['profile_url'], sender['profile_id'], sender['nickname'],
+             sender['avatar_url'], sender['avatar_file'], message[:2000]),
+        )
+        db.commit()
+        flash('Feedback enviado! Obrigado por ajudar o Chamas Flamejantes.', 'success')
+        return redirect(url_for('feedback_page'))
+    return render_template('feedback.html')
+
 @app.get('/mapas')
 def maps_page():return render_template('maps.html',maps=get_db().execute("SELECT * FROM community_maps ORDER BY id DESC").fetchall())
 
-@app.get('/static/uploads/<path:filename>')
+
+@app.post('/mapas/pedir')
+def map_request_submit():
+    require_csrf()
+    message = (request.form.get('message') or '').strip()
+    category = request.form.get('category', 'Outro')
+    if category not in ('FFA', '1x1', '2x2', '3x3', 'Outro'):
+        category = 'Outro'
+    if len(message) < 5:
+        flash('Descreva o mapa que você gostaria de receber.', 'error')
+        return redirect(url_for('maps_page') + '#pedir-mapa')
+    try:
+        sender = public_submission_identity(request.form.get('aomstats_url', ''))
+    except ValueError as exc:
+        flash(str(exc), 'error')
+        return redirect(url_for('maps_page') + '#pedir-mapa')
+    db = get_db()
+    db.execute(
+        """INSERT INTO map_requests
+           (aomstats_url,aomstats_profile_id,nickname,avatar_url,avatar_file,category,message)
+           VALUES (?,?,?,?,?,?,?)""",
+        (sender['profile_url'], sender['profile_id'], sender['nickname'],
+         sender['avatar_url'], sender['avatar_file'], category, message[:2000]),
+    )
+    db.commit()
+    flash('Pedido de mapa enviado para o administrador.', 'success')
+    return redirect(url_for('maps_page') + '#pedir-mapa')
+
+@app.get('/uploads/<path:filename>')
 def persistent_upload(filename):return send_from_directory(UPLOAD_DIR,filename)
 
 @app.get('/mapas/<int:map_id>/baixar')
@@ -2925,6 +3053,52 @@ def admin_map_add():
 @admin_required
 def admin_map_remove(map_id):
     require_csrf();get_db().execute('DELETE FROM community_maps WHERE id=?',(map_id,));get_db().commit();flash('Mapa removido.','success');return redirect(url_for('admin'))
+
+
+@app.post('/admin/feedback/<int:feedback_id>/status')
+@admin_required
+def admin_feedback_status(feedback_id):
+    require_csrf()
+    status = request.form.get('status', 'lido')
+    if status not in ('novo', 'lido'):
+        abort(400)
+    get_db().execute('UPDATE feedback_entries SET status=? WHERE id=?', (status, feedback_id))
+    get_db().commit()
+    flash('Feedback atualizado.', 'success')
+    return redirect(url_for('admin') + '#feedbacks-recebidos')
+
+
+@app.post('/admin/feedback/<int:feedback_id>/remover')
+@admin_required
+def admin_feedback_remove(feedback_id):
+    require_csrf()
+    get_db().execute('DELETE FROM feedback_entries WHERE id=?', (feedback_id,))
+    get_db().commit()
+    flash('Feedback removido.', 'success')
+    return redirect(url_for('admin') + '#feedbacks-recebidos')
+
+
+@app.post('/admin/pedidos-mapa/<int:request_id>/status')
+@admin_required
+def admin_map_request_status(request_id):
+    require_csrf()
+    status = request.form.get('status', 'em_analise')
+    if status not in ('novo', 'em_analise', 'concluido'):
+        abort(400)
+    get_db().execute('UPDATE map_requests SET status=? WHERE id=?', (status, request_id))
+    get_db().commit()
+    flash('Pedido de mapa atualizado.', 'success')
+    return redirect(url_for('admin') + '#pedidos-de-mapa')
+
+
+@app.post('/admin/pedidos-mapa/<int:request_id>/remover')
+@admin_required
+def admin_map_request_remove(request_id):
+    require_csrf()
+    get_db().execute('DELETE FROM map_requests WHERE id=?', (request_id,))
+    get_db().commit()
+    flash('Pedido de mapa removido.', 'success')
+    return redirect(url_for('admin') + '#pedidos-de-mapa')
 
 
 # ============================================================
@@ -3158,13 +3332,13 @@ def knowledge_build_page(god_slug, build_id):
 
 @app.get("/health")
 def health():
-    return {"version":"14.0-railway","database":"ok"}
+    return {"version":"15.0-feedback-mapas","database":"ok"}
 
 
 init_db()
 migrate_v6_db()
 ensure_default_admin()
-print("🔥 CHAMAS FLAMEJANTES V14.0 — RAILWAY\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V15.0 — FEEDBACK + MAPAS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)

@@ -237,3 +237,33 @@ CREATE TABLE IF NOT EXISTS official_programs (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CHECK(file_name <> '' OR download_url <> '')
 );
+
+-- V15: feedback público e pedidos de mapas identificados pelo AoMStats.
+CREATE TABLE IF NOT EXISTS feedback_entries (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    aomstats_url TEXT NOT NULL,
+    aomstats_profile_id TEXT NOT NULL,
+    nickname TEXT NOT NULL DEFAULT '',
+    avatar_url TEXT NOT NULL DEFAULT '',
+    avatar_file TEXT NOT NULL DEFAULT '',
+    message TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'novo' CHECK(status IN ('novo','lido')),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_status_created
+    ON feedback_entries(status,created_at DESC);
+
+CREATE TABLE IF NOT EXISTS map_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    aomstats_url TEXT NOT NULL,
+    aomstats_profile_id TEXT NOT NULL,
+    nickname TEXT NOT NULL DEFAULT '',
+    avatar_url TEXT NOT NULL DEFAULT '',
+    avatar_file TEXT NOT NULL DEFAULT '',
+    category TEXT NOT NULL DEFAULT 'Outro' CHECK(category IN ('FFA','1x1','2x2','3x3','Outro')),
+    message TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'novo' CHECK(status IN ('novo','em_analise','concluido')),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_map_requests_status_created
+    ON map_requests(status,created_at DESC);

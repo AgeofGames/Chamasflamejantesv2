@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V14.0 — RAILWAY
+# 🔥 CHAMAS FLAMEJANTES V15.0 — FEEDBACK + MAPAS
 
 Build configurado com Railpack, o construtor atual do Railway.
 
@@ -40,6 +40,10 @@ Altere a senha no painel após o primeiro acesso.
 - Rodapé com redes sociais oficiais e perfil do criador integrado ao AoMStats/Steam.
 - Links oficiais para WhatsApp, Discord e Telegram.
 - Busca de mapas por nome, criador ou categoria, com listas separadas e imagens completas.
+- Cards de mapas no mesmo acabamento visual da Área de Conhecimento, mantendo a busca existente.
+- Pedidos de mapas enviados pelo público com identificação via perfil AoMStats.
+- Área pública de feedback, com mensagens privadas para o painel do administrador.
+- Administração de feedbacks e pedidos de mapas com status e exclusão.
 - Links oficiais com logos de WhatsApp, Discord e YouTube.
 - Área de Conhecimento com 113 build orders de 23 deuses atuais.
 - Pesquisa e filtros por panteão, deus e tipo de estratégia.
@@ -61,7 +65,7 @@ mkdir -p /app/data/uploads && cp -a /app/static/uploads/. /app/data/uploads/ 2>/
 
 Depois faça o novo deploy. Banco e uploads passarão a permanecer no mesmo volume.
 
-A atualização cria automaticamente apenas a nova tabela `official_programs`, sem apagar ou modificar os registros existentes. Arquivos e imagens dos programas ficam em `/app/data/uploads/programs`.
+A atualização cria automaticamente as tabelas `feedback_entries` e `map_requests`, sem apagar ou modificar os registros existentes. A tabela `official_programs` e seus arquivos permanecem preservados.
 
 A Área de Conhecimento continua estática e não altera cadastros. O catálogo fica em `knowledge_data/build_orders.json`, fora do volume `/app/data`, para permanecer disponível no Railway.
 

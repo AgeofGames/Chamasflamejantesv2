@@ -1,5 +1,77 @@
-{% extends "base.html" %}{% block title %}Mapas • Chamas Flamejantes{% endblock %}{% block content %}
-<section class="page-hero compact"><span class="eyebrow">🗺️ CRIAÇÕES DA COMUNIDADE</span><h1>BAIXAR MAPAS</h1><p>Encontre mapas personalizados para FFA, 1x1, 2x2 e 3x3.</p></section>
-<section class="section maps-browser"><div class="maps-search-panel"><label><span>🔎 PESQUISAR MAPA</span><input id="map-search" type="search" placeholder="Digite o nome do mapa ou do criador..." autocomplete="off"></label><div class="map-filter-buttons"><button class="map-filter active" data-category="all">TODOS</button>{% for cat in ['FFA','1x1','2x2','3x3'] %}<button class="map-filter" data-category="{{cat}}">{{cat}}</button>{% endfor %}</div><small id="map-count"></small></div>
-{% for cat in ['FFA','1x1','2x2','3x3'] %}{% set category_maps=maps|selectattr('category','equalto',cat)|list %}<section class="map-category" data-map-section="{{cat}}"><div class="map-category-title"><span>{{'🔥' if cat=='FFA' else '⚔️'}}</span><div><span class="eyebrow">CATEGORIA</span><h2>MAPAS {{cat}}</h2></div><b>{{category_maps|length}}</b></div><div class="map-list">{% for m in category_maps %}<article class="map-list-card" data-map-card data-name="{{m.name|lower}}" data-creator="{{m.creator|lower}}" data-category="{{m.category}}"><div class="map-image-frame">{% if m.image_name %}<img src="{{url_for('static',filename='uploads/maps/'+m.image_name)}}" alt="Imagem completa do mapa {{m.name}}" loading="lazy">{% else %}<div class="map-no-image">🗺️<span>SEM IMAGEM</span></div>{% endif %}</div><div class="map-list-info"><div><span class="status-badge">{{m.category}}</span><h3>{{m.name}}</h3><p>Criado por <strong>{{m.creator}}</strong></p></div><div class="map-list-actions"><span>⬇ {{m.downloads}} downloads</span><a class="btn primary" href="{{url_for('map_download',map_id=m.id)}}">BAIXAR MAPA</a></div></div></article>{% endfor %}{% if not category_maps %}<div class="empty category-empty"><h3>Nenhum mapa {{cat}} publicado.</h3></div>{% endif %}</div></section>{% endfor %}<div id="maps-no-results" class="empty" hidden><h3>Nenhum mapa encontrado.</h3><p>Tente outro nome ou selecione outra categoria.</p></div></section>
-<script>(()=>{const search=document.querySelector('#map-search'),buttons=[...document.querySelectorAll('.map-filter')],cards=[...document.querySelectorAll('[data-map-card]')],sections=[...document.querySelectorAll('[data-map-section]')],empty=document.querySelector('#maps-no-results'),count=document.querySelector('#map-count');let category='all';function apply(){const term=search.value.trim().toLocaleLowerCase('pt-BR');let visible=0;cards.forEach(card=>{const okCategory=category==='all'||card.dataset.category===category;const text=card.dataset.name+' '+card.dataset.creator+' '+card.dataset.category.toLowerCase();card.hidden=!(okCategory&&(!term||text.includes(term)));if(!card.hidden)visible++});sections.forEach(section=>{section.hidden=![...section.querySelectorAll('[data-map-card]')].some(card=>!card.hidden)});empty.hidden=visible!==0;count.textContent=visible+' mapa'+(visible===1?' encontrado':'s encontrados')};search.addEventListener('input',apply);buttons.forEach(button=>button.addEventListener('click',()=>{buttons.forEach(b=>b.classList.remove('active'));button.classList.add('active');category=button.dataset.category;apply()}));apply()})();</script>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Mapas • Chamas Flamejantes{% endblock %}
+{% block content %}
+<section class="page-hero compact">
+  <span class="eyebrow">🗺️ CRIAÇÕES DA COMUNIDADE</span>
+  <h1>BAIXAR MAPAS</h1>
+  <p>Encontre mapas personalizados para FFA, 1x1, 2x2 e 3x3.</p>
+</section>
+
+<section class="section maps-browser">
+  <div class="maps-search-panel">
+    <label><span>🔎 PESQUISAR MAPA</span><input id="map-search" type="search" placeholder="Digite o nome do mapa ou do criador..." autocomplete="off"></label>
+    <div class="map-filter-buttons"><button class="map-filter active" data-category="all">TODOS</button>{% for cat in ['FFA','1x1','2x2','3x3'] %}<button class="map-filter" data-category="{{cat}}">{{cat}}</button>{% endfor %}</div>
+    <small id="map-count"></small>
+  </div>
+
+  {% for cat in ['FFA','1x1','2x2','3x3'] %}
+  {% set category_maps=maps|selectattr('category','equalto',cat)|list %}
+  <section class="map-category" data-map-section="{{cat}}">
+    <div class="map-category-title">
+      <span>{{'🔥' if cat=='FFA' else '⚔️'}}</span>
+      <div><span class="eyebrow">CATEGORIA</span><h2>MAPAS {{cat}}</h2></div>
+      <b>{{category_maps|length}}</b>
+    </div>
+    <div class="god-card-grid map-card-grid">
+      {% for m in category_maps %}
+      <article class="god-knowledge-card map-knowledge-card" data-map-card data-name="{{m.name|lower}}" data-creator="{{m.creator|lower}}" data-category="{{m.category}}">
+        <div class="god-portrait-wrap map-portrait-wrap">
+          {% if m.image_name %}
+          <img src="{{url_for('persistent_upload',filename='maps/'~m.image_name)}}" alt="Imagem completa do mapa {{m.name}}" loading="lazy">
+          {% else %}
+          <div class="map-no-image">🗺️<span>SEM IMAGEM</span></div>
+          {% endif %}
+          <div class="god-card-shade"></div>
+          <span class="pantheon-pill">MAPA {{m.category}}</span>
+        </div>
+        <div class="god-card-body map-card-body">
+          <div class="god-card-title">
+            <div><small>MAPA DA COMUNIDADE</small><h2>{{m.name}}</h2></div>
+            <b>{{m.downloads}}<small>downloads</small></b>
+          </div>
+          <p>Criado por <strong>{{m.creator}}</strong></p>
+          <div class="strategy-routes map-card-details">
+            <span class="strategy-route route-rush"><i>🗺️</i><b>Categoria</b><small>{{m.category}}</small></span>
+            <span class="strategy-route route-economia"><i>⬇️</i><b>Arquivo</b><small>ZIP, RAR ou 7Z</small></span>
+          </div>
+          <a class="open-god map-download-link" href="{{url_for('map_download',map_id=m.id)}}">BAIXAR MAPA <b>↓</b></a>
+        </div>
+      </article>
+      {% endfor %}
+      {% if not category_maps %}<div class="empty category-empty"><h3>Nenhum mapa {{cat}} publicado.</h3></div>{% endif %}
+    </div>
+  </section>
+  {% endfor %}
+  <div id="maps-no-results" class="empty" hidden><h3>Nenhum mapa encontrado.</h3><p>Tente outro nome ou selecione outra categoria.</p></div>
+</section>
+
+<section class="knowledge-shell map-request-shell" id="pedir-mapa">
+  <div class="community-form-card map-request-card">
+    <div class="community-form-copy">
+      <span class="eyebrow">🧭 SUA IDEIA PODE VIRAR MAPA</span>
+      <h2>PEDIR UM MAPA</h2>
+      <p>Conte como deve ser o mapa e informe seu perfil AoMStats. O pedido será enviado diretamente ao administrador.</p>
+      <div class="submission-privacy"><span>🛡️</span><p>Seu link AoMStats serve apenas para identificar quem enviou o pedido.</p></div>
+    </div>
+    <form method="post" action="{{url_for('map_request_submit')}}" class="community-public-form">
+      <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+      <label><span>Tipo de mapa</span><select name="category"><option>FFA</option><option>1x1</option><option>2x2</option><option>3x3</option><option>Outro</option></select></label>
+      <label><span>Seu perfil AoMStats *</span><input type="url" name="aomstats_url" required placeholder="https://aomstats.io/profile/1076869557"></label>
+      <label class="full"><span>Descreva o mapa que você quer *</span><textarea name="message" minlength="5" maxlength="2000" required placeholder="Ex.: Quero um mapa FFA para 8 jogadores, com ilhas centrais, poucos recursos e bastante espaço para batalhas navais..."></textarea></label>
+      <button class="btn primary big">ENVIAR PEDIDO DE MAPA</button>
+    </form>
+  </div>
+</section>
+
+<script>(()=>{const search=document.querySelector('#map-search'),buttons=[...document.querySelectorAll('.map-filter')],cards=[...document.querySelectorAll('[data-map-card]')],sections=[...document.querySelectorAll('[data-map-section]')],empty=document.querySelector('#maps-no-results'),count=document.querySelector('#map-count');let category='all';function apply(){const term=search.value.trim().toLocaleLowerCase('pt-BR');let visible=0;cards.forEach(card=>{const okCategory=category==='all'||card.dataset.category===category;const text=card.dataset.name+' '+card.dataset.creator+' '+card.dataset.category.toLowerCase();card.hidden=!(okCategory&&(!term||text.includes(term)));if(!card.hidden)visible++});sections.forEach(section=>{section.hidden=![...section.querySelectorAll('[data-map-card]')].some(card=>!card.hidden)});empty.hidden=visible!==0;count.textContent=visible+' mapa'+(visible===1?' encontrado':'s encontrados')};search.addEventListener('input',apply);buttons.forEach(button=>button.addEventListener('click',()=>{buttons.forEach(b=>b.classList.remove('active'));button.classList.add('active');category=button.dataset.category;apply()}));apply()})();</script>
+{% endblock %}

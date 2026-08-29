@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Feedback • Chamas Flamejantes{% endblock %}
+{% block content %}
+<section class="knowledge-hero feedback-hero">
+  <div class="knowledge-hero-copy">
+    <span class="eyebrow">💬 A VOZ DA COMUNIDADE</span>
+    <h1>SEU<br><em>FEEDBACK</em></h1>
+    <p>Ajude o Chamas Flamejantes a evoluir. Conte o que você gostou, o que pode melhorar ou qual recurso gostaria de encontrar no site.</p>
+    <div class="knowledge-stats">
+      <div><strong>1</strong><span>Mensagem simples</span></div>
+      <div><strong>🔗</strong><span>Perfil AoMStats</span></div>
+      <div><strong>🔥</strong><span>Comunidade mais forte</span></div>
+    </div>
+  </div>
+  <aside class="resource-legend hero-legend feedback-legend" aria-label="Como funciona">
+    <span><i>✍️</i><b>Escreva</b><small>conte sua experiência</small></span>
+    <span><i>🛡️</i><b>Identifique-se</b><small>cole seu perfil AoMStats</small></span>
+    <span><i>📨</i><b>Envie</b><small>o administrador receberá</small></span>
+  </aside>
+</section>
+
+<section class="knowledge-shell feedback-shell">
+  <div class="community-form-card feedback-form-card">
+    <div class="community-form-copy">
+      <span class="eyebrow">🔥 FALE COM A EQUIPE</span>
+      <h2>ENVIAR FEEDBACK</h2>
+      <p>O feedback não será exibido publicamente. Ele ficará disponível apenas no painel do administrador.</p>
+      <div class="submission-privacy"><span>👤</span><p>O AoMStats é solicitado somente para sabermos quem enviou a mensagem.</p></div>
+    </div>
+    <form method="post" action="{{url_for('feedback_page')}}" class="community-public-form">
+      <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+      <label class="full"><span>Seu perfil AoMStats *</span><input type="url" name="aomstats_url" required placeholder="https://aomstats.io/profile/1076869557"></label>
+      <label class="full"><span>Seu feedback *</span><textarea name="message" minlength="5" maxlength="2000" required placeholder="Escreva aqui sua opinião, sugestão ou ideia para o site..."></textarea></label>
+      <button class="btn primary big">ENVIAR FEEDBACK</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
