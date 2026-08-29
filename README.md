@@ -1,5 +1,7 @@
 # 🔥 CHAMAS FLAMEJANTES V14.0 — RAILWAY
 
+Build configurado com Railpack, o construtor atual do Railway.
+
 Base visual e cadastro de jogadores preservados do projeto V7.5, com recursos V11 integrados.
 
 ## Railway
