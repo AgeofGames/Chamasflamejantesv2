@@ -30,10 +30,15 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FFA_SECRET_KEY", secrets.token_hex(32))
+try:
+    MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "250"))
+except ValueError:
+    MAX_UPLOAD_MB = 250
+MAX_UPLOAD_MB = min(max(MAX_UPLOAD_MB, 5), 1024)
 app.config.update(
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
-    MAX_CONTENT_LENGTH=5 * 1024 * 1024,
+    MAX_CONTENT_LENGTH=MAX_UPLOAD_MB * 1024 * 1024,
 )
 
 ACTIVE_STATUSES = ("inscrito", "confirmado")
@@ -85,6 +90,7 @@ STATIC_PAGE_BG_INDEX = {
     "community_page": 12,
     "x1_page": 16,
     "maps_page": 9,
+    "programs_page": 8,
     "knowledge_page": 17,
     "knowledge_god_page": 10,
     "knowledge_build_page": 13,
@@ -1835,10 +1841,12 @@ def admin():
     x1_players=db.execute("SELECT id,nickname,aomstats_url FROM players WHERE aomstats_url<>'' ORDER BY nickname").fetchall()
     pending_duels=db.execute("""SELECT d.*,a.nickname challenger,b.nickname challenged FROM duels d JOIN players a ON a.id=d.challenger_id JOIN players b ON b.id=d.challenged_id WHERE d.status<>'finalizado' ORDER BY d.id DESC""").fetchall()
     maps=db.execute("SELECT * FROM community_maps ORDER BY id DESC").fetchall()
+    programs=db.execute("SELECT * FROM official_programs ORDER BY id DESC").fetchall()
     community_links={r['key']:r['value'] for r in db.execute("SELECT * FROM community_links")}
     return render_template("admin.html", tournaments=cards, open_tournaments=open_cards, running_tournaments=running_cards,
                            history_tournaments=history_cards, player_count=player_count, templates=TOURNAMENT_TEMPLATES,
-                           x1_players=x1_players,pending_duels=pending_duels,maps=maps,community_links=community_links)
+                           x1_players=x1_players,pending_duels=pending_duels,maps=maps,programs=programs,
+                           max_upload_mb=MAX_UPLOAD_MB,community_links=community_links)
 
 
 @app.post("/admin/torneios/criar")
@@ -2849,6 +2857,128 @@ def admin_map_add():
 def admin_map_remove(map_id):
     require_csrf();get_db().execute('DELETE FROM community_maps WHERE id=?',(map_id,));get_db().commit();flash('Mapa removido.','success');return redirect(url_for('admin'))
 
+
+# ============================================================
+# V11.3 — PROGRAMAS OFICIAIS
+# Upload RAR persistente ou URL externa de download.
+# ============================================================
+def valid_external_download_url(value):
+    try:
+        parsed = urlparse((value or "").strip())
+        return parsed.scheme in ("http", "https") and bool(parsed.netloc)
+    except ValueError:
+        return False
+
+
+def remove_program_file(filename):
+    if not filename:
+        return
+    folder = (UPLOAD_DIR / "programs").resolve()
+    target = (folder / Path(filename).name).resolve()
+    try:
+        target.relative_to(folder)
+    except ValueError:
+        return
+    if target.is_file():
+        target.unlink(missing_ok=True)
+
+
+@app.get('/programas')
+def programs_page():
+    programs = get_db().execute("SELECT * FROM official_programs ORDER BY id DESC").fetchall()
+    return render_template('programs.html', programs=programs)
+
+
+@app.get('/programas/<int:program_id>/baixar')
+def program_download(program_id):
+    db = get_db()
+    program = db.execute("SELECT * FROM official_programs WHERE id=?", (program_id,)).fetchone()
+    if not program:
+        abort(404)
+
+    if program['file_name']:
+        file_path = UPLOAD_DIR / 'programs' / Path(program['file_name']).name
+        if not file_path.is_file():
+            abort(404)
+        db.execute("UPDATE official_programs SET downloads=downloads+1 WHERE id=?", (program_id,))
+        db.commit()
+        return send_from_directory(
+            UPLOAD_DIR / 'programs',
+            program['file_name'],
+            as_attachment=True,
+            download_name=f"{slugify(program['name'])}.rar",
+        )
+
+    if valid_external_download_url(program['download_url']):
+        db.execute("UPDATE official_programs SET downloads=downloads+1 WHERE id=?", (program_id,))
+        db.commit()
+        return redirect(program['download_url'])
+    abort(404)
+
+
+@app.post('/admin/programas/adicionar')
+@admin_required
+def admin_program_add():
+    require_csrf()
+    name = request.form.get('name', '').strip()[:120]
+    description = request.form.get('description', '').strip()[:2400]
+    download_url = request.form.get('download_url', '').strip()[:1000]
+    archive = request.files.get('program_file')
+    image = request.files.get('program_image')
+    archive_ext = Path(archive.filename or '').suffix.lower() if archive else ''
+    image_ext = _safe_image_extension(image.filename if image else '')
+
+    if not name or not description:
+        flash('Informe o nome e a descrição do programa.', 'error')
+        return redirect(url_for('admin'))
+    if archive and archive.filename and archive_ext != '.rar':
+        flash('O arquivo do programa deve estar no formato RAR.', 'error')
+        return redirect(url_for('admin'))
+    if not (archive and archive.filename) and not valid_external_download_url(download_url):
+        flash('Envie um arquivo RAR ou informe uma URL de download válida.', 'error')
+        return redirect(url_for('admin'))
+    if download_url and not valid_external_download_url(download_url):
+        flash('A URL de download precisa começar com http:// ou https://.', 'error')
+        return redirect(url_for('admin'))
+    if not image or not image.filename or not image_ext:
+        flash('Envie uma imagem JPG, PNG ou WebP para o programa.', 'error')
+        return redirect(url_for('admin'))
+
+    folder = UPLOAD_DIR / 'programs'
+    folder.mkdir(parents=True, exist_ok=True)
+    file_name = ''
+    if archive and archive.filename:
+        file_name = f"{uuid.uuid4().hex}.rar"
+        archive.save(folder / file_name)
+    image_name = f"{uuid.uuid4().hex}{image_ext}"
+    image.save(folder / image_name)
+
+    db = get_db()
+    db.execute(
+        """INSERT INTO official_programs(name,description,file_name,download_url,image_name)
+           VALUES(?,?,?,?,?)""",
+        (name, description, file_name, download_url, image_name),
+    )
+    db.commit()
+    flash('Programa oficial publicado.', 'success')
+    return redirect(url_for('admin'))
+
+
+@app.post('/admin/programas/<int:program_id>/remover')
+@admin_required
+def admin_program_remove(program_id):
+    require_csrf()
+    db = get_db()
+    program = db.execute("SELECT * FROM official_programs WHERE id=?", (program_id,)).fetchone()
+    if not program:
+        abort(404)
+    db.execute("DELETE FROM official_programs WHERE id=?", (program_id,))
+    db.commit()
+    remove_program_file(program['file_name'])
+    remove_program_file(program['image_name'])
+    flash('Programa removido.', 'success')
+    return redirect(url_for('admin'))
+
 @app.post('/admin/grupos')
 @admin_required
 def admin_groups():
@@ -2959,13 +3089,13 @@ def knowledge_build_page(god_slug, build_id):
 
 @app.get("/health")
 def health():
-    return {"version":"11.2.3-v75-conhecimento","database":"ok"}
+    return {"version":"11.3.0-v75-programas","database":"ok"}
 
 
 init_db()
 migrate_v6_db()
 ensure_default_admin()
-print("🔥 CHAMAS FLAMEJANTES V11.2.3 — VISUAL V7.5 + CONHECIMENTO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V11.3.0 — VISUAL V7.5 + PROGRAMAS OFICIAIS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)

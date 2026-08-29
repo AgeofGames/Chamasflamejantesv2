@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Programas Oficiais • Chamas Flamejantes{% endblock %}
+{% block content %}
+<section class="knowledge-hero programs-hero">
+  <div class="knowledge-hero-copy">
+    <span class="eyebrow">💾 FERRAMENTAS DA COMUNIDADE</span>
+    <h1>PROGRAMAS<br><em>OFICIAIS</em></h1>
+    <p>Baixe ferramentas selecionadas e publicadas oficialmente pelo Chamas Flamejantes para melhorar sua experiência com Age of Mythology: Retold.</p>
+    <div class="knowledge-stats">
+      <div><strong>{{ programs|length }}</strong><span>Programas disponíveis</span></div>
+      <div><strong>100%</strong><span>Publicados pelo site</span></div>
+    </div>
+  </div>
+  <div class="resource-legend hero-legend programs-legend">
+    <span><i>🛡️</i><b>Oficiais</b><small>selecionados pela comunidade</small></span>
+    <span><i>🖼️</i><b>Identificados</b><small>imagem e descrição completas</small></span>
+    <span><i>⬇️</i><b>Download direto</b><small>arquivo RAR ou link externo</small></span>
+  </div>
+</section>
+
+<section class="knowledge-shell programs-shell">
+  <div class="programs-section-head">
+    <div><span class="eyebrow">🔥 BIBLIOTECA OFICIAL</span><h2>ESCOLHA SEU PROGRAMA</h2></div>
+    <span>{{ programs|length }} disponível{{ '' if programs|length == 1 else 'is' }}</span>
+  </div>
+
+  {% if programs %}
+  <div class="build-library-grid programs-grid">
+    {% for program in programs %}
+    <article class="build-library-card program-card">
+      <div class="program-card-image">
+        <img src="{{url_for('persistent_upload',filename='programs/'~program.image_name)}}" alt="Imagem do programa {{program.name}}" loading="lazy">
+        <span class="program-official-seal">🔥 OFICIAL</span>
+      </div>
+      <div class="program-card-body">
+        <div class="build-card-top">
+          <span class="build-number">{{'%02d'|format(loop.index)}}</span>
+          <div class="build-badges">
+            <span class="build-tag tag-economia">VERIFICADO</span>
+            <span class="build-tag tag-agua">{{'ARQUIVO RAR' if program.file_name else 'LINK EXTERNO'}}</span>
+          </div>
+        </div>
+        <h2>{{program.name}}</h2>
+        <p class="program-description">{{program.description}}</p>
+        <dl>
+          <div><dt>Formato</dt><dd>{{'RAR' if program.file_name else 'URL externa'}}</dd></div>
+          <div><dt>Downloads</dt><dd>⬇ {{program.downloads}}</dd></div>
+        </dl>
+        <a class="open-build program-download" href="{{url_for('program_download',program_id=program.id)}}">BAIXAR PROGRAMA <b>↓</b></a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="knowledge-empty"><span>💾</span><h2>Nenhum programa publicado</h2><p>Os programas oficiais aparecerão aqui assim que forem adicionados pelo administrador.</p></div>
+  {% endif %}
+</section>
+{% endblock %}
