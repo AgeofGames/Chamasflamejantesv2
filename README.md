@@ -2,6 +2,8 @@
 
 Build configurado com Railpack, o construtor atual do Railway.
 
+Menu superior sem destaque permanente; todas as abas recebem destaque ao passar o mouse.
+
 Base visual e cadastro de jogadores preservados do projeto V7.5, com recursos V11 integrados.
 
 ## Railway
