@@ -40,14 +40,6 @@
   </div>
 </section>
 
-<section class="section programs-home-section">
-  <a class="programs-home-card" href="{{url_for('programs_page')}}">
-    <span class="programs-home-icon">💾</span>
-    <span class="programs-home-copy"><small>DOWNLOADS OFICIAIS DO SITE</small><strong>PROGRAMAS OFICIAIS</strong><em>Ferramentas com imagem, descrição e download seguro por arquivo RAR ou link oficial.</em></span>
-    <span class="programs-home-action"><b>{{program_count}}</b><small>programa{{'' if program_count == 1 else 's'}}</small><strong>ABRIR →</strong></span>
-  </a>
-</section>
-
 {% if history_tournaments %}
 <section class="section history-preview">
   <div class="section-head"><div><span class="eyebrow">🏛️ ARQUIVO DAS BATALHAS</span><h3>Últimos torneios finalizados</h3></div><a class="text-link" href="{{ url_for('tournament_history') }}">Ver histórico completo →</a></div>

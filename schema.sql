@@ -224,16 +224,3 @@ CREATE TABLE IF NOT EXISTS community_links (
     key TEXT PRIMARY KEY, value TEXT NOT NULL DEFAULT ''
 );
 INSERT OR IGNORE INTO community_links(key,value) VALUES ('whatsapp',''),('discord',''),('telegram',''),('youtube','');
-
--- V11.3: Downloads de programas oficiais do site.
-CREATE TABLE IF NOT EXISTS official_programs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    description TEXT NOT NULL DEFAULT '',
-    file_name TEXT NOT NULL DEFAULT '',
-    download_url TEXT NOT NULL DEFAULT '',
-    image_name TEXT NOT NULL DEFAULT '',
-    downloads INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CHECK(file_name <> '' OR download_url <> '')
-);
