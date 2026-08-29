@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V11.2.3 — VISUAL V7.5 + CONHECIMENTO
+# 🔥 CHAMAS FLAMEJANTES V14.0 — RAILWAY
 
 Base visual e cadastro de jogadores preservados do projeto V7.5, com recursos V11 integrados.
 
@@ -8,7 +8,8 @@ Base visual e cadastro de jogadores preservados do projeto V7.5, com recursos V1
 2. Crie um volume persistente montado em `/app/data`.
 3. Configure a variável `FFA_SECRET_KEY` com uma chave longa e secreta.
 4. Opcional: configure `DATABASE_PATH=/app/data/chamas_flamejantes.sqlite`.
-5. O Railway inicia pelo `railway.json` e verifica `/health`.
+5. Opcional: configure `MAX_UPLOAD_MB=250` para ajustar o limite dos arquivos enviados pelo painel.
+6. O Railway inicia pelo `railway.json` e verifica `/health`.
 
 O SQLite é criado automaticamente na primeira inicialização.
 
@@ -30,6 +31,9 @@ Altere a senha no painel após o primeiro acesso.
 - Elo da Comunidade, frases e patrocinadores.
 - Arena X1 com aprovação e ranking público.
 - Upload e download de mapas ZIP, RAR e 7Z.
+- Programas oficiais com imagem, descrição, contador de downloads e publicação por arquivo RAR ou URL externa.
+- Atalho destacado para Programas Oficiais na navegação e na página inicial.
+- Rodapé com redes sociais oficiais e perfil do criador integrado ao AoMStats/Steam.
 - Links oficiais para WhatsApp, Discord e Telegram.
 - Busca de mapas por nome, criador ou categoria, com listas separadas e imagens completas.
 - Links oficiais com logos de WhatsApp, Discord e YouTube.
@@ -53,7 +57,9 @@ mkdir -p /app/data/uploads && cp -a /app/static/uploads/. /app/data/uploads/ 2>/
 
 Depois faça o novo deploy. Banco e uploads passarão a permanecer no mesmo volume.
 
-A Área de Conhecimento é estática e não cria tabelas, não altera cadastros e não modifica o SQLite existente. O catálogo fica em `knowledge_data/build_orders.json`, fora do volume `/app/data`, para permanecer disponível no Railway.
+A atualização cria automaticamente apenas a nova tabela `official_programs`, sem apagar ou modificar os registros existentes. Arquivos e imagens dos programas ficam em `/app/data/uploads/programs`.
+
+A Área de Conhecimento continua estática e não altera cadastros. O catálogo fica em `knowledge_data/build_orders.json`, fora do volume `/app/data`, para permanecer disponível no Railway.
 
 ## Execução local
 
