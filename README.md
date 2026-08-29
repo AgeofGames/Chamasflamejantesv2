@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V11.3.0 — VISUAL V7.5 + PROGRAMAS OFICIAIS
+# 🔥 CHAMAS FLAMEJANTES V11.3.1 — VISUAL V7.5 + PROGRAMAS OFICIAIS
 
 Base visual e cadastro de jogadores preservados do projeto V7.5, com recursos V11 integrados.
 
@@ -32,6 +32,8 @@ Altere a senha no painel após o primeiro acesso.
 - Arena X1 com aprovação e ranking público.
 - Upload e download de mapas ZIP, RAR e 7Z.
 - Programas oficiais com imagem, descrição, contador de downloads e publicação por arquivo RAR ou URL externa.
+- Atalho destacado para Programas Oficiais na navegação e na página inicial.
+- Rodapé com redes sociais oficiais e perfil do criador integrado ao AoMStats/Steam.
 - Links oficiais para WhatsApp, Discord e Telegram.
 - Busca de mapas por nome, criador ou categoria, com listas separadas e imagens completas.
 - Links oficiais com logos de WhatsApp, Discord e YouTube.

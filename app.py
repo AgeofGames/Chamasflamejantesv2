@@ -56,6 +56,9 @@ AOM_IMAGE_DEFAULTS = {
     "gallery_image_3": "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/257070884/501a50c366e017ae0e22c4dae1530a428f852f99/movie_full.jpg",
 }
 
+SITE_CREATOR_AOMSTATS_URL = "https://aomstats.io/profile/1076869557"
+SITE_CREATOR_PROFILE_ID = "1076869557"
+
 
 
 # ============================================================
@@ -1589,6 +1592,69 @@ def community_ranking():
     return [{k:r[k] for k in r.keys()} for r in rows]
 
 
+def site_creator_profile():
+    """Exibe o criador com a mesma foto Steam/AoMStats usada pelos jogadores."""
+    db = get_db()
+    player = db.execute(
+        """SELECT nickname,avatar_url,avatar_file,aomstats_url
+           FROM players
+           WHERE aomstats_profile_id=? OR aomstats_url LIKE ?
+           ORDER BY CASE WHEN avatar_file<>'' OR avatar_url<>'' THEN 0 ELSE 1 END,id
+           LIMIT 1""",
+        (SITE_CREATOR_PROFILE_ID, f"%/profile/{SITE_CREATOR_PROFILE_ID}%"),
+    ).fetchone()
+    if player:
+        return {k: player[k] for k in player.keys()}
+
+    rows = db.execute(
+        "SELECT key,value FROM site_meta WHERE key LIKE 'site_creator_%'"
+    ).fetchall()
+    cached = {row["key"]: row["value"] for row in rows}
+    nickname = cached.get("site_creator_nickname", "")
+    avatar_url = cached.get("site_creator_avatar_url", "")
+    avatar_file = cached.get("site_creator_avatar_file", "")
+
+    attempted_at = cached.get("site_creator_attempted_at", "")
+    can_refresh = not attempted_at
+    if attempted_at:
+        check = db.execute(
+            "SELECT datetime(?) <= datetime('now','-12 hours') AS allowed",
+            (attempted_at,),
+        ).fetchone()
+        can_refresh = bool(check and check["allowed"])
+
+    if can_refresh and not (nickname and (avatar_file or avatar_url)):
+        db.execute(
+            "INSERT OR REPLACE INTO site_meta(key,value) VALUES('site_creator_attempted_at',CURRENT_TIMESTAMP)"
+        )
+        db.commit()
+        try:
+            profile = fetch_aomstats(SITE_CREATOR_AOMSTATS_URL)
+            nickname = profile.get("nickname", "").strip()[:120]
+            avatar_url = profile.get("avatar_url", "").strip()[:1000]
+            avatar_file = cache_remote_avatar(avatar_url, SITE_CREATOR_PROFILE_ID)
+            values = {
+                "site_creator_nickname": nickname,
+                "site_creator_avatar_url": avatar_url,
+                "site_creator_avatar_file": avatar_file,
+            }
+            for key, value in values.items():
+                db.execute(
+                    "INSERT OR REPLACE INTO site_meta(key,value) VALUES(?,?)",
+                    (key, value),
+                )
+            db.commit()
+        except Exception:
+            pass
+
+    return {
+        "nickname": nickname or "Criador do site",
+        "avatar_url": avatar_url,
+        "avatar_file": avatar_file,
+        "aomstats_url": SITE_CREATOR_AOMSTATS_URL,
+    }
+
+
 @app.context_processor
 def inject_globals_v5():
     try:
@@ -1603,6 +1669,7 @@ def inject_globals_v5():
             "community_worst": ranking[-1] if ranking else None,
             "page_background_url": page_background_url(),
             "community_links": {r['key']:r['value'] for r in get_db().execute("SELECT * FROM community_links")},
+            "site_creator": site_creator_profile(),
         }
     except Exception:
         return {}
@@ -1614,8 +1681,10 @@ def home():
     open_tournaments = [t for t in open_tournaments if t["registration_open"] and t["left"] > 0]
     running_tournaments = [enriched_tournament(t) for t in tournaments_by_status("andamento")]
     history_tournaments = [enriched_tournament(t) for t in tournaments_by_status("finalizado")][:6]
+    program_count = get_db().execute("SELECT COUNT(*) c FROM official_programs").fetchone()["c"]
     return render_template("home.html", open_tournaments=open_tournaments, running_tournaments=running_tournaments,
-                           history_tournaments=history_tournaments, templates=TOURNAMENT_TEMPLATES)
+                           history_tournaments=history_tournaments, templates=TOURNAMENT_TEMPLATES,
+                           program_count=program_count)
 
 
 @app.get("/torneios")
@@ -3089,13 +3158,13 @@ def knowledge_build_page(god_slug, build_id):
 
 @app.get("/health")
 def health():
-    return {"version":"11.3.0-v75-programas","database":"ok"}
+    return {"version":"11.3.1-v75-programas","database":"ok"}
 
 
 init_db()
 migrate_v6_db()
 ensure_default_admin()
-print("🔥 CHAMAS FLAMEJANTES V11.3.0 — VISUAL V7.5 + PROGRAMAS OFICIAIS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V11.3.1 — VISUAL V7.5 + PROGRAMAS OFICIAIS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
