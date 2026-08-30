@@ -1,8 +1,10 @@
-# 🔥 CHAMAS FLAMEJANTES V16.1 — GUIA DE COUNTERS
+# 🔥 CHAMAS FLAMEJANTES V16.2 — NAVEGAÇÃO ORGANIZADA
 
 Build configurado com Railpack, o construtor atual do Railway.
 
 Menu superior sem destaque permanente; todas as abas recebem destaque ao passar o mouse.
+
+A navegação principal usa abas de altura uniforme, textos alinhados e organização responsiva. A aba Programas não possui mais o ícone de disquete.
 
 Base visual e cadastro de jogadores preservados do projeto V7.5, com recursos V11 integrados.
 

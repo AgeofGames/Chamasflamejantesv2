@@ -1,0 +1,140 @@
+/* ============================================================
+   V16.2 — Navegação principal organizada e alinhada
+   ============================================================ */
+.topbar{
+  min-height:84px;
+  height:84px;
+  display:grid;
+  grid-template-columns:190px minmax(0,1fr);
+  align-items:center;
+  gap:20px;
+  padding:0 max(18px,calc((100vw - 1440px)/2));
+  border-bottom:1px solid rgba(255,255,255,.09);
+  background:linear-gradient(180deg,rgba(8,11,14,.98),rgba(7,10,12,.96));
+  box-shadow:0 10px 32px rgba(0,0,0,.34);
+}
+.topbar .brand{
+  display:grid;
+  grid-template-columns:46px minmax(0,1fr);
+  align-items:center;
+  gap:11px;
+  min-width:0;
+}
+.topbar .brand-mark{width:44px;height:44px;flex:none}
+.topbar .brand>span:last-child{display:grid;min-width:0;gap:3px}
+.topbar .brand strong{
+  color:#f3eee5;
+  font-size:13px;
+  line-height:1.1;
+  letter-spacing:.08em;
+}
+.topbar .brand small{
+  margin:0;
+  color:#8f979d;
+  font-size:6.5px;
+  line-height:1;
+  letter-spacing:.14em;
+  white-space:nowrap;
+}
+.topbar>.topbar-nav{
+  min-width:0;
+  display:flex;
+  align-items:stretch;
+  justify-content:flex-end;
+  gap:3px;
+  padding:5px;
+  border:1px solid rgba(255,255,255,.075);
+  border-radius:7px;
+  background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.012));
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025),0 9px 24px rgba(0,0,0,.2);
+}
+.topbar>.topbar-nav>a,
+.topbar>.topbar-nav>.nav-drop>button{
+  flex:0 0 auto;
+  min-height:40px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  margin:0;
+  padding:0 10px;
+  border:1px solid transparent!important;
+  border-radius:4px;
+  color:#bfc5ca!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  font:500 10.5px/1 Inter,system-ui,sans-serif;
+  letter-spacing:.015em;
+  text-align:center;
+  white-space:nowrap;
+  transition:color .2s ease,border-color .2s ease,background .2s ease,box-shadow .2s ease,transform .2s ease;
+}
+.topbar>.topbar-nav>.nav-drop{display:flex;align-items:stretch;position:relative}
+.topbar>.topbar-nav>.nav-drop>button{width:100%;cursor:pointer}
+.topbar>.topbar-nav>a:hover,
+.topbar>.topbar-nav>.nav-drop>button:hover,
+.topbar>.topbar-nav>.nav-drop:focus-within>button{
+  color:#fff!important;
+  border-color:rgba(255,111,55,.58)!important;
+  background:linear-gradient(135deg,rgba(141,37,22,.58),rgba(234,87,42,.25))!important;
+  box-shadow:0 0 22px rgba(255,82,35,.34)!important;
+  transform:translateY(-1px);
+}
+.topbar>.topbar-nav>a:focus-visible,
+.topbar>.topbar-nav>.nav-drop>button:focus-visible{
+  outline:2px solid #ff7c4b;
+  outline-offset:2px;
+}
+.topbar .nav-menu{top:calc(100% + 7px);border-radius:6px}
+.topbar .nav-menu a{white-space:normal}
+
+@media (max-width:1450px){
+  .topbar{grid-template-columns:172px minmax(0,1fr);gap:12px;padding-inline:14px}
+  .topbar .brand{grid-template-columns:42px minmax(0,1fr);gap:8px}
+  .topbar .brand-mark{width:40px;height:40px;font-size:22px}
+  .topbar .brand strong{font-size:11.5px}
+  .topbar .brand small{font-size:6px;letter-spacing:.1em}
+  .topbar>.topbar-nav{gap:2px;padding:4px}
+  .topbar>.topbar-nav>a,.topbar>.topbar-nav>.nav-drop>button{min-height:38px;padding-inline:8px;font-size:9.5px}
+}
+
+@media (max-width:1200px){
+  .topbar{
+    height:auto;
+    min-height:112px;
+    grid-template-columns:1fr;
+    justify-items:center;
+    gap:7px;
+    padding:8px 14px 10px;
+  }
+  .topbar .brand{grid-template-columns:40px auto;width:auto}
+  .topbar .brand>span:last-child{display:flex;align-items:baseline;gap:10px}
+  .topbar .brand strong{font-size:12px;white-space:nowrap}
+  .topbar .brand small{font-size:6.5px}
+  .topbar>.topbar-nav{width:100%;justify-content:center}
+  .topbar>.topbar-nav>a,.topbar>.topbar-nav>.nav-drop>button{padding-inline:9px;font-size:9.5px}
+}
+
+@media (max-width:700px){
+  .topbar{position:relative;min-height:0;padding:10px 10px 12px;gap:9px}
+  .topbar .brand{grid-template-columns:40px minmax(0,1fr);justify-self:start;width:100%}
+  .topbar .brand>span:last-child{display:grid;gap:2px}
+  .topbar .brand strong{font-size:11px;white-space:normal}
+  .topbar .brand small{display:block;font-size:5.8px;white-space:nowrap}
+  .topbar>.topbar-nav{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:4px;
+    padding:5px;
+  }
+  .topbar>.topbar-nav>a,.topbar>.topbar-nav>.nav-drop>button{
+    width:100%;
+    min-height:38px;
+    padding:5px 4px;
+    font-size:8.5px;
+    line-height:1.15;
+    white-space:normal;
+  }
+  .topbar>.topbar-nav>.nav-drop{width:100%}
+  .topbar .nav-menu{position:absolute;right:0;top:calc(100% + 5px);width:min(270px,calc(100vw - 20px))}
+}

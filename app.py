@@ -3338,17 +3338,17 @@ def knowledge_build_page(god_slug, build_id):
 
 @app.get("/health")
 def health():
-    return {"version":"16.1-guia-counters","database":"ok"}
+    return {"version":"16.2-navegacao-organizada","database":"ok"}
 
 
 init_db()
 migrate_v6_db()
 ensure_default_admin()
-print("🔥 CHAMAS FLAMEJANTES V16.1 — GUIA DE COUNTERS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V16.2 — NAVEGAÇÃO ORGANIZADA\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V16.1 — GUIA DE COUNTERS")
+    print(" 🔥 CHAMAS FLAMEJANTES V16.2 — NAVEGAÇÃO ORGANIZADA")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Admin padrão: yukinochannyan")
