@@ -105,6 +105,7 @@ STATIC_PAGE_BG_INDEX = {
 }
 
 KNOWLEDGE_DATA_PATH = BASE_DIR / "knowledge_data" / "build_orders.json"
+SEO_BASE_URL = os.environ.get("SEO_BASE_URL", "https://chamasflamejantes.com.br").strip().rstrip("/")
 PANTHEON_META = {
     "grego": {"name": "Grego", "symbol": "Ω", "description": "Heróis, infantaria e poder divino do Olimpo."},
     "egipcio": {"name": "Egípcio", "symbol": "𓂀", "description": "Monumentos, sacerdotes e economia protegida."},
@@ -3336,19 +3337,96 @@ def knowledge_build_page(god_slug, build_id):
     )
 
 
+@app.get("/sitemap.xml")
+def sitemap_xml():
+    """Sitemap público e automático para Google, Bing e outros buscadores."""
+    paths = []
+
+    def add_url(endpoint, **values):
+        paths.append(url_for(endpoint, **values))
+
+    for endpoint in (
+        "home",
+        "open_tournaments_page",
+        "tournament_history",
+        "community_page",
+        "x1_page",
+        "maps_page",
+        "programs_page",
+        "knowledge_page",
+        "counter_guide_page",
+        "feedback_page",
+    ):
+        add_url(endpoint)
+
+    public_tournaments = get_db().execute(
+        "SELECT slug FROM tournaments WHERE is_public=1 ORDER BY id"
+    ).fetchall()
+    for tournament in public_tournaments:
+        for endpoint in (
+            "tournament_page",
+            "tournament_participants",
+            "tournament_matches",
+            "tournament_result",
+        ):
+            add_url(endpoint, slug=tournament["slug"])
+
+    catalog = knowledge_catalog()
+    for god_names in catalog.get("gods", {}).values():
+        for god_name in god_names:
+            add_url("knowledge_god_page", god_slug=knowledge_god_slug(god_name))
+    for build in catalog.get("builds", []):
+        build_id = build.get("id", "").strip()
+        god_name = build.get("god", "").strip()
+        if build_id and god_name:
+            add_url(
+                "knowledge_build_page",
+                god_slug=knowledge_god_slug(god_name),
+                build_id=build_id,
+            )
+
+    unique_paths = list(dict.fromkeys(paths))
+    url_nodes = "".join(
+        f"<url><loc>{html_lib.escape(SEO_BASE_URL + path, quote=False)}</loc></url>"
+        for path in unique_paths
+    )
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">'
+        f"{url_nodes}</urlset>"
+    )
+    response = app.response_class(xml, mimetype="application/xml")
+    response.headers["Cache-Control"] = "public, max-age=3600"
+    return response
+
+
+@app.get("/robots.txt")
+def robots_txt():
+    content = "\n".join((
+        "User-agent: *",
+        "Allow: /",
+        "Disallow: /admin",
+        "Disallow: /login",
+        "Disallow: /setup",
+        f"Sitemap: {SEO_BASE_URL}/sitemap.xml",
+        "",
+    ))
+    return app.response_class(content, mimetype="text/plain")
+
+
 @app.get("/health")
 def health():
-    return {"version":"16.3-navegacao-distribuida","database":"ok"}
+    return {"version":"16.4-sitemap-google","database":"ok"}
 
 
 init_db()
 migrate_v6_db()
 ensure_default_admin()
-print("🔥 CHAMAS FLAMEJANTES V16.3 — NAVEGAÇÃO DISTRIBUÍDA\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V16.4 — SITEMAP GOOGLE\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V16.3 — NAVEGAÇÃO DISTRIBUÍDA")
+    print(" 🔥 CHAMAS FLAMEJANTES V16.4 — SITEMAP GOOGLE")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Admin padrão: yukinochannyan")

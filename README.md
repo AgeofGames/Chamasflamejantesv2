@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V16.3 — NAVEGAÇÃO DISTRIBUÍDA
+# 🔥 CHAMAS FLAMEJANTES V16.4 — SITEMAP GOOGLE
 
 Build configurado com Railpack, o construtor atual do Railway.
 
@@ -7,6 +7,16 @@ Menu superior sem destaque permanente; todas as abas recebem destaque ao passar 
 A navegação principal usa abas de altura uniforme, textos alinhados e organização responsiva. A aba Programas não possui mais o ícone de disquete.
 
 As abas ocupam toda a largura disponível da moldura, sem deixar uma faixa vazia no lado esquerdo.
+
+## Google e outros buscadores
+
+- Sitemap automático disponível em `https://chamasflamejantes.com.br/sitemap.xml`.
+- `robots.txt` disponível em `https://chamasflamejantes.com.br/robots.txt`, apontando para o sitemap.
+- O sitemap inclui páginas públicas, torneios públicos, os 23 deuses, todas as build orders e o Guia de Counters.
+- Login, configuração e painel administrativo não são enviados no sitemap.
+- Novos torneios marcados como públicos entram automaticamente no sitemap.
+
+Depois do deploy, abra o Google Search Console, verifique o domínio e envie `sitemap.xml` na opção **Sitemaps**.
 
 Base visual e cadastro de jogadores preservados do projeto V7.5, com recursos V11 integrados.
 
