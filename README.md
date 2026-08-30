@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V15.0 — FEEDBACK + MAPAS
+# 🔥 CHAMAS FLAMEJANTES V16.0 — GUIA DE COUNTERS
 
 Build configurado com Railpack, o construtor atual do Railway.
 
@@ -46,6 +46,10 @@ Altere a senha no painel após o primeiro acesso.
 - Administração de feedbacks e pedidos de mapas com status e exclusão.
 - Links oficiais com logos de WhatsApp, Discord e YouTube.
 - Área de Conhecimento com 113 build orders de 23 deuses atuais.
+- Guia interativo de counters acessível por um card acima da pesquisa da Área de Conhecimento.
+- Catálogo completo com 251 unidades de 7 panteões, separado em unidades humanas, heróis, míticas, cerco, navais e Titãs.
+- Seleção do panteão inimigo, counters diretos por classe e multiplicador, custos, pontos de vida e ranking de caçadores de Titãs.
+- Cards de unidades no mesmo acabamento visual da Área de Conhecimento, com ícones completos e pesquisa por nome, categoria ou deus.
 - Pesquisa e filtros por panteão, deus e tipo de estratégia.
 - Rotas essenciais de economia, rush e economia de água para cada deus.
 - Passo a passo em português por idade, com 🍖 comida, 🪵 madeira, 🪙 ouro, ✨ favor, 👨‍🌾 aldeões e 🎣 pesca.
@@ -67,7 +71,7 @@ Depois faça o novo deploy. Banco e uploads passarão a permanecer no mesmo volu
 
 A atualização cria automaticamente as tabelas `feedback_entries` e `map_requests`, sem apagar ou modificar os registros existentes. A tabela `official_programs` e seus arquivos permanecem preservados.
 
-A Área de Conhecimento continua estática e não altera cadastros. O catálogo fica em `knowledge_data/build_orders.json`, fora do volume `/app/data`, para permanecer disponível no Railway.
+A Área de Conhecimento e o Guia de Counters são estáticos e não alteram cadastros. Os catálogos ficam em `knowledge_data/build_orders.json` e `static/counters/units.json`, fora do volume `/app/data`, para permanecerem disponíveis no Railway.
 
 ## Execução local
 

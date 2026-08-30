@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Área de Conhecimento • Chamas Flamejantes{% endblock %}
 {% block content %}
+<link rel="stylesheet" href="{{ url_for('static',filename='counters.css') }}">
 <section class="knowledge-hero">
   <div class="knowledge-hero-copy">
     <span class="eyebrow">ESTRATÉGIA • AGE OF MYTHOLOGY: RETOLD</span>
@@ -22,6 +23,15 @@
 </section>
 
 <section class="knowledge-shell">
+  <a class="counter-guide-launch" href="{{ url_for('counter_guide_page') }}">
+    <span class="counter-guide-launch__icon">🎯</span>
+    <span class="counter-guide-launch__copy">
+      <strong>APRENDA A COUNTERAR</strong>
+      <small>Escolha uma unidade e descubra quais inimigos ela derrota com vantagem.</small>
+    </span>
+    <span class="counter-guide-launch__meta"><b>251</b><small>unidades</small></span>
+    <span class="counter-guide-launch__arrow">→</span>
+  </a>
   <div class="knowledge-toolbar">
     <label class="knowledge-search">
       <span>🔎</span>

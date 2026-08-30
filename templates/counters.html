@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Guia de Counters • Chamas Flamejantes{% endblock %}
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static',filename='counters.css') }}">
+
+<div class="counter-guide-app" data-counter-guide
+     data-units-url="{{ url_for('static',filename='counters/units.json') }}"
+     data-icons-base="{{ url_for('static',filename='counters/unit-icons/') }}">
+  <section class="knowledge-hero counter-guide-hero">
+    <div class="knowledge-hero-copy">
+      <a class="knowledge-back" href="{{ url_for('knowledge_page') }}">← Voltar à Área de Conhecimento</a>
+      <span class="eyebrow">🎯 COMBATE • AGE OF MYTHOLOGY: RETOLD</span>
+      <h1>GUIA DE<br><em>COUNTERS</em></h1>
+      <p>Escolha uma unidade, selecione o panteão inimigo e descubra exatamente quais alvos ela countera. O guia inclui unidades humanas, heróis, míticas, cerco, navais e Titãs.</p>
+      <div class="knowledge-stats">
+        <div><strong>7</strong><span>panteões atuais</span></div>
+        <div><strong>251</strong><span>unidades catalogadas</span></div>
+        <div><strong>6</strong><span>categorias de combate</span></div>
+      </div>
+    </div>
+    <aside class="resource-legend hero-legend counter-guide-legend" aria-label="Como usar o guia">
+      <span><i>①</i><b>Escolha o panteão</b><small>veja todas as unidades disponíveis</small></span>
+      <span><i>②</i><b>Clique na unidade</b><small>abra a análise de combate</small></span>
+      <span><i>③</i><b>Selecione o inimigo</b><small>descubra os counters diretos</small></span>
+      <span><i>⚔️</i><b>Bônus reais</b><small>classes e multiplicadores do jogo</small></span>
+    </aside>
+  </section>
+
+  <section class="counter-guide-shell">
+    <div class="counter-control-panel">
+      <div class="counter-control-heading">
+        <div><span class="eyebrow">01 • SEU EXÉRCITO</span><h2>SELECIONE O PANTEÃO</h2></div>
+        <strong id="counter-roster-count">Carregando unidades...</strong>
+      </div>
+      <div class="counter-pantheon-tabs" id="counter-pantheon-tabs" role="group" aria-label="Panteões disponíveis"></div>
+      <label class="counter-unit-search"><span>🔎</span><input id="counter-unit-search" type="search" placeholder="Pesquisar unidade, categoria ou deus..." autocomplete="off"></label>
+    </div>
+
+    <section class="counter-titan-panel" aria-labelledby="counter-titan-title">
+      <div class="counter-titan-lead">
+        <span class="counter-titan-emblem">🛡️</span>
+        <div><span class="eyebrow">PRIORIDADE MÁXIMA</span><h2 id="counter-titan-title">QUEM MATA TITÃS MAIS RÁPIDO?</h2><p>Outro <strong>Titã</strong> possui o maior bônus direto: ×20 contra Titãs. Sem usar outro Titã, concentre heróis com alto dano e bônus contra unidades míticas.</p></div>
+      </div>
+      <div class="counter-hunter-grid" id="counter-hunter-grid"></div>
+      <small class="counter-titan-note">Ranking indicativo por DPS base, sem melhorias, poderes divinos ou microgerenciamento.</small>
+    </section>
+
+    <div class="counter-section-heading">
+      <div><span class="eyebrow">02 • UNIDADES</span><h2 id="counter-roster-title">ELENCO GREGO</h2></div>
+      <p>Clique em qualquer card para abrir os counters em uma janela flutuante.</p>
+    </div>
+    <div id="counter-unit-groups" class="counter-unit-groups" aria-live="polite"></div>
+    <div id="counter-loading" class="knowledge-empty"><span>🔥</span><h2>Carregando guia</h2><p>Preparando as 251 unidades...</p></div>
+  </section>
+
+  <div class="counter-modal" id="counter-modal" hidden role="dialog" aria-modal="true" aria-labelledby="counter-modal-title">
+    <button class="counter-modal-backdrop" type="button" data-counter-close aria-label="Fechar janela"></button>
+    <div class="counter-modal-panel">
+      <button class="counter-modal-close" type="button" data-counter-close aria-label="Fechar">×</button>
+      <div id="counter-selected-unit" class="counter-selected-unit"></div>
+      <section class="counter-enemy-section">
+        <div><span class="eyebrow">ALVO</span><h3>QUAL É O PANTEÃO INIMIGO?</h3></div>
+        <div class="counter-enemy-tabs" id="counter-enemy-tabs" role="group" aria-label="Panteão inimigo"></div>
+      </section>
+      <section class="counter-results-section">
+        <div class="counter-results-heading"><div><span>🎯</span><div><h3 id="counter-modal-title">UNIDADES COUNTERADAS</h3><p id="counter-result-summary"></p></div></div><strong>COUNTERS DIRETOS</strong></div>
+        <div class="counter-target-grid" id="counter-target-grid"></div>
+        <div class="counter-empty-result" id="counter-empty-result" hidden><span>⚓</span><h3>Nenhum counter direto de classe</h3><p>Esta unidade ainda pode vencer por custo, alcance, melhorias, habilidade especial ou composição do exército.</p></div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script defer src="{{ url_for('static',filename='counters.js') }}"></script>
+{% endblock %}

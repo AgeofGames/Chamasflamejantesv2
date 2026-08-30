@@ -95,6 +95,7 @@ STATIC_PAGE_BG_INDEX = {
     "maps_page": 9,
     "programs_page": 8,
     "knowledge_page": 17,
+    "counter_guide_page": 6,
     "knowledge_god_page": 10,
     "knowledge_build_page": 13,
     "feedback_page": 11,
@@ -3278,6 +3279,11 @@ def knowledge_page():
     )
 
 
+@app.get("/conhecimento/counters")
+def counter_guide_page():
+    return render_template("counters.html")
+
+
 @app.get("/conhecimento/<god_slug>")
 def knowledge_god_page(god_slug):
     catalog = knowledge_catalog()
@@ -3332,17 +3338,17 @@ def knowledge_build_page(god_slug, build_id):
 
 @app.get("/health")
 def health():
-    return {"version":"15.0-feedback-mapas","database":"ok"}
+    return {"version":"16.0-guia-counters","database":"ok"}
 
 
 init_db()
 migrate_v6_db()
 ensure_default_admin()
-print("🔥 CHAMAS FLAMEJANTES V15.0 — FEEDBACK + MAPAS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V16.0 — GUIA DE COUNTERS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V7.5 — Age of Mythology: Retold")
+    print(" 🔥 CHAMAS FLAMEJANTES V16.0 — GUIA DE COUNTERS")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Admin padrão: yukinochannyan")
