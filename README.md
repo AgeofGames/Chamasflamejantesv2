@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V16.0 — GUIA DE COUNTERS
+# 🔥 CHAMAS FLAMEJANTES V16.1 — GUIA DE COUNTERS
 
 Build configurado com Railpack, o construtor atual do Railway.
 
@@ -49,6 +49,7 @@ Altere a senha no painel após o primeiro acesso.
 - Guia interativo de counters acessível por um card acima da pesquisa da Área de Conhecimento.
 - Catálogo completo com 251 unidades de 7 panteões, separado em unidades humanas, heróis, míticas, cerco, navais e Titãs.
 - Seleção do panteão inimigo, counters diretos por classe e multiplicador, custos, pontos de vida e ranking de caçadores de Titãs.
+- O painel “Quem mata Titãs mais rápido?” fica abaixo do elenco para não atrapalhar a pesquisa de unidades.
 - Cards de unidades no mesmo acabamento visual da Área de Conhecimento, com ícones completos e pesquisa por nome, categoria ou deus.
 - Pesquisa e filtros por panteão, deus e tipo de estratégia.
 - Rotas essenciais de economia, rush e economia de água para cada deus.
