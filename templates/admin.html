@@ -46,7 +46,7 @@
 <section class="section admin-section">
 <details class="admin-block" open><summary><span>⚡</span> Elo da Comunidade</summary>
 <div class="admin-form">
-<p class="section-copy">Somente o administrador pode cadastrar integrantes deste ranking. Cole o perfil do AoMStats para buscar automaticamente <b>Nick, Elo Sup 1v1 e foto Steam</b>. O maior Elo vira <b>Melhor da Comunidade</b>; o menor fica com o título <b>Pior Fracassado</b>.</p>
+<p class="section-copy">Somente o administrador pode cadastrar integrantes deste ranking. Cole o perfil do AoMStats para buscar automaticamente <b>Nick, Elo Sup 1v1 e foto Steam</b>. O maior Elo vira <b>Melhor da Comunidade</b>; o último colocado fica com o título <b>Menor Elo</b>.</p>
 <form method="post" enctype="multipart/form-data" action="{{ url_for('admin_community_add') }}" class="community-aom-form" data-elo-mode="1v1">
 <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
@@ -135,7 +135,7 @@
   {% if avatar_src(c) %}<img class="avatar-img small" src="{{ avatar_src(c) }}">{% else %}<span class="avatar small avatar-fire">🔥</span>{% endif %}
   <div class="community-admin-main">
     <b>{{ c.nickname }}</b>
-    <small>{% if loop.first %}👑 MELHOR DA COMUNIDADE{% elif loop.last and community_members|length>1 %}💀 PIOR FRACASSADO{% else %}Ranking da comunidade{% endif %}</small>
+    <small>{% if loop.first %}👑 MELHOR DA COMUNIDADE{% elif loop.last and community_members|length>1 %}📉 MENOR ELO{% else %}Ranking da comunidade{% endif %}</small>
     <span class="community-admin-rating">
       {% if c.has_elo %}<strong>{{ c.community_elo }} ELO</strong>
       {% else %}<strong class="no-elo-badge">SEM ELO</strong> • {{ community_level_text(c) }}{% endif %}

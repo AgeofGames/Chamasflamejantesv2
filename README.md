@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V19 — GUIAS DE CONHECIMENTO
+# 🔥 CHAMAS FLAMEJANTES V19.2 — MENU GARANTIDO + MENOR ELO
 
 Build configurado com Railpack, o construtor atual do Railway.
 
@@ -61,6 +61,9 @@ Altere a senha no painel após o primeiro acesso.
 - Links oficiais com logos de WhatsApp, Discord e YouTube.
 - Área de Conhecimento com três páginas próprias: Guia de Teclas, Guia de Counters e Biblioteca de Build Orders.
 - Guia interativo de teclas do AoM Retold com consulta, simulação e personalização de XML.
+- O Guia de Teclas abre dentro da estrutura do site e mantém o menu principal sempre visível.
+- O HTML direto do Guia de Teclas também possui um menu de segurança; dentro do site, apenas o menu principal é exibido.
+- O último colocado agora recebe o título “Menor Elo” na página inicial, na comunidade e no painel.
 - Biblioteca com 113 build orders de 23 deuses atuais.
 - Guia interativo de counters acessível por um card acima da pesquisa da Área de Conhecimento.
 - Catálogo completo com 251 unidades de 7 panteões, separado em unidades humanas, heróis, míticas, cerco, navais e Titãs.

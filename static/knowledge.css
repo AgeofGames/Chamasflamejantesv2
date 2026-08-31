@@ -19,6 +19,15 @@ body[data-page^="knowledge_"] main{overflow:hidden}
 .hero-legend{transform:rotate(1deg);box-shadow:0 32px 90px #0008}.hero-legend>span:nth-child(odd){transform:translateX(-15px)}
 .knowledge-shell{width:min(1240px,calc(100% - 40px));margin:auto;padding:30px 0 90px}
 .knowledge-launch-stack{display:grid;gap:14px;max-width:1040px;margin:0 auto}.knowledge-launch-stack .counter-guide-launch{margin:0}.knowledge-launch-stack+.knowledge-credit{margin-top:36px}
+
+/* V19.1 — mantém o menu do site visível enquanto o Guia de Teclas é usado. */
+body[data-page="hotkeys_guide_page"]{height:100dvh;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:#030609}
+body[data-page="hotkeys_guide_page"] .topbar{flex:0 0 auto}
+body[data-page="hotkeys_guide_page"] main{width:100%;min-height:0;flex:1 1 0;overflow:hidden}
+body[data-page="hotkeys_guide_page"] .site-footer{display:none!important}
+body[data-page="hotkeys_guide_page"] .page-background-art,body[data-page="hotkeys_guide_page"] .noise{display:none}
+.hotkeys-guide-embed,.hotkeys-guide-frame{display:block;width:100%;height:100%;min-height:0}
+.hotkeys-guide-frame{border:0;background:#030609}
 .knowledge-toolbar{position:sticky;top:78px;z-index:10;margin:0 0 34px;padding:20px;background:rgba(7,10,15,.94);border:1px solid #ffffff16;box-shadow:0 22px 55px #0009;backdrop-filter:blur(16px)}
 .knowledge-toolbar.compact{position:relative;top:auto;margin-top:34px}
 .knowledge-search{display:flex;align-items:center;gap:11px}.knowledge-search>span{font-size:18px}.knowledge-search input{border-color:#ffffff18!important;background:#05080ccd!important;font-size:15px;padding:15px 17px!important}

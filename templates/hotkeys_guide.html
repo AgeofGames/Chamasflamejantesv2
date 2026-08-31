@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Guia de Teclas do AoM Retold • Chamas Flamejantes{% endblock %}
+{% block content %}
+<section class="hotkeys-guide-embed" aria-label="Guia interativo de teclas do Age of Mythology: Retold">
+  <iframe
+    class="hotkeys-guide-frame"
+    src="{{ url_for('static', filename='guia_de_teclas_aom_retold.html') }}"
+    title="Guia interativo de teclas do Age of Mythology: Retold"
+  ></iframe>
+</section>
+{% endblock %}

@@ -73,7 +73,7 @@
     {% endif %}
     {% if community_worst and community_members|length > 1 %}
     <article class="community-highlight worst">
-      <small>💀 PIOR FRACASSADO</small>
+      <small>📉 MENOR ELO</small>
       {% if avatar_src(community_worst) %}<img src="{{ avatar_src(community_worst) }}" class="community-avatar">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}
       <h3>{{ community_worst.nickname }}</h3>{% if community_worst.has_elo %}<strong>{{ community_worst.community_elo }} ELO</strong>{% else %}<strong class="no-elo-badge big">SEM ELO</strong><span class="level-line">{{ community_level_text(community_worst) }}</span>{% endif %}<span class="normal-record">{{ community_worst.normal_wins }}V • {{ community_worst.normal_losses }}D em normais</span>{% if community_worst.quote %}<span class="player-quote">“{{community_worst.quote}}”</span>{% endif %}
       {% if community_worst.aomstats_url %}<a class="neon-profile danger-neon" target="_blank" href="{{ community_worst.aomstats_url }}">PERFIL AOMSTATS ↗</a>{% endif %}

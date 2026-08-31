@@ -96,6 +96,7 @@ STATIC_PAGE_BG_INDEX = {
     "programs_page": 8,
     "knowledge_page": 17,
     "knowledge_build_orders_page": 17,
+    "hotkeys_guide_page": 17,
     "counter_guide_page": 6,
     "knowledge_god_page": 10,
     "knowledge_build_page": 13,
@@ -3291,13 +3292,7 @@ def knowledge_build_orders_page():
 
 @app.get("/conhecimento/guia-de-teclas")
 def hotkeys_guide_page():
-    response = send_from_directory(
-        app.static_folder,
-        "guia_de_teclas_aom_retold.html",
-        mimetype="text/html",
-    )
-    response.headers["Cache-Control"] = "public, max-age=3600"
-    return response
+    return render_template("hotkeys_guide.html")
 
 
 @app.get("/conhecimento/counters")
@@ -3438,17 +3433,17 @@ def robots_txt():
 
 @app.get("/health")
 def health():
-    return {"version":"19.0-guias-conhecimento","database":"ok"}
+    return {"version":"19.2-menu-guia-menor-elo","database":"ok"}
 
 
 init_db()
 migrate_v6_db()
 ensure_default_admin()
-print("🔥 CHAMAS FLAMEJANTES V19 — GUIAS DE CONHECIMENTO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V19.2 — MENU GARANTIDO + MENOR ELO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V19 — GUIAS DE CONHECIMENTO")
+    print(" 🔥 CHAMAS FLAMEJANTES V19.2 — MENU GARANTIDO + MENOR ELO")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Admin padrão: yukinochannyan")
