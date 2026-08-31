@@ -18,6 +18,7 @@ body[data-page^="knowledge_"] main{overflow:hidden}
 .resource-legend{display:grid;gap:9px;position:relative;z-index:1}.resource-legend>span{display:grid;grid-template-columns:48px 1fr;grid-template-rows:auto auto;column-gap:13px;padding:13px 15px;border:1px solid #ffffff15;background:linear-gradient(90deg,#10151be8,#0b0e13ca);box-shadow:0 14px 35px #0005}.resource-legend i{grid-row:1/3;align-self:center;font-style:normal;font-size:27px;text-align:center}.resource-legend b{font:700 13px Cinzel}.resource-legend small{color:#828d97;font-size:10px;margin-top:3px}
 .hero-legend{transform:rotate(1deg);box-shadow:0 32px 90px #0008}.hero-legend>span:nth-child(odd){transform:translateX(-15px)}
 .knowledge-shell{width:min(1240px,calc(100% - 40px));margin:auto;padding:30px 0 90px}
+.knowledge-launch-stack{display:grid;gap:14px;max-width:1040px;margin:0 auto}.knowledge-launch-stack .counter-guide-launch{margin:0}.knowledge-launch-stack+.knowledge-credit{margin-top:36px}
 .knowledge-toolbar{position:sticky;top:78px;z-index:10;margin:0 0 34px;padding:20px;background:rgba(7,10,15,.94);border:1px solid #ffffff16;box-shadow:0 22px 55px #0009;backdrop-filter:blur(16px)}
 .knowledge-toolbar.compact{position:relative;top:auto;margin-top:34px}
 .knowledge-search{display:flex;align-items:center;gap:11px}.knowledge-search>span{font-size:18px}.knowledge-search input{border-color:#ffffff18!important;background:#05080ccd!important;font-size:15px;padding:15px 17px!important}

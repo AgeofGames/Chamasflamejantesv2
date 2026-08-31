@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V16.4 — SITEMAP GOOGLE
+# 🔥 CHAMAS FLAMEJANTES V19 — GUIAS DE CONHECIMENTO
 
 Build configurado com Railpack, o construtor atual do Railway.
 
@@ -12,7 +12,7 @@ As abas ocupam toda a largura disponível da moldura, sem deixar uma faixa vazia
 
 - Sitemap automático disponível em `https://chamasflamejantes.com.br/sitemap.xml`.
 - `robots.txt` disponível em `https://chamasflamejantes.com.br/robots.txt`, apontando para o sitemap.
-- O sitemap inclui páginas públicas, torneios públicos, os 23 deuses, todas as build orders e o Guia de Counters.
+- O sitemap inclui páginas públicas, torneios públicos, os 23 deuses, todas as build orders, o Guia de Counters e o Guia de Teclas.
 - Login, configuração e painel administrativo não são enviados no sitemap.
 - Novos torneios marcados como públicos entram automaticamente no sitemap.
 
@@ -59,7 +59,9 @@ Altere a senha no painel após o primeiro acesso.
 - Área pública de feedback, com mensagens privadas para o painel do administrador.
 - Administração de feedbacks e pedidos de mapas com status e exclusão.
 - Links oficiais com logos de WhatsApp, Discord e YouTube.
-- Área de Conhecimento com 113 build orders de 23 deuses atuais.
+- Área de Conhecimento com três páginas próprias: Guia de Teclas, Guia de Counters e Biblioteca de Build Orders.
+- Guia interativo de teclas do AoM Retold com consulta, simulação e personalização de XML.
+- Biblioteca com 113 build orders de 23 deuses atuais.
 - Guia interativo de counters acessível por um card acima da pesquisa da Área de Conhecimento.
 - Catálogo completo com 251 unidades de 7 panteões, separado em unidades humanas, heróis, míticas, cerco, navais e Titãs.
 - Seleção do panteão inimigo, counters diretos por classe e multiplicador, custos, pontos de vida e ranking de caçadores de Titãs.

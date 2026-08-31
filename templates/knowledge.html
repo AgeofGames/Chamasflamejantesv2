@@ -6,7 +6,7 @@
   <div class="knowledge-hero-copy">
     <span class="eyebrow">ESTRATÉGIA • AGE OF MYTHOLOGY: RETOLD</span>
     <h1>Área de<br><em>Conhecimento</em></h1>
-    <p>Build orders organizadas por deus, idade e objetivo. Escolha uma estratégia, acompanhe a distribuição de aldeões e saiba exatamente o que fazer em cada etapa.</p>
+    <p>Teclas, counters e build orders reunidos em guias interativos. Escolha o conteúdo que deseja estudar e abra uma página completa dedicada a ele.</p>
     <div class="knowledge-stats">
       <div><strong>{{ gods|length }}</strong><span>deuses atuais</span></div>
       <div><strong>{{ build_count }}</strong><span>build orders</span></div>
@@ -23,53 +23,37 @@
 </section>
 
 <section class="knowledge-shell">
-  <a class="counter-guide-launch" href="{{ url_for('counter_guide_page') }}">
-    <span class="counter-guide-launch__icon">🎯</span>
-    <span class="counter-guide-launch__copy">
-      <strong>APRENDA A COUNTERAR</strong>
-      <small>Escolha uma unidade e descubra quais inimigos ela derrota com vantagem.</small>
-    </span>
-    <span class="counter-guide-launch__meta"><b>251</b><small>unidades</small></span>
-    <span class="counter-guide-launch__arrow">→</span>
-  </a>
-  <div class="knowledge-toolbar">
-    <label class="knowledge-search">
-      <span>🔎</span>
-      <input id="knowledge-search" type="search" placeholder="Pesquisar Zeus, rush, água, economia..." autocomplete="off">
-    </label>
-    <div class="knowledge-filter-row" role="group" aria-label="Filtrar por panteão">
-      <button class="knowledge-filter active" type="button" data-knowledge-pantheon="all">Todos</button>
-      {% for key, pantheon in pantheons.items() %}
-      <button class="knowledge-filter" type="button" data-knowledge-pantheon="{{ key }}"><span>{{ pantheon.symbol }}</span>{{ pantheon.name }}</button>
-      {% endfor %}
-    </div>
-    <small id="knowledge-result-count">{{ gods|length }} deuses disponíveis</small>
-  </div>
-
-  <div class="god-card-grid" id="knowledge-god-grid">
-    {% for god in gods %}
-    <a class="god-knowledge-card" data-knowledge-card data-pantheon="{{ god.pantheon_key }}" data-search="{{ god.name|lower }} {{ god.pantheon.name|lower }} economia rush água" href="{{ url_for('knowledge_god_page',god_slug=god.slug) }}">
-      <div class="god-portrait-wrap">
-        <span class="god-symbol">{{ god.pantheon.symbol }}</span>
-        <img src="{{ url_for('static',filename='knowledge/gods/'~god.image_name~'.webp') }}" alt="Retrato de {{ god.name }} em Age of Mythology: Retold" loading="lazy">
-        <div class="god-card-shade"></div>
-        <span class="pantheon-pill">{{ god.pantheon.name }}</span>
-      </div>
-      <div class="god-card-body">
-        <div class="god-card-title"><div><small>DEUS MAIOR</small><h2>{{ god.name }}</h2></div><b>{{ god.build_count }}<small>builds</small></b></div>
-        <p>{{ god.pantheon.description }}</p>
-        <div class="strategy-routes">
-          {% for tag in ['economia','rush','agua'] %}
-          {% set item=god.featured[tag] %}
-          <span class="strategy-route route-{{tag}}"><i>{{ tag_meta[tag].icon }}</i><b>{{ tag_meta[tag].name }}</b><small>{{ item.title if item else 'Disponível' }}</small></span>
-          {% endfor %}
-        </div>
-        <span class="open-god">VER TODAS AS BUILDS <b>→</b></span>
-      </div>
+  <div class="knowledge-launch-stack" aria-label="Guias da Área de Conhecimento">
+    <a class="counter-guide-launch knowledge-guide-launch knowledge-guide-launch--hotkeys" href="{{ url_for('hotkeys_guide_page') }}">
+      <span class="counter-guide-launch__icon">⌨️</span>
+      <span class="counter-guide-launch__copy">
+        <strong>GUIA DE TECLAS DO AOM RETOLD</strong>
+        <small>Consulte atalhos por panteão, simule o teclado e personalize seu arquivo XML.</small>
+      </span>
+      <span class="counter-guide-launch__meta"><b>3</b><small>modos</small></span>
+      <span class="counter-guide-launch__arrow">→</span>
     </a>
-    {% endfor %}
+
+    <a class="counter-guide-launch knowledge-guide-launch" href="{{ url_for('counter_guide_page') }}">
+      <span class="counter-guide-launch__icon">🎯</span>
+      <span class="counter-guide-launch__copy">
+        <strong>APRENDA A COUNTERAR</strong>
+        <small>Escolha uma unidade e descubra quais inimigos ela derrota com vantagem.</small>
+      </span>
+      <span class="counter-guide-launch__meta"><b>251</b><small>unidades</small></span>
+      <span class="counter-guide-launch__arrow">→</span>
+    </a>
+
+    <a class="counter-guide-launch knowledge-guide-launch knowledge-guide-launch--builds" href="{{ url_for('knowledge_build_orders_page') }}">
+      <span class="counter-guide-launch__icon">📜</span>
+      <span class="counter-guide-launch__copy">
+        <strong>BIBLIOTECA DE BUILD ORDERS</strong>
+        <small>Pesquise estratégias por deus, panteão, rush, economia e mapas de água.</small>
+      </span>
+      <span class="counter-guide-launch__meta"><b>{{ build_count }}</b><small>builds</small></span>
+      <span class="counter-guide-launch__arrow">→</span>
+    </a>
   </div>
-  <div class="knowledge-empty" id="knowledge-empty" hidden><span>🏺</span><h2>Nenhum deus encontrado</h2><p>Tente outro nome, panteão ou tipo de estratégia.</p></div>
-  <p class="knowledge-credit">Retratos do jogo exibidos a partir de recursos disponibilizados pelo <a href="https://aomstats.io/" target="_blank" rel="noopener">AoMStats</a>. Build orders reorganizadas e traduzidas para estudo da comunidade.</p>
+  <p class="knowledge-credit">Conteúdo organizado para estudo da comunidade de Age of Mythology: Retold.</p>
 </section>
 {% endblock %}
