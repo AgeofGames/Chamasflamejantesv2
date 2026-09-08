@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V19.2 — MENU GARANTIDO + MENOR ELO
+# 🔥 CHAMAS FLAMEJANTES V20 — MINI REDE SOCIAL + ARENA X1
 
 Build configurado com Railpack, o construtor atual do Railway.
 
@@ -29,16 +29,31 @@ Base visual e cadastro de jogadores preservados do projeto V7.5, com recursos V1
 5. Opcional: configure `MAX_UPLOAD_MB=250` para ajustar o limite dos arquivos enviados pelo painel.
 6. O Railway inicia pelo `railway.json` e verifica `/health`.
 
+### Login Google dos jogadores
+
+Crie um cliente OAuth 2.0 do tipo **Aplicativo da Web** no Google Cloud e configure no Railway:
+
+```env
+PUBLIC_BASE_URL=https://chamasflamejantes.com.br
+GOOGLE_CLIENT_ID=SEU_CLIENT_ID.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=SEU_CLIENT_SECRET
+```
+
+No cliente OAuth do Google, adicione exatamente este URI de redirecionamento autorizado:
+
+```text
+https://chamasflamejantes.com.br/auth/google/callback
+```
+
+Se quiser usar outro endereço no callback, configure também `GOOGLE_REDIRECT_URI` no Railway e cadastre o mesmo endereço no Google Cloud. O endpoint `/health` mostra `google_oauth: configured` quando as duas credenciais foram reconhecidas.
+
 O SQLite é criado automaticamente na primeira inicialização.
 
 ## Administrador
 
-O login não aparece no menu público. Digite `/login` no final do endereço do site.
+O login administrativo não aparece no menu público. Digite `/admin/login` no final do endereço do site. A atualização preserva o administrador e a senha que já estão no banco.
 
-- Usuário inicial: `yukinochannyan`
-- Senha inicial: `yukinochannyan60`
-
-Altere a senha no painel após o primeiro acesso.
+Em uma instalação totalmente nova, abra `/setup` uma única vez e crie o primeiro administrador. A versão não publica nem recria uma senha administrativa padrão.
 
 ## Recursos
 
@@ -47,7 +62,18 @@ Altere a senha no painel após o primeiro acesso.
 - Torneios FFA, 1x1, 2x2, 3x3 e Melhor de 3.
 - Classificação, confrontos, vencedores e histórico.
 - Elo da Comunidade, frases e patrocinadores.
-- Arena X1 com aprovação e ranking público.
+- Mini rede social com login Google, perfil público e frase pessoal.
+- Perfil preenchido automaticamente pelo AoMStats, foto Steam por padrão e upload opcional pelo PC.
+- Cards de perfil no estilo da Área de Conhecimento e janela flutuante ao clicar nas fotos.
+- Desafio X1 criado somente dentro do perfil do jogador-alvo.
+- Notificações internas, caixa de desafios em formato de mensagem e resposta Aceitar/Recusar.
+- Recusas registradas no histórico como “Fugiu da batalha”.
+- ID da partida enviado somente pelos dois participantes depois do desafio ser aceito.
+- Consulta de `https://aomstats.io/match/ID`, validação dos dois perfis e registro automático do vencedor.
+- Estado “Partida em andamento” enquanto o AoMStats ainda não encontrar ou finalizar o ID.
+- Ranking da Arena X1 calculado apenas com resultados confirmados.
+- Cards compartilháveis de perfis e resultados, com metadados Open Graph e fotos dos jogadores.
+- Atalhos de compartilhamento para WhatsApp, Telegram, Facebook, X e menu nativo do aparelho.
 - Upload e download de mapas ZIP, RAR e 7Z.
 - Programas oficiais com imagem, descrição, contador de downloads e publicação por arquivo RAR ou URL externa.
 - Atalho destacado para Programas Oficiais na navegação e na página inicial.
@@ -89,7 +115,7 @@ mkdir -p /app/data/uploads && cp -a /app/static/uploads/. /app/data/uploads/ 2>/
 
 Depois faça o novo deploy. Banco e uploads passarão a permanecer no mesmo volume.
 
-A atualização cria automaticamente as tabelas `feedback_entries` e `map_requests`, sem apagar ou modificar os registros existentes. A tabela `official_programs` e seus arquivos permanecem preservados.
+A atualização cria automaticamente as tabelas `social_accounts`, `social_duels` e `social_notifications`, sem apagar os registros existentes. Os duelos antigos são copiados uma única vez para o novo histórico. As tabelas `feedback_entries`, `map_requests`, `official_programs` e seus arquivos permanecem preservados.
 
 A Área de Conhecimento e o Guia de Counters são estáticos e não alteram cadastros. Os catálogos ficam em `knowledge_data/build_orders.json` e `static/counters/units.json`, fora do volume `/app/data`, para permanecerem disponíveis no Railway.
 

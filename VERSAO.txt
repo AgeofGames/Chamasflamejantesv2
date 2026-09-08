@@ -1,3 +1,3 @@
-CHAMAS FLAMEJANTES V19.2 — MENU GARANTIDO + MENOR ELO
-Menu principal no Guia de Teclas integrado e direto • último colocado identificado como “Menor Elo” • banco preservado.
-Admin padrão: yukinochannyan / yukinochannyan60
+CHAMAS FLAMEJANTES V20 — MINI REDE SOCIAL + ARENA X1
+Login Google • perfis AoMStats • desafios privados • notificações • resultados verificados e compartilháveis • banco preservado.
+Admin existente preservado; em banco novo, crie o primeiro acesso em /setup.

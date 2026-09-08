@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Entrar na Arena X1 • Chamas Flamejantes{% endblock %}
+{% block content %}
+<section class="social-auth-shell">
+  <article class="social-auth-card">
+    <div class="social-auth-art"><span>🔥</span><small>CHAMAS FLAMEJANTES</small><h1>SUA IDENTIDADE NA ARENA</h1><p>Um login, um perfil AoMStats e todo o seu histórico de desafios X1.</p></div>
+    <div class="social-auth-action">
+      <span class="eyebrow">LOGIN DOS JOGADORES</span><h2>Entre com o Google</h2><p>O site usa o e-mail verificado pelo Google. Nenhuma senha é criada ou guardada pelo Chamas Flamejantes.</p>
+      {% if google_oauth_configured %}<a class="google-login-button" href="{{url_for('social_google_start',next=next_url)}}"><b>G</b><span>Continuar com Google</span></a>{% else %}<div class="social-config-warning"><b>Configuração pendente</b><span>Adicione GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET no Railway.</span></div>{% endif %}
+      <ul><li>Perfil público com frase e histórico</li><li>Desafios privados e notificações</li><li>Resultados confirmados pelo AoMStats</li></ul>
+    </div>
+  </article>
+</section>
+{% endblock %}

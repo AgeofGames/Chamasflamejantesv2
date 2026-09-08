@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{profile.nickname}} • Arena X1{% endblock %}
+{% block meta_description %}Perfil de {{profile.nickname}} na Arena X1: {{profile.stats.wins}} vitórias, {{profile.stats.losses}} derrotas e histórico de duelos.{% endblock %}
+{% block social_meta %}
+<meta property="og:type" content="profile"><meta property="og:site_name" content="Chamas Flamejantes"><meta property="og:title" content="{{profile.nickname}} • Arena X1"><meta property="og:description" content="{{profile.stats.wins}} vitórias • {{profile.stats.losses}} derrotas • {{profile.elo_1v1 or 'SEM ELO'}}"><meta property="og:url" content="{{profile_url}}"><meta property="og:image" content="{{public_base_url}}{{url_for('social_profile_share_image',player_id=profile.id)}}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
+{% endblock %}
+{% block content %}
+<section class="social-profile-page">
+  <div class="social-profile-main">
+    <article class="profile-identity-card build-library-card">
+      <div class="profile-identity-glow"></div>
+      {% if social_avatar_src(profile) %}<img class="profile-identity-avatar" src="{{social_avatar_src(profile)}}" alt="Foto de {{profile.nickname}}">{% else %}<span class="profile-identity-avatar fallback">🔥</span>{% endif %}
+      <small>PERFIL DA ARENA X1</small><h1>{{profile.nickname}}</h1>
+      {% if profile.quote %}<blockquote>“{{profile.quote}}”</blockquote>{% else %}<blockquote class="muted">Sem frase por enquanto.</blockquote>{% endif %}
+      <div class="profile-account-status">{% if profile.social_enabled %}<b>●</b> CONTA GOOGLE ATIVA{% else %}PERFIL DA COMUNIDADE{% endif %}</div>
+      <dl><div><dt>Elo 1x1</dt><dd>{{profile.elo_1v1 or 'SEM ELO'}}</dd></div><div><dt>Nível</dt><dd>{{profile.normal_level}} • {{profile.normal_level_label}}</dd></div><div><dt>AoMStats</dt><dd>#{{profile.aomstats_profile_id}}</dd></div></dl>
+      {% if profile.aomstats_url %}<a class="mini-link" href="{{profile.aomstats_url}}" target="_blank" rel="noopener">ABRIR PERFIL AOMSTATS ↗</a>{% endif %}
+    </article>
+    <div class="profile-action-column">
+      <article class="profile-battle-stats"><span class="eyebrow">HISTÓRICO PERMANENTE</span><h2>Números na Arena</h2><div><strong>{{profile.stats.wins}}<small>VITÓRIAS</small></strong><strong>{{profile.stats.losses}}<small>DERROTAS</small></strong><strong>{{profile.stats.rate}}%<small>APROVEITAMENTO</small></strong><strong>{{profile.stats.refusals}}<small>RECUSAS</small></strong></div></article>
+      {% if is_owner %}<article class="profile-owner-actions"><h3>Este perfil é seu</h3><p>Atualize a frase, sincronize o AoMStats ou escolha uma foto do seu PC.</p><a class="btn primary" href="{{url_for('social_my_profile')}}">EDITAR MEU PERFIL</a><a class="btn" href="{{url_for('social_notifications')}}">VER NOTIFICAÇÕES</a></article>
+      {% elif can_challenge %}<article class="profile-duel-panel"><span class="eyebrow">DESAFIO DIRETO</span><h2>Desafiar {{profile.nickname}}</h2><p>Somente você será o desafiante e somente {{profile.nickname}} poderá aceitar ou recusar.</p><form method="post" action="{{url_for('social_challenge_player',player_id=profile.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><label><span>Mensagem</span><textarea name="message" maxlength="280">Prepare-se para a batalha!</textarea></label><button class="btn primary big">⚔️ ENVIAR DESAFIO</button></form></article>
+      {% elif not social_user %}<article class="profile-duel-panel"><h2>Quer desafiar?</h2><p>Entre com o Google, vincule seu AoMStats e volte a este perfil.</p><a class="btn primary big" href="{{url_for('social_login',next=request.path)}}">ENTRAR COM GOOGLE</a></article>
+      {% else %}<article class="profile-duel-panel disabled"><h2>Desafio indisponível</h2><p>Este jogador ainda não ativou o perfil social.</p></article>{% endif %}
+      <article class="share-panel"><span>COMPARTILHAR PERFIL</span><div class="share-buttons"><a href="{{share.whatsapp}}" target="_blank" rel="noopener">WhatsApp</a><a href="{{share.facebook}}" target="_blank" rel="noopener">Facebook</a><a href="{{share.x}}" target="_blank" rel="noopener">X</a><a href="{{share.telegram}}" target="_blank" rel="noopener">Telegram</a><button type="button" data-native-share data-share-url="{{share.url}}" data-share-title="{{share.title}}">Outras redes</button><button type="button" data-copy-link="{{share.url}}">Copiar link</button></div><small>O link exibe um card com a foto e os dados do jogador.</small></article>
+    </div>
+  </div>
+</section>
+
+<section class="section"><div class="section-head"><div><span class="eyebrow">TODAS AS BATALHAS</span><h2>Histórico de {{profile.nickname}}</h2></div></div><div class="duel-history-list">
+  {% for d in history %}<article class="duel-history-row status-{{d.status}}"><div><button type="button" class="duel-history-profile profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=d.challenger.id)}}" aria-label="Abrir perfil de {{d.challenger.nickname}}">{% if social_avatar_src(d.challenger) %}<img src="{{social_avatar_src(d.challenger)}}" alt="Foto de {{d.challenger.nickname}}">{% else %}<span>🔥</span>{% endif %}</button><strong>{{d.challenger.nickname}}</strong></div><a class="duel-history-summary" href="{{d.public_url}}"><b>{{social_duel_label(d.status)}}</b>{% if d.winner %}<small>Vencedor: {{d.winner.nickname}}</small>{% elif d.status=='refused' %}<small>{{d.challenged.nickname}} fugiu da batalha</small>{% endif %}</a><div><button type="button" class="duel-history-profile profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=d.challenged.id)}}" aria-label="Abrir perfil de {{d.challenged.nickname}}">{% if social_avatar_src(d.challenged) %}<img src="{{social_avatar_src(d.challenged)}}" alt="Foto de {{d.challenged.nickname}}">{% else %}<span>🔥</span>{% endif %}</button><strong>{{d.challenged.nickname}}</strong></div></article>{% else %}<div class="empty"><h3>Nenhum duelo registrado.</h3></div>{% endfor %}
+</div></section>
+{% endblock %}

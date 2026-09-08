@@ -214,6 +214,69 @@ CREATE TABLE IF NOT EXISTS duels (
     FOREIGN KEY(challenger_id) REFERENCES players(id), FOREIGN KEY(challenged_id) REFERENCES players(id),
     FOREIGN KEY(winner_id) REFERENCES players(id), CHECK(challenger_id <> challenged_id)
 );
+
+-- V20: contas Google, perfis sociais, desafios privados e notificações.
+-- A tabela antiga "duels" é mantida para preservar o histórico das versões anteriores.
+CREATE TABLE IF NOT EXISTS social_accounts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    google_sub TEXT NOT NULL UNIQUE,
+    email TEXT NOT NULL UNIQUE,
+    google_name TEXT NOT NULL DEFAULT '',
+    google_picture TEXT NOT NULL DEFAULT '',
+    player_id INTEGER UNIQUE,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_login_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(player_id) REFERENCES players(id) ON DELETE SET NULL
+);
+
+CREATE TABLE IF NOT EXISTS social_duels (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    legacy_duel_id INTEGER UNIQUE,
+    challenger_id INTEGER NOT NULL,
+    challenged_id INTEGER NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    message TEXT NOT NULL DEFAULT '',
+    response_note TEXT NOT NULL DEFAULT '',
+    requested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    responded_at TEXT DEFAULT '',
+    match_id TEXT DEFAULT '',
+    match_url TEXT DEFAULT '',
+    match_submitted_by INTEGER,
+    match_submitted_at TEXT DEFAULT '',
+    last_checked_at TEXT DEFAULT '',
+    match_error TEXT DEFAULT '',
+    match_payload TEXT DEFAULT '',
+    winner_id INTEGER,
+    loser_id INTEGER,
+    finished_at TEXT DEFAULT '',
+    share_token TEXT NOT NULL UNIQUE,
+    FOREIGN KEY(challenger_id) REFERENCES players(id) ON DELETE CASCADE,
+    FOREIGN KEY(challenged_id) REFERENCES players(id) ON DELETE CASCADE,
+    FOREIGN KEY(match_submitted_by) REFERENCES players(id) ON DELETE SET NULL,
+    FOREIGN KEY(winner_id) REFERENCES players(id) ON DELETE SET NULL,
+    FOREIGN KEY(loser_id) REFERENCES players(id) ON DELETE SET NULL,
+    CHECK(challenger_id <> challenged_id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_social_duels_match_id
+ON social_duels(match_id) WHERE match_id <> '';
+CREATE INDEX IF NOT EXISTS idx_social_duels_players
+ON social_duels(challenger_id,challenged_id,status,requested_at DESC);
+
+CREATE TABLE IF NOT EXISTS social_notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    account_id INTEGER NOT NULL,
+    actor_player_id INTEGER,
+    duel_id INTEGER,
+    kind TEXT NOT NULL,
+    message TEXT NOT NULL,
+    is_read INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(account_id) REFERENCES social_accounts(id) ON DELETE CASCADE,
+    FOREIGN KEY(actor_player_id) REFERENCES players(id) ON DELETE SET NULL,
+    FOREIGN KEY(duel_id) REFERENCES social_duels(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_social_notifications_account
+ON social_notifications(account_id,is_read,created_at DESC);
 CREATE TABLE IF NOT EXISTS community_maps (
     id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, creator TEXT NOT NULL,
     category TEXT NOT NULL CHECK(category IN ('FFA','1x1','2x2','3x3')),

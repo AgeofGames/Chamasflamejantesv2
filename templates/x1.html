@@ -1,5 +1,86 @@
-{% extends "base.html" %}{% block title %}Arena X1 • Chamas Flamejantes{% endblock %}{% block content %}
-<section class="page-hero compact"><span class="eyebrow">⚔️ DUELOS DA COMUNIDADE</span><h1>ARENA X1</h1><p>Desafie um jogador cadastrado. O administrador aprova, acompanha e confirma o vencedor.</p></section>
-{% if ranking %}<section class="section"><div class="section-head"><div><span class="eyebrow">RANKING PÚBLICO</span><h2>⚡ MESTRE DO X1</h2></div></div><div class="x1-ranking">{% for p in ranking %}<article class="x1-row {% if loop.first %}x1-master{% endif %}"><b>#{{loop.index}}</b><div class="community-player"><img src="{{avatar_src(p)}}"><strong>{{p.nickname}}</strong></div><span>{{p.x1_wins}} vitórias</span><span>{{p.x1_losses}} derrotas</span><span>{{p.x1_rate}}%</span><span>🔥 {{p.x1_streak}}</span></article>{% endfor %}</div></section>{% endif %}
-<section class="section narrow-wide"><form method="post" action="{{url_for('x1_challenge')}}" class="panel admin-form"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><h2>DESAFIAR JOGADOR</h2><div class="two-col"><label><span>Desafiante</span><select name="challenger_id" required>{% for p in players %}<option value="{{p.id}}">{{p.nickname}}</option>{% endfor %}</select></label><label><span>Desafiado</span><select name="challenged_id" required>{% for p in players %}<option value="{{p.id}}">{{p.nickname}}</option>{% endfor %}</select></label></div><button class="btn primary big">ENVIAR DESAFIO</button></form></section>
-<section class="section"><h2>HISTÓRICO DE DUELOS</h2>{% for d in duels %}<div class="x1-duel"><strong>{{d.challenger}}</strong><span>{{'SOLICITADO' if d.status=='solicitado' else ('DUELO EM CURSO' if d.status=='em_curso' else 'FINALIZADO')}}{% if d.winner %} • Vencedor: {{d.winner}}{% endif %}</span><strong>{{d.challenged}}</strong></div>{% else %}<div class="empty"><h3>A arena aguarda o primeiro desafio.</h3></div>{% endfor %}</section>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Arena X1 • Chamas Flamejantes{% endblock %}
+{% block meta_description %}Desafios privados, perfis de jogadores e resultados verificados pelo AoMStats na Arena X1.{% endblock %}
+{% block content %}
+<section class="page-hero compact social-arena-hero">
+  <span class="eyebrow">⚔️ MINI REDE SOCIAL DA COMUNIDADE</span>
+  <h1>ARENA X1</h1>
+  <p>Conheça jogadores, abra um perfil e desafie a pessoa certa. Cada resposta, partida e resultado fica salvo no histórico dos dois perfis.</p>
+  <div class="arena-hero-actions">
+    {% if social_user and social_user.player_id %}
+      <a class="btn primary" href="{{url_for('social_my_profile')}}">MEU PERFIL</a>
+      <a class="btn" href="{{url_for('social_notifications')}}">NOTIFICAÇÕES{% if unread_notifications %} ({{unread_notifications}}){% endif %}</a>
+    {% else %}
+      <a class="btn primary google-cta" href="{{url_for('social_login',next=url_for('x1_page'))}}">ENTRAR COM GOOGLE</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section arena-how">
+  <div class="arena-step"><b>01</b><span>ABRA O PERFIL</span><p>Escolha abaixo quem você quer enfrentar. O desafio só nasce no perfil dessa pessoa.</p></div>
+  <div class="arena-step"><b>02</b><span>ACEITAR OU RECUSAR</span><p>O desafiado recebe uma notificação e decide. Ao recusar, aparece “Fugiu da batalha”.</p></div>
+  <div class="arena-step"><b>03</b><span>CONFIRMAR PARTIDA</span><p>Depois do jogo, um dos dois informa o ID. O resultado só vale quando o AoMStats confirmar.</p></div>
+</section>
+
+{% if received %}
+<section class="section">
+  <div class="section-head"><div><span class="eyebrow">NOVA MENSAGEM</span><h2>DESAFIOS RECEBIDOS</h2></div></div>
+  <div class="challenge-inbox">
+    {% for d in received %}
+    <article class="challenge-message-card">
+      <button class="profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=d.challenger.id)}}" aria-label="Abrir perfil de {{d.challenger.nickname}}">
+        {% if social_avatar_src(d.challenger) %}<img src="{{social_avatar_src(d.challenger)}}" alt="">{% else %}<span>🔥</span>{% endif %}
+      </button>
+      <div class="challenge-bubble"><small>{{d.challenger.nickname}} • desafio #{{d.id}}</small><p>{{d.message or 'Prepare-se para a batalha!'}}</p><time>{{d.requested_at}}</time></div>
+      <div class="challenge-actions">
+        <form method="post" action="{{url_for('social_duel_accept',duel_id=d.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn primary">ACEITAR</button></form>
+        <form method="post" action="{{url_for('social_duel_refuse',duel_id=d.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn danger">RECUSAR</button></form>
+        <a class="mini-link" href="{{url_for('social_duel',duel_id=d.id)}}">ABRIR MENSAGEM</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if active %}
+<section class="section">
+  <div class="section-head"><div><span class="eyebrow">SUA JORNADA</span><h2>DUELOS ATIVOS</h2></div></div>
+  <div class="duel-card-grid">
+    {% for d in active %}
+    <a class="duel-status-card status-{{d.status}}" href="{{url_for('social_duel',duel_id=d.id)}}">
+      <div class="duel-mini-player">{% if social_avatar_src(d.challenger) %}<img src="{{social_avatar_src(d.challenger)}}" alt="">{% else %}<span>🔥</span>{% endif %}<strong>{{d.challenger.nickname}}</strong></div><b>VS</b>
+      <div class="duel-mini-player">{% if social_avatar_src(d.challenged) %}<img src="{{social_avatar_src(d.challenged)}}" alt="">{% else %}<span>🔥</span>{% endif %}<strong>{{d.challenged.nickname}}</strong></div><em>{{social_duel_label(d.status)}}</em>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="section-head"><div><span class="eyebrow">ENCONTRE SEU OPONENTE</span><h2>JOGADORES DA ARENA</h2><p>Na Arena você escolhe o perfil. O botão de desafiar fica somente dentro dele.</p></div></div>
+  <label class="social-player-search"><span>⌕</span><input type="search" id="arena-player-search" placeholder="Pesquisar jogador pelo nome…" autocomplete="off"></label>
+  <div class="social-player-grid" id="arena-player-grid">
+    {% for p in players %}
+    <article class="social-player-card build-library-card" data-player-name="{{p.nickname|lower}}">
+      <button class="social-player-avatar profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=p.id)}}" aria-label="Abrir perfil de {{p.nickname}}">{% if social_avatar_src(p) %}<img src="{{social_avatar_src(p)}}" alt="Foto de {{p.nickname}}">{% else %}<span>🔥</span>{% endif %}</button>
+      <div class="social-player-card-body"><small>PERFIL DA ARENA</small><h3>{{p.nickname}}</h3>{% if p.quote %}<blockquote>“{{p.quote}}”</blockquote>{% else %}<blockquote class="muted">Sem frase ainda.</blockquote>{% endif %}
+        <dl><div><dt>Vitórias X1</dt><dd>{{p.stats.wins}}</dd></div><div><dt>Derrotas X1</dt><dd>{{p.stats.losses}}</dd></div><div><dt>Aproveitamento</dt><dd>{{p.stats.rate}}%</dd></div><div><dt>Elo AoMStats</dt><dd>{{p.elo_1v1 or 'SEM ELO'}}</dd></div></dl>
+        <a class="open-build" href="{{url_for('social_profile',player_id=p.id)}}"><span>VER PERFIL E DESAFIAR</span><b>→</b></a>
+      </div>
+    </article>
+    {% else %}<div class="empty"><h3>Nenhum perfil social ainda</h3><p>Entre com o Google e seja o primeiro jogador da Arena.</p></div>{% endfor %}
+  </div>
+</section>
+
+{% if ranking %}
+<section class="section"><div class="section-head"><div><span class="eyebrow">RESULTADOS CONFIRMADOS</span><h2>RANKING DA ARENA</h2></div></div><div class="x1-ranking">
+  {% for p in ranking %}<article class="x1-row {% if loop.first and p.stats.wins %}x1-master{% endif %}"><b>#{{loop.index}}</b><button class="community-player profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=p.id)}}">{% if social_avatar_src(p) %}<img src="{{social_avatar_src(p)}}" alt="">{% else %}<span>🔥</span>{% endif %}<strong>{{p.nickname}}</strong></button><span>{{p.stats.wins}} vitórias</span><span>{{p.stats.losses}} derrotas</span><span>{{p.stats.rate}}%</span><span>🔥 {{p.stats.streak}}</span></article>{% endfor %}
+</div></section>
+{% endif %}
+
+<section class="section"><div class="section-head"><div><span class="eyebrow">MEMÓRIA DA BATALHA</span><h2>HISTÓRICO DE DUELOS</h2></div></div><div class="duel-history-list">
+  {% for d in duels %}<article class="duel-history-row status-{{d.status}}"><div><button type="button" class="duel-history-profile profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=d.challenger.id)}}" aria-label="Abrir perfil de {{d.challenger.nickname}}">{% if social_avatar_src(d.challenger) %}<img src="{{social_avatar_src(d.challenger)}}" alt="Foto de {{d.challenger.nickname}}">{% else %}<span>🔥</span>{% endif %}</button><strong>{{d.challenger.nickname}}</strong></div><a class="duel-history-summary" href="{{d.public_url}}"><b>{{social_duel_label(d.status)}}</b>{% if d.winner %}<small>Vencedor: {{d.winner.nickname}}</small>{% elif d.status=='refused' %}<small>{{d.challenged.nickname}} fugiu da batalha</small>{% endif %}</a><div><button type="button" class="duel-history-profile profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=d.challenged.id)}}" aria-label="Abrir perfil de {{d.challenged.nickname}}">{% if social_avatar_src(d.challenged) %}<img src="{{social_avatar_src(d.challenged)}}" alt="Foto de {{d.challenged.nickname}}">{% else %}<span>🔥</span>{% endif %}</button><strong>{{d.challenged.nickname}}</strong></div></article>
+  {% else %}<div class="empty"><h3>A arena aguarda o primeiro duelo.</h3></div>{% endfor %}
+</div></section>
+{% endblock %}

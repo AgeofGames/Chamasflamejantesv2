@@ -10,9 +10,10 @@ import re
 import secrets
 import sqlite3
 import uuid
+from datetime import datetime, timezone
 from functools import wraps
 from pathlib import Path
-from urllib.parse import urljoin, urlparse
+from urllib.parse import quote, urlencode, urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -20,6 +21,7 @@ from flask import (
     Flask, abort, flash, g, jsonify, redirect, render_template,
     request, send_file, send_from_directory, session, url_for
 )
+from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.security import check_password_hash, generate_password_hash
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -29,6 +31,7 @@ UPLOAD_DIR = DB_PATH.parent / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.secret_key = os.environ.get("FFA_SECRET_KEY", secrets.token_hex(32))
 try:
     MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "250"))
@@ -108,6 +111,11 @@ STATIC_PAGE_BG_INDEX = {
 
 KNOWLEDGE_DATA_PATH = BASE_DIR / "knowledge_data" / "build_orders.json"
 SEO_BASE_URL = os.environ.get("SEO_BASE_URL", "https://chamasflamejantes.com.br").strip().rstrip("/")
+PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", SEO_BASE_URL).strip().rstrip("/")
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
+GOOGLE_OAUTH_CONFIGURED = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+app.config["SESSION_COOKIE_SECURE"] = PUBLIC_BASE_URL.startswith("https://")
 PANTHEON_META = {
     "grego": {"name": "Grego", "symbol": "Ω", "description": "Heróis, infantaria e poder divino do Olimpo."},
     "egipcio": {"name": "Egípcio", "symbol": "𓂀", "description": "Monumentos, sacerdotes e economia protegida."},
@@ -221,38 +229,6 @@ def active_count():
 
 def has_admin():
     return get_db().execute("SELECT 1 FROM admins LIMIT 1").fetchone() is not None
-
-
-DEFAULT_ADMIN_USERNAME = "yukinochannyan"
-DEFAULT_ADMIN_PASSWORD = "yukinochannyan60"
-
-
-def ensure_default_admin():
-    """
-    Garante que o usuário padrão exista.
-    Se ele já existir, sua senha atual é preservada para permitir
-    que o administrador troque a senha pelo painel.
-    """
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(DB_PATH)
-    db.row_factory = sqlite3.Row
-    exists = db.execute(
-        "SELECT id FROM admins WHERE username=?",
-        (DEFAULT_ADMIN_USERNAME,)
-    ).fetchone()
-    if not exists:
-        db.execute(
-            "INSERT INTO admins(username,password_hash) VALUES (?,?)",
-            (
-                DEFAULT_ADMIN_USERNAME,
-                generate_password_hash(
-                    DEFAULT_ADMIN_PASSWORD,
-                    method="pbkdf2:sha256:260000"
-                )
-            )
-        )
-        db.commit()
-    db.close()
 
 
 def csrf_token():
@@ -670,10 +646,28 @@ def save_uploaded_avatar(file_storage, key: str):
         raise ValueError("Formato inválido. Use JPG, PNG ou WebP.")
     if file_storage.mimetype not in CONTENT_TYPE_EXTENSIONS:
         raise ValueError("O arquivo enviado não parece ser uma imagem JPG, PNG ou WebP.")
+    try:
+        from PIL import Image, ImageOps, UnidentifiedImageError
+        from PIL.Image import DecompressionBombError
+
+        file_storage.stream.seek(0)
+        with Image.open(file_storage.stream) as probe:
+            probe.verify()
+        file_storage.stream.seek(0)
+        with Image.open(file_storage.stream) as source:
+            source = ImageOps.exif_transpose(source)
+            if source.width * source.height > 24_000_000:
+                raise ValueError("A imagem possui resolução grande demais. Use até 24 megapixels.")
+            source.thumbnail((1800, 1800), Image.Resampling.LANCZOS)
+            if source.mode not in ("RGB", "RGBA"):
+                source = source.convert("RGBA" if "transparency" in source.info else "RGB")
+            sanitized = source.copy()
+    except (UnidentifiedImageError, DecompressionBombError, OSError, SyntaxError) as exc:
+        raise ValueError("O arquivo enviado não é uma imagem válida.") from exc
     safe_key = re.sub(r"[^A-Za-z0-9_-]", "_", str(key))[:60] or secrets.token_hex(8)
-    filename = f"manual_{safe_key}_{secrets.token_hex(5)}{ext}"
+    filename = f"manual_{safe_key}_{secrets.token_hex(5)}.webp"
     path = UPLOAD_DIR / filename
-    file_storage.save(path)
+    sanitized.save(path, "WEBP", quality=90, method=6)
     return f"uploads/{filename}"
 
 
@@ -1555,6 +1549,92 @@ def migrate_v6_db():
     if not _has_column(db, "players", "quote"):
         db.execute("ALTER TABLE players ADD COLUMN quote TEXT NOT NULL DEFAULT ''")
 
+    # V20 — a conta Google passa a ser a identidade do jogador. Os perfis continuam
+    # na tabela players para preservar torneios, Elo, avatares e cadastros antigos.
+    db.executescript("""
+    CREATE TABLE IF NOT EXISTS social_accounts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        google_sub TEXT NOT NULL UNIQUE,
+        email TEXT NOT NULL UNIQUE,
+        google_name TEXT NOT NULL DEFAULT '',
+        google_picture TEXT NOT NULL DEFAULT '',
+        player_id INTEGER UNIQUE,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_login_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(player_id) REFERENCES players(id) ON DELETE SET NULL
+    );
+    CREATE TABLE IF NOT EXISTS social_duels (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        legacy_duel_id INTEGER UNIQUE,
+        challenger_id INTEGER NOT NULL,
+        challenged_id INTEGER NOT NULL,
+        status TEXT NOT NULL DEFAULT 'pending',
+        message TEXT NOT NULL DEFAULT '',
+        response_note TEXT NOT NULL DEFAULT '',
+        requested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        responded_at TEXT DEFAULT '',
+        match_id TEXT DEFAULT '',
+        match_url TEXT DEFAULT '',
+        match_submitted_by INTEGER,
+        match_submitted_at TEXT DEFAULT '',
+        last_checked_at TEXT DEFAULT '',
+        match_error TEXT DEFAULT '',
+        match_payload TEXT DEFAULT '',
+        winner_id INTEGER,
+        loser_id INTEGER,
+        finished_at TEXT DEFAULT '',
+        share_token TEXT NOT NULL UNIQUE,
+        FOREIGN KEY(challenger_id) REFERENCES players(id) ON DELETE CASCADE,
+        FOREIGN KEY(challenged_id) REFERENCES players(id) ON DELETE CASCADE,
+        FOREIGN KEY(match_submitted_by) REFERENCES players(id) ON DELETE SET NULL,
+        FOREIGN KEY(winner_id) REFERENCES players(id) ON DELETE SET NULL,
+        FOREIGN KEY(loser_id) REFERENCES players(id) ON DELETE SET NULL,
+        CHECK(challenger_id <> challenged_id)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_social_duels_match_id
+        ON social_duels(match_id) WHERE match_id <> '';
+    CREATE INDEX IF NOT EXISTS idx_social_duels_players
+        ON social_duels(challenger_id,challenged_id,status,requested_at DESC);
+    CREATE TABLE IF NOT EXISTS social_notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        account_id INTEGER NOT NULL,
+        actor_player_id INTEGER,
+        duel_id INTEGER,
+        kind TEXT NOT NULL,
+        message TEXT NOT NULL,
+        is_read INTEGER NOT NULL DEFAULT 0,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY(account_id) REFERENCES social_accounts(id) ON DELETE CASCADE,
+        FOREIGN KEY(actor_player_id) REFERENCES players(id) ON DELETE SET NULL,
+        FOREIGN KEY(duel_id) REFERENCES social_duels(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_social_notifications_account
+        ON social_notifications(account_id,is_read,created_at DESC);
+    """)
+
+    # Copia uma única vez os duelos V11 para o novo histórico, sem alterar os originais.
+    legacy_duels = db.execute(
+        "SELECT * FROM duels WHERE id NOT IN (SELECT legacy_duel_id FROM social_duels WHERE legacy_duel_id IS NOT NULL)"
+    ).fetchall()
+    for old in legacy_duels:
+        status = {"solicitado": "pending", "em_curso": "accepted", "finalizado": "completed"}.get(old["status"], "pending")
+        winner_id = old["winner_id"] if status == "completed" else None
+        loser_id = None
+        if winner_id:
+            loser_id = old["challenged_id"] if winner_id == old["challenger_id"] else old["challenger_id"]
+        db.execute(
+            """INSERT OR IGNORE INTO social_duels
+               (legacy_duel_id,challenger_id,challenged_id,status,message,response_note,
+                requested_at,winner_id,loser_id,finished_at,share_token)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+            (
+                old["id"], old["challenger_id"], old["challenged_id"], status,
+                "Duelo importado da Arena X1 anterior.", "Histórico preservado",
+                old["requested_at"], winner_id, loser_id, old["finished_at"] or "",
+                secrets.token_urlsafe(18),
+            ),
+        )
+
     # As 7 modalidades são MODELOS de criação, não 7 torneios automaticamente abertos.
     # Remove somente instâncias padrão totalmente vazias; nunca toca em torneios usados.
     default_slugs = ("ffa","food-wood-gold","1v1","2v2","md3-1v1","md3-2v2","md3-3v3")
@@ -1692,10 +1772,207 @@ def site_creator_profile():
     }
 
 
+# ============================================================
+# V20 — MINI REDE SOCIAL + LOGIN GOOGLE + ARENA X1 PRIVADA
+# ============================================================
+
+SOCIAL_ACTIVE_DUEL_STATUSES = ("pending", "accepted", "match_pending")
+SOCIAL_DUEL_LABELS = {
+    "pending": "Desafio enviado",
+    "accepted": "Desafio aceito",
+    "refused": "Fugiu da batalha",
+    "match_pending": "Partida em andamento",
+    "completed": "Partida finalizada",
+    "cancelled": "Desafio cancelado",
+}
+
+
+def absolute_site_url(path=""):
+    """URL pública estável para OAuth, notificações e compartilhamentos."""
+    if path.startswith("http://") or path.startswith("https://"):
+        return path
+    return f"{PUBLIC_BASE_URL}/{path.lstrip('/')}"
+
+
+def google_redirect_uri():
+    configured = os.environ.get("GOOGLE_REDIRECT_URI", "").strip()
+    return configured or absolute_site_url("/auth/google/callback")
+
+
+def current_social_account():
+    account_id = session.get("social_account_id")
+    if not account_id:
+        return None
+    row = get_db().execute(
+        """SELECT sa.id account_id,sa.google_sub,sa.email,sa.google_name,sa.google_picture,
+                  sa.player_id,sa.created_at,sa.last_login_at,
+                  p.nickname,p.discord,p.aomstats_url,p.aomstats_profile_id,p.elo_1v1,p.elo_team,
+                  p.elo_verified,p.avatar_url,p.avatar_file,p.quote,p.normal_wins,p.normal_losses,
+                  p.normal_games,p.normal_win_rate,p.normal_level,p.normal_level_label
+           FROM social_accounts sa LEFT JOIN players p ON p.id=sa.player_id
+           WHERE sa.id=?""",
+        (account_id,),
+    ).fetchone()
+    if not row:
+        session.pop("social_account_id", None)
+        return None
+    return row
+
+
+def social_login_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        account = current_social_account()
+        if not account:
+            flash("Entre com o Google para continuar.", "error")
+            return redirect(url_for("social_login", next=request.full_path.rstrip("?")))
+        return view(*args, **kwargs)
+    return wrapped
+
+
+def social_profile_required(view):
+    @wraps(view)
+    def wrapped(*args, **kwargs):
+        account = current_social_account()
+        if not account:
+            flash("Entre com o Google para continuar.", "error")
+            return redirect(url_for("social_login", next=request.full_path.rstrip("?")))
+        if not account["player_id"]:
+            flash("Vincule primeiro o seu perfil do AoMStats.", "error")
+            return redirect(url_for("social_profile_setup"))
+        return view(*args, **kwargs)
+    return wrapped
+
+
+def safe_next_url(raw, fallback_endpoint="x1_page"):
+    raw = (raw or "").strip()
+    if raw.startswith("/") and not raw.startswith("//"):
+        return raw
+    return url_for(fallback_endpoint)
+
+
+def get_social_player(player_id):
+    return get_db().execute(
+        """SELECT p.*,
+                  CASE WHEN sa.id IS NULL THEN 0 ELSE 1 END social_enabled,
+                  COALESCE(sa.google_picture,'') google_picture
+           FROM players p LEFT JOIN social_accounts sa ON sa.player_id=p.id
+           WHERE p.id=?""",
+        (player_id,),
+    ).fetchone()
+
+
+def social_avatar_src(player):
+    if not player:
+        return ""
+    primary = avatar_src(player)
+    if primary:
+        return primary
+    try:
+        return _normalize_external_image_url(player["google_picture"] or "")
+    except Exception:
+        return ""
+
+
+app.jinja_env.globals["social_avatar_src"] = social_avatar_src
+app.jinja_env.globals["social_duel_label"] = lambda status: SOCIAL_DUEL_LABELS.get(status, status)
+
+
+def social_profile_stats(player_id):
+    row = get_db().execute(
+        """SELECT
+             SUM(CASE WHEN status='completed' AND winner_id=? THEN 1 ELSE 0 END) wins,
+             SUM(CASE WHEN status='completed' AND loser_id=? THEN 1 ELSE 0 END) losses,
+             SUM(CASE WHEN status='refused' AND challenged_id=? THEN 1 ELSE 0 END) refusals,
+             SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) completed
+           FROM social_duels WHERE challenger_id=? OR challenged_id=?""",
+        (player_id, player_id, player_id, player_id, player_id),
+    ).fetchone()
+    wins = int(row["wins"] or 0)
+    losses = int(row["losses"] or 0)
+    completed = int(row["completed"] or 0)
+    return {
+        "wins": wins,
+        "losses": losses,
+        "refusals": int(row["refusals"] or 0),
+        "completed": completed,
+        "rate": round(wins * 100 / completed, 1) if completed else 0,
+    }
+
+
+def social_player_payload(player):
+    if not player:
+        return None
+    data = {k: player[k] for k in player.keys()}
+    data["stats"] = social_profile_stats(player["id"])
+    return data
+
+
+def social_account_for_player(player_id):
+    return get_db().execute("SELECT * FROM social_accounts WHERE player_id=?", (player_id,)).fetchone()
+
+
+def create_social_notification(player_id, actor_player_id, duel_id, kind, message):
+    account = social_account_for_player(player_id)
+    if not account:
+        return
+    get_db().execute(
+        """INSERT INTO social_notifications(account_id,actor_player_id,duel_id,kind,message)
+           VALUES (?,?,?,?,?)""",
+        (account["id"], actor_player_id, duel_id, kind, message[:500]),
+    )
+
+
+def social_duel_row(duel_id=None, share_token=None):
+    if duel_id is not None:
+        return get_db().execute("SELECT * FROM social_duels WHERE id=?", (duel_id,)).fetchone()
+    return get_db().execute("SELECT * FROM social_duels WHERE share_token=?", (share_token,)).fetchone()
+
+
+def social_duel_payload(row):
+    if not row:
+        return None
+    data = {k: row[k] for k in row.keys()}
+    data["challenger"] = social_player_payload(get_social_player(row["challenger_id"]))
+    data["challenged"] = social_player_payload(get_social_player(row["challenged_id"]))
+    data["winner"] = social_player_payload(get_social_player(row["winner_id"])) if row["winner_id"] else None
+    data["loser"] = social_player_payload(get_social_player(row["loser_id"])) if row["loser_id"] else None
+    try:
+        match_details = json.loads(row["match_payload"] or "{}")
+    except (TypeError, ValueError, json.JSONDecodeError):
+        match_details = {}
+    data["match_map"] = str(match_details.get("map") or "").strip()
+    duration = int(match_details.get("duration") or 0)
+    data["match_duration"] = f"{duration // 60}:{duration % 60:02d}" if duration > 0 else ""
+    endpoint_url = (
+        url_for("social_duel_result_share", share_token=row["share_token"])
+        if row["status"] == "completed"
+        else url_for("social_duel", duel_id=row["id"])
+    )
+    data["public_url"] = absolute_site_url(endpoint_url)
+    return data
+
+
+def social_duels_query(where="", params=(), limit=100):
+    sql = "SELECT * FROM social_duels"
+    if where:
+        sql += " WHERE " + where
+    sql += " ORDER BY id DESC LIMIT ?"
+    rows = get_db().execute(sql, (*params, int(limit))).fetchall()
+    return [social_duel_payload(row) for row in rows]
+
+
 @app.context_processor
 def inject_globals_v5():
     try:
         ranking = community_ranking()
+        social_user = current_social_account()
+        unread_notifications = 0
+        if social_user:
+            unread_notifications = get_db().execute(
+                "SELECT COUNT(*) c FROM social_notifications WHERE account_id=? AND is_read=0",
+                (social_user["account_id"],),
+            ).fetchone()["c"]
         return {
             "site": settings(),
             "nav_tournaments": [t for t in all_tournaments(public_only=True) if t["status"] != "finalizado"][:10],
@@ -1707,6 +1984,10 @@ def inject_globals_v5():
             "page_background_url": page_background_url(),
             "community_links": {r['key']:r['value'] for r in get_db().execute("SELECT * FROM community_links")},
             "site_creator": site_creator_profile(),
+            "social_user": social_user,
+            "unread_notifications": int(unread_notifications or 0),
+            "google_oauth_configured": GOOGLE_OAUTH_CONFIGURED,
+            "public_base_url": PUBLIC_BASE_URL,
         }
     except Exception:
         return {}
@@ -1914,7 +2195,6 @@ def setup():
     return render_template("setup.html")
 
 
-@app.route("/login", methods=["GET", "POST"])
 @app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
     if not has_admin():
@@ -1931,7 +2211,8 @@ def admin_login():
 
 @app.get("/admin/logout")
 def admin_logout():
-    session.clear()
+    session.pop("admin_id", None)
+    session.pop("admin_username", None)
     return redirect(url_for("home"))
 
 
@@ -2906,30 +3187,816 @@ def admin_backup():
 # V11 — ARENA X1, MAPAS E GRUPOS OFICIAIS
 # ============================================================
 def duel_ranking():
-    rows=get_db().execute("""SELECT p.*,SUM(CASE WHEN d.status='finalizado' AND d.winner_id=p.id THEN 1 ELSE 0 END) x1_wins,SUM(CASE WHEN d.status='finalizado' AND d.winner_id<>p.id THEN 1 ELSE 0 END) x1_losses FROM players p JOIN duels d ON d.challenger_id=p.id OR d.challenged_id=p.id GROUP BY p.id ORDER BY x1_wins DESC,x1_losses ASC,LOWER(p.nickname)""").fetchall()
-    result=[]
-    for r in rows:
-        item={k:r[k] for k in r.keys()}; games=item['x1_wins']+item['x1_losses'];item['x1_rate']=round(item['x1_wins']*100/games,1) if games else 0
-        recent=get_db().execute("SELECT winner_id FROM duels WHERE status='finalizado' AND (challenger_id=? OR challenged_id=?) ORDER BY id DESC",(r['id'],r['id'])).fetchall();streak=0
-        for d in recent:
-            if d['winner_id']==r['id']:streak+=1
-            else:break
-        item['x1_streak']=streak;result.append(item)
-    return result
+    """Ranking da rede social, calculado somente com resultados confirmados pelo AoMStats."""
+    players = get_db().execute(
+        """SELECT p.*,sa.google_picture FROM social_accounts sa
+           JOIN players p ON p.id=sa.player_id WHERE sa.player_id IS NOT NULL"""
+    ).fetchall()
+    ranking = []
+    for player in players:
+        item = social_player_payload(player)
+        recent = get_db().execute(
+            """SELECT winner_id FROM social_duels
+               WHERE status='completed' AND (challenger_id=? OR challenged_id=?)
+               ORDER BY id DESC""",
+            (player["id"], player["id"]),
+        ).fetchall()
+        streak = 0
+        for duel in recent:
+            if duel["winner_id"] == player["id"]:
+                streak += 1
+            else:
+                break
+        item["stats"]["streak"] = streak
+        ranking.append(item)
+    ranking.sort(key=lambda p: (-p["stats"]["wins"], p["stats"]["losses"], -p["stats"]["streak"], p["nickname"].lower()))
+    return ranking
 
-@app.get('/x1')
-def x1_page():
-    db=get_db();players=db.execute("SELECT * FROM players WHERE aomstats_url<>'' ORDER BY nickname").fetchall();ranking=duel_ranking();duels=db.execute("""SELECT d.*,a.nickname challenger,b.nickname challenged,w.nickname winner FROM duels d JOIN players a ON a.id=d.challenger_id JOIN players b ON b.id=d.challenged_id LEFT JOIN players w ON w.id=d.winner_id ORDER BY d.id DESC LIMIT 100""").fetchall()
-    return render_template('x1.html',players=players,ranking=ranking,duels=duels)
+
+def _google_profile_from_code(code):
+    token_response = requests.post(
+        "https://oauth2.googleapis.com/token",
+        data={
+            "code": code,
+            "client_id": GOOGLE_CLIENT_ID,
+            "client_secret": GOOGLE_CLIENT_SECRET,
+            "redirect_uri": google_redirect_uri(),
+            "grant_type": "authorization_code",
+        },
+        timeout=15,
+    )
+    token_response.raise_for_status()
+    token_data = token_response.json()
+    raw_id_token = token_data.get("id_token")
+    if not raw_id_token:
+        raise ValueError("O Google não retornou a identidade da conta.")
+
+    from google.auth.transport.requests import Request as GoogleRequest
+    from google.oauth2 import id_token as google_id_token
+
+    claims = google_id_token.verify_oauth2_token(raw_id_token, GoogleRequest(), GOOGLE_CLIENT_ID)
+    if claims.get("nonce") != session.pop("google_oauth_nonce", None):
+        raise ValueError("A validação de segurança do Google expirou. Tente entrar novamente.")
+    if not claims.get("email") or not claims.get("email_verified"):
+        raise ValueError("Use uma conta Google com e-mail verificado.")
+    return claims
+
+
+@app.get("/login")
+@app.get("/entrar")
+def social_login():
+    if current_social_account():
+        return redirect(url_for("social_my_profile"))
+    return render_template("social_login.html", next_url=safe_next_url(request.args.get("next")))
+
+
+@app.get("/entrar/google")
+def social_google_start():
+    if not GOOGLE_OAUTH_CONFIGURED:
+        flash("O login Google ainda não foi configurado pelo administrador.", "error")
+        return redirect(url_for("social_login"))
+    state = secrets.token_urlsafe(32)
+    nonce = secrets.token_urlsafe(32)
+    session["google_oauth_state"] = state
+    session["google_oauth_nonce"] = nonce
+    session["google_oauth_next"] = safe_next_url(request.args.get("next"))
+    params = {
+        "client_id": GOOGLE_CLIENT_ID,
+        "redirect_uri": google_redirect_uri(),
+        "response_type": "code",
+        "scope": "openid email profile",
+        "state": state,
+        "nonce": nonce,
+        "prompt": "select_account",
+    }
+    return redirect("https://accounts.google.com/o/oauth2/v2/auth?" + urlencode(params))
+
+
+@app.get("/auth/google/callback")
+def social_google_callback():
+    expected_state = session.pop("google_oauth_state", None)
+    if not expected_state or not secrets.compare_digest(request.args.get("state", ""), expected_state):
+        abort(400, "Falha na validação de segurança do login Google.")
+    if request.args.get("error"):
+        flash("O login Google foi cancelado.", "error")
+        return redirect(url_for("social_login"))
+    try:
+        claims = _google_profile_from_code(request.args.get("code", ""))
+    except Exception as exc:
+        app.logger.warning("Falha no login Google: %s", exc)
+        flash("Não foi possível concluir o login Google. Tente novamente.", "error")
+        return redirect(url_for("social_login"))
+
+    db = get_db()
+    account = db.execute("SELECT * FROM social_accounts WHERE google_sub=?", (claims["sub"],)).fetchone()
+    if account:
+        db.execute(
+            """UPDATE social_accounts SET email=?,google_name=?,google_picture=?,last_login_at=CURRENT_TIMESTAMP
+               WHERE id=?""",
+            (claims["email"][:254], claims.get("name", "")[:120], claims.get("picture", "")[:1000], account["id"]),
+        )
+        account_id = account["id"]
+    else:
+        email_owner = db.execute("SELECT id FROM social_accounts WHERE email=?", (claims["email"],)).fetchone()
+        if email_owner:
+            account_id = email_owner["id"]
+            db.execute(
+                """UPDATE social_accounts SET google_sub=?,google_name=?,google_picture=?,last_login_at=CURRENT_TIMESTAMP
+                   WHERE id=?""",
+                (claims["sub"], claims.get("name", "")[:120], claims.get("picture", "")[:1000], account_id),
+            )
+        else:
+            cursor = db.execute(
+                """INSERT INTO social_accounts(google_sub,email,google_name,google_picture)
+                   VALUES (?,?,?,?)""",
+                (claims["sub"], claims["email"][:254], claims.get("name", "")[:120], claims.get("picture", "")[:1000]),
+            )
+            account_id = cursor.lastrowid
+    db.commit()
+    session["social_account_id"] = account_id
+    session.permanent = True
+    csrf_token()
+    account = current_social_account()
+    next_url = safe_next_url(session.pop("google_oauth_next", ""))
+    if not account["player_id"]:
+        return redirect(url_for("social_profile_setup"))
+    flash("Login Google concluído.", "success")
+    return redirect(next_url)
+
+
+@app.get("/sair")
+def social_logout():
+    for key in ("social_account_id", "google_oauth_state", "google_oauth_nonce", "google_oauth_next"):
+        session.pop(key, None)
+    flash("Você saiu da rede social.", "success")
+    return redirect(url_for("home"))
+
+
+def save_social_profile(account, raw_url, quote_text, upload=None, avatar_mode="keep"):
+    profile_url, profile_id = normalize_profile_url(raw_url)
+    if not profile_url:
+        raise ValueError("Informe um link válido: https://aomstats.io/profile/ID")
+    try:
+        info = fetch_aomstats(profile_url)
+    except Exception as exc:
+        raise ValueError("Não consegui consultar esse perfil no AoMStats agora. Confira o link e tente novamente.") from exc
+
+    db = get_db()
+    player = db.execute("SELECT * FROM players WHERE aomstats_profile_id=?", (profile_id,)).fetchone()
+    if player:
+        owner = db.execute(
+            "SELECT id FROM social_accounts WHERE player_id=? AND id<>?", (player["id"], account["account_id"])
+        ).fetchone()
+        if owner:
+            raise ValueError("Esse perfil AoMStats já pertence a outra conta do site.")
+
+    new_avatar_file = ""
+    if upload and upload.filename:
+        new_avatar_file = save_uploaded_avatar(upload, profile_id)
+
+    stats_available = bool(info.get("normal_stats_available"))
+    quote_text = (quote_text or "").strip()[:220]
+    if player:
+        old_file = player["avatar_file"] or ""
+        final_file = old_file
+        if avatar_mode == "aomstats":
+            remove_local_avatar(old_file)
+            final_file = ""
+        if new_avatar_file:
+            remove_local_avatar(old_file)
+            final_file = new_avatar_file
+        db.execute(
+            """UPDATE players SET nickname=?,aomstats_url=?,elo_1v1=?,elo_team=?,elo_verified=?,
+               avatar_url=?,avatar_file=?,quote=?,normal_wins=?,normal_losses=?,normal_games=?,
+               normal_win_rate=?,normal_level=?,normal_level_label=?,normal_stats_available=?,
+               normal_stats_updated_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?""",
+            (
+                info["nickname"][:80], profile_url, info.get("elo_1v1"), info.get("elo_team"),
+                1 if info.get("elo_1v1") is not None or info.get("elo_team") is not None else 0,
+                info.get("avatar_url", "")[:1000], final_file, quote_text,
+                info.get("normal_wins", 0), info.get("normal_losses", 0), info.get("normal_games", 0),
+                info.get("normal_win_rate", 0), info.get("normal_level", 1),
+                info.get("normal_level_label", "Novato"), 1 if stats_available else 0, player["id"],
+            ),
+        )
+        player_id = player["id"]
+    else:
+        cursor = db.execute(
+            """INSERT INTO players
+               (nickname,discord,aomstats_url,aomstats_profile_id,elo_1v1,elo_team,elo_verified,
+                avatar_url,avatar_file,quote,normal_wins,normal_losses,normal_games,normal_win_rate,
+                normal_level,normal_level_label,normal_stats_available,normal_stats_updated_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)""",
+            (
+                info["nickname"][:80], "", profile_url, profile_id, info.get("elo_1v1"), info.get("elo_team"),
+                1 if info.get("elo_1v1") is not None or info.get("elo_team") is not None else 0,
+                info.get("avatar_url", "")[:1000], new_avatar_file, quote_text,
+                info.get("normal_wins", 0), info.get("normal_losses", 0), info.get("normal_games", 0),
+                info.get("normal_win_rate", 0), info.get("normal_level", 1),
+                info.get("normal_level_label", "Novato"), 1 if stats_available else 0,
+            ),
+        )
+        player_id = cursor.lastrowid
+    db.execute("UPDATE social_accounts SET player_id=? WHERE id=?", (player_id, account["account_id"]))
+    db.commit()
+    return player_id
+
+
+@app.route("/meu-perfil/configurar", methods=["GET", "POST"])
+@social_login_required
+def social_profile_setup():
+    account = current_social_account()
+    if request.method == "POST":
+        require_csrf()
+        try:
+            player_id = save_social_profile(
+                account, request.form.get("aomstats_url", ""), request.form.get("quote", ""),
+                request.files.get("avatar"), request.form.get("avatar_mode", "keep"),
+            )
+            flash("Perfil criado e preenchido pelo AoMStats.", "success")
+            return redirect(url_for("social_profile", player_id=player_id))
+        except ValueError as exc:
+            flash(str(exc), "error")
+    return render_template("social_profile_edit.html", account=account, player=None, setup_mode=True)
+
+
+@app.route("/meu-perfil", methods=["GET", "POST"])
+@social_profile_required
+def social_my_profile():
+    account = current_social_account()
+    player = get_social_player(account["player_id"])
+    if request.method == "POST":
+        require_csrf()
+        try:
+            player_id = save_social_profile(
+                account, request.form.get("aomstats_url", ""), request.form.get("quote", ""),
+                request.files.get("avatar"), request.form.get("avatar_mode", "keep"),
+            )
+            flash("Seu perfil foi atualizado.", "success")
+            return redirect(url_for("social_profile", player_id=player_id))
+        except ValueError as exc:
+            flash(str(exc), "error")
+    return render_template("social_profile_edit.html", account=account, player=social_player_payload(player), setup_mode=False)
+
+
+@app.get("/perfil/<int:player_id>")
+def social_profile(player_id):
+    player = get_social_player(player_id)
+    if not player:
+        abort(404)
+    profile = social_player_payload(player)
+    viewer = current_social_account()
+    is_owner = bool(viewer and viewer["player_id"] == player_id)
+    history = social_duels_query(
+        "challenger_id=? OR challenged_id=?" if is_owner else
+        "(challenger_id=? OR challenged_id=?) AND status IN ('completed','refused')",
+        (player_id, player_id), 80,
+    )
+    can_challenge = bool(
+        viewer and viewer["player_id"] and viewer["player_id"] != player_id and profile["social_enabled"]
+    )
+    profile_url = absolute_site_url(url_for("social_profile", player_id=player_id))
+    return render_template(
+        "social_profile.html", profile=profile, history=history, can_challenge=can_challenge,
+        is_owner=is_owner, profile_url=profile_url,
+        share=build_share_links(profile_url, f"Perfil de {profile['nickname']} na Arena X1"),
+    )
+
+
+@app.get("/perfil/<int:player_id>/card")
+def social_profile_card(player_id):
+    player = get_social_player(player_id)
+    if not player:
+        abort(404)
+    profile = social_player_payload(player)
+    viewer = current_social_account()
+    return render_template(
+        "_social_profile_card.html", profile=profile,
+        can_challenge=bool(viewer and viewer["player_id"] and viewer["player_id"] != player_id and profile["social_enabled"]),
+        compact=True,
+    )
+
+
+@app.post("/perfil/<int:player_id>/desafiar")
+@social_profile_required
+def social_challenge_player(player_id):
+    require_csrf()
+    viewer = current_social_account()
+    challenger_id = int(viewer["player_id"])
+    target = get_social_player(player_id)
+    if not target or not target["social_enabled"]:
+        abort(404)
+    if challenger_id == player_id:
+        flash("Você não pode desafiar a si mesmo.", "error")
+        return redirect(url_for("social_profile", player_id=player_id))
+    duplicate = get_db().execute(
+        """SELECT id FROM social_duels WHERE status IN ('pending','accepted','match_pending')
+           AND ((challenger_id=? AND challenged_id=?) OR (challenger_id=? AND challenged_id=?))""",
+        (challenger_id, player_id, player_id, challenger_id),
+    ).fetchone()
+    if duplicate:
+        flash("Já existe um desafio ativo entre vocês.", "error")
+        return redirect(url_for("social_duel", duel_id=duplicate["id"]))
+    message = (request.form.get("message") or "Prepare-se para a batalha!").strip()[:280]
+    db = get_db()
+    cursor = db.execute(
+        """INSERT INTO social_duels(challenger_id,challenged_id,message,share_token)
+           VALUES (?,?,?,?)""",
+        (challenger_id, player_id, message, secrets.token_urlsafe(18)),
+    )
+    duel_id = cursor.lastrowid
+    create_social_notification(
+        player_id, challenger_id, duel_id, "challenge",
+        f"{viewer['nickname']} desafiou você para um X1.",
+    )
+    db.commit()
+    flash("Desafio enviado. Compartilhe o link para o jogador abrir e responder.", "success")
+    return redirect(url_for("social_duel", duel_id=duel_id))
+
 
 @app.post('/x1/desafiar')
 def x1_challenge():
-    require_csrf();a=int(request.form.get('challenger_id',0));b=int(request.form.get('challenged_id',0));db=get_db()
-    if not a or not b or a==b:flash('Escolha dois jogadores diferentes.','error');return redirect(url_for('x1_page'))
-    active=db.execute("SELECT 1 FROM duels WHERE status<>'finalizado' AND (challenger_id IN (?,?) OR challenged_id IN (?,?))",(a,b,a,b)).fetchone()
-    if active:flash('Um dos jogadores já possui um duelo ativo.','error')
-    else:db.execute("INSERT INTO duels(challenger_id,challenged_id) VALUES(?,?)",(a,b));db.commit();flash('Desafio enviado para aprovação do administrador.','success')
+    require_csrf()
+    flash("Agora todo desafio começa no perfil do jogador que você quer enfrentar.", "error")
     return redirect(url_for('x1_page'))
+
+
+def _parse_aomstats_match(match_id, html):
+    segment_match = re.search(r"matches:\[(.*?)\],details:\[", html, re.S)
+    segment = segment_match.group(1) if segment_match else html
+    pattern = re.compile(
+        rf"match_id:{re.escape(str(match_id))},(?:(?!match_id:).)*?profile_id:(\d+),"
+        rf"(?:(?!match_id:).)*?win:(true|false),",
+        re.S,
+    )
+    players = []
+    for profile_id, won in pattern.findall(segment):
+        if not any(p["profile_id"] == profile_id for p in players):
+            players.append({"profile_id": profile_id, "win": won == "true"})
+    map_match = re.search(rf"match_id:{re.escape(str(match_id))},.*?mapname:\"([^\"]+)\"", segment, re.S)
+    duration_match = re.search(rf"match_id:{re.escape(str(match_id))},.*?duration:(\d+)", segment, re.S)
+    return {
+        "players": players,
+        "map": map_match.group(1) if map_match else "",
+        "duration": int(duration_match.group(1)) if duration_match else 0,
+    }
+
+
+def fetch_aomstats_match(match_id, expected_profile_ids):
+    match_url = f"https://aomstats.io/match/{match_id}"
+    try:
+        response = requests.get(
+            match_url,
+            headers={"User-Agent": "Mozilla/5.0 Chrome/126 Safari/537.36", "Accept-Language": "pt-BR,en;q=0.8"},
+            timeout=15,
+        )
+    except requests.RequestException:
+        return {"state": "unavailable", "match_url": match_url, "message": "AoMStats indisponível. Tente verificar novamente."}
+    if response.status_code == 404:
+        return {"state": "pending", "match_url": match_url, "message": "A partida ainda não apareceu no AoMStats."}
+    try:
+        response.raise_for_status()
+    except requests.RequestException:
+        return {"state": "unavailable", "match_url": match_url, "message": "AoMStats indisponível. Tente verificar novamente."}
+
+    parsed = _parse_aomstats_match(match_id, response.text)
+    rows = parsed["players"]
+    if not rows:
+        return {"state": "pending", "match_url": match_url, "message": "A partida ainda está sendo processada pelo AoMStats."}
+    found = {row["profile_id"] for row in rows}
+    expected = {str(value) for value in expected_profile_ids}
+    if len(rows) != 2 or found != expected:
+        raise ValueError("Esse ID não é uma partida X1 entre os dois perfis deste desafio.")
+    winners = [row for row in rows if row["win"]]
+    losers = [row for row in rows if not row["win"]]
+    if len(winners) != 1 or len(losers) != 1:
+        return {"state": "pending", "match_url": match_url, "message": "O resultado ainda não foi finalizado no AoMStats."}
+    return {
+        "state": "completed", "match_url": match_url,
+        "winner_profile_id": winners[0]["profile_id"], "loser_profile_id": losers[0]["profile_id"],
+        "map": parsed["map"], "duration": parsed["duration"],
+    }
+
+
+def verify_social_duel_match(duel, fetched_result=None):
+    challenger = get_social_player(duel["challenger_id"])
+    challenged = get_social_player(duel["challenged_id"])
+    result = fetched_result or fetch_aomstats_match(
+        duel["match_id"], [challenger["aomstats_profile_id"], challenged["aomstats_profile_id"]]
+    )
+    db = get_db()
+    if result["state"] == "completed":
+        mapping = {
+            str(challenger["aomstats_profile_id"]): challenger["id"],
+            str(challenged["aomstats_profile_id"]): challenged["id"],
+        }
+        winner_id = mapping[result["winner_profile_id"]]
+        loser_id = mapping[result["loser_profile_id"]]
+        db.execute(
+            """UPDATE social_duels SET status='completed',winner_id=?,loser_id=?,match_url=?,
+               match_payload=?,match_error='',last_checked_at=CURRENT_TIMESTAMP,finished_at=CURRENT_TIMESTAMP
+               WHERE id=?""",
+            (winner_id, loser_id, result["match_url"], json.dumps(result, ensure_ascii=False), duel["id"]),
+        )
+        winner = get_social_player(winner_id)
+        create_social_notification(winner_id, loser_id, duel["id"], "result", "Vitória confirmada pelo AoMStats! 🔥")
+        create_social_notification(loser_id, winner_id, duel["id"], "result", f"Resultado confirmado: {winner['nickname']} venceu o duelo.")
+    else:
+        db.execute(
+            """UPDATE social_duels SET status='match_pending',match_url=?,match_error=?,
+               last_checked_at=CURRENT_TIMESTAMP WHERE id=?""",
+            (result["match_url"], result["message"], duel["id"]),
+        )
+    db.commit()
+    return result
+
+
+@app.get('/x1')
+def x1_page():
+    viewer = current_social_account()
+    players = [social_player_payload(row) for row in get_db().execute(
+        """SELECT p.*,sa.google_picture FROM social_accounts sa JOIN players p ON p.id=sa.player_id
+           WHERE sa.player_id IS NOT NULL ORDER BY LOWER(p.nickname)"""
+    ).fetchall()]
+    ranking = duel_ranking()
+    received = []
+    active = []
+    if viewer and viewer["player_id"]:
+        received = social_duels_query("challenged_id=? AND status='pending'", (viewer["player_id"],), 30)
+        active = social_duels_query(
+            "(challenger_id=? OR challenged_id=?) AND status IN ('accepted','match_pending')",
+            (viewer["player_id"], viewer["player_id"]), 30,
+        )
+    history = social_duels_query("status IN ('completed','refused')", (), 60)
+    return render_template('x1.html', players=players, ranking=ranking, received=received, active=active, duels=history)
+
+
+@app.get("/duelo/<int:duel_id>")
+def social_duel(duel_id):
+    row = social_duel_row(duel_id=duel_id)
+    if not row:
+        abort(404)
+    viewer = current_social_account()
+    participant = bool(viewer and viewer["player_id"] in (row["challenger_id"], row["challenged_id"]))
+    if row["status"] != "completed" and not participant:
+        if not viewer:
+            return redirect(url_for("social_login", next=request.path))
+        abort(403)
+    if viewer:
+        get_db().execute(
+            "UPDATE social_notifications SET is_read=1 WHERE account_id=? AND duel_id=?",
+            (viewer["account_id"], duel_id),
+        )
+        get_db().commit()
+    duel = social_duel_payload(row)
+    share = build_share_links(duel["public_url"], f"{duel['challenger']['nickname']} x {duel['challenged']['nickname']} — Arena X1")
+    return render_template("social_duel.html", duel=duel, participant=participant, share=share)
+
+
+@app.post("/duelo/<int:duel_id>/aceitar")
+@social_profile_required
+def social_duel_accept(duel_id):
+    require_csrf()
+    viewer = current_social_account()
+    duel = social_duel_row(duel_id=duel_id)
+    if not duel or duel["challenged_id"] != viewer["player_id"]:
+        abort(403)
+    if duel["status"] != "pending":
+        flash("Esse desafio já foi respondido.", "error")
+    else:
+        db = get_db()
+        db.execute(
+            """UPDATE social_duels SET status='accepted',response_note='Desafio aceito',
+               responded_at=CURRENT_TIMESTAMP WHERE id=?""", (duel_id,)
+        )
+        create_social_notification(
+            duel["challenger_id"], viewer["player_id"], duel_id, "accepted",
+            f"{viewer['nickname']} aceitou o seu desafio.",
+        )
+        db.commit()
+        flash("Desafio aceito. Joguem a partida e só depois informem o ID.", "success")
+    return redirect(url_for("social_duel", duel_id=duel_id))
+
+
+@app.post("/duelo/<int:duel_id>/recusar")
+@social_profile_required
+def social_duel_refuse(duel_id):
+    require_csrf()
+    viewer = current_social_account()
+    duel = social_duel_row(duel_id=duel_id)
+    if not duel or duel["challenged_id"] != viewer["player_id"]:
+        abort(403)
+    if duel["status"] != "pending":
+        flash("Esse desafio já foi respondido.", "error")
+    else:
+        db = get_db()
+        db.execute(
+            """UPDATE social_duels SET status='refused',response_note='Fugiu da batalha',
+               responded_at=CURRENT_TIMESTAMP,finished_at=CURRENT_TIMESTAMP WHERE id=?""", (duel_id,)
+        )
+        create_social_notification(
+            duel["challenger_id"], viewer["player_id"], duel_id, "refused",
+            f"{viewer['nickname']} recusou: fugiu da batalha.",
+        )
+        db.commit()
+        flash("Desafio recusado. O histórico mostrará: Fugiu da batalha.", "success")
+    return redirect(url_for("x1_page"))
+
+
+@app.post("/duelo/<int:duel_id>/partida")
+@social_profile_required
+def social_duel_submit_match(duel_id):
+    require_csrf()
+    viewer = current_social_account()
+    duel = social_duel_row(duel_id=duel_id)
+    if not duel or viewer["player_id"] not in (duel["challenger_id"], duel["challenged_id"]):
+        abort(403)
+    if duel["status"] not in ("accepted", "match_pending"):
+        flash("O ID só pode ser enviado depois que o desafio for aceito.", "error")
+        return redirect(url_for("social_duel", duel_id=duel_id))
+    match_id = re.sub(r"\D", "", request.form.get("match_id", ""))
+    if not re.fullmatch(r"\d{5,12}", match_id):
+        flash("Informe somente o número do ID da partida exibido no AoMStats.", "error")
+        return redirect(url_for("social_duel", duel_id=duel_id))
+    used = get_db().execute("SELECT id FROM social_duels WHERE match_id=? AND id<>?", (match_id, duel_id)).fetchone()
+    if used:
+        flash("Esse ID já foi usado em outro duelo.", "error")
+        return redirect(url_for("social_duel", duel_id=duel_id))
+    try:
+        result = fetch_aomstats_match(
+            match_id,
+            [get_social_player(duel["challenger_id"])["aomstats_profile_id"], get_social_player(duel["challenged_id"])["aomstats_profile_id"]],
+        )
+    except ValueError as exc:
+        flash(str(exc), "error")
+        return redirect(url_for("social_duel", duel_id=duel_id))
+    db = get_db()
+    db.execute(
+        """UPDATE social_duels SET match_id=?,match_url=?,match_submitted_by=?,
+           match_submitted_at=CURRENT_TIMESTAMP WHERE id=?""",
+        (match_id, result["match_url"], viewer["player_id"], duel_id),
+    )
+    db.commit()
+    stored_duel = social_duel_row(duel_id=duel_id)
+    try:
+        result = verify_social_duel_match(stored_duel, fetched_result=result)
+    except ValueError as exc:
+        db.execute("UPDATE social_duels SET match_id='',match_url='',match_error='' WHERE id=?", (duel_id,))
+        db.commit()
+        flash(str(exc), "error")
+        return redirect(url_for("social_duel", duel_id=duel_id))
+    if result["state"] == "completed":
+        flash("Partida encontrada. Resultado e vencedor registrados!", "success")
+    else:
+        flash("ID guardado. Partida em andamento: verifique novamente quando ela aparecer no AoMStats.", "success")
+    return redirect(url_for("social_duel", duel_id=duel_id))
+
+
+@app.post("/duelo/<int:duel_id>/verificar")
+@social_profile_required
+def social_duel_verify(duel_id):
+    require_csrf()
+    viewer = current_social_account()
+    duel = social_duel_row(duel_id=duel_id)
+    if not duel or viewer["player_id"] not in (duel["challenger_id"], duel["challenged_id"]):
+        abort(403)
+    if duel["status"] != "match_pending" or not duel["match_id"]:
+        flash("Ainda não existe uma partida aguardando verificação.", "error")
+        return redirect(url_for("social_duel", duel_id=duel_id))
+    try:
+        result = verify_social_duel_match(duel)
+        flash("Resultado encontrado e registrado!" if result["state"] == "completed" else result["message"], "success")
+    except ValueError as exc:
+        flash(str(exc), "error")
+    return redirect(url_for("social_duel", duel_id=duel_id))
+
+
+@app.route("/notificacoes", methods=["GET", "POST"])
+@social_login_required
+def social_notifications():
+    account = current_social_account()
+    if request.method == "POST":
+        require_csrf()
+        get_db().execute("UPDATE social_notifications SET is_read=1 WHERE account_id=?", (account["account_id"],))
+        get_db().commit()
+        return redirect(url_for("social_notifications"))
+    rows = get_db().execute(
+        """SELECT n.*,p.nickname actor_name,p.avatar_url,p.avatar_file
+           FROM social_notifications n LEFT JOIN players p ON p.id=n.actor_player_id
+           WHERE n.account_id=? ORDER BY n.id DESC LIMIT 100""",
+        (account["account_id"],),
+    ).fetchall()
+    return render_template("social_notifications.html", notifications=rows)
+
+
+def build_share_links(url, title):
+    text_value = f"{title} — {url}"
+    encoded_url = quote(url, safe="")
+    encoded_text = quote(text_value, safe="")
+    return {
+        "url": url,
+        "title": title,
+        "whatsapp": f"https://wa.me/?text={encoded_text}",
+        "telegram": f"https://t.me/share/url?url={encoded_url}&text={quote(title, safe='')}",
+        "facebook": f"https://www.facebook.com/sharer/sharer.php?u={encoded_url}",
+        "x": f"https://twitter.com/intent/tweet?text={quote(title, safe='')}&url={encoded_url}",
+    }
+
+
+app.jinja_env.globals["build_share_links"] = build_share_links
+
+
+def _social_share_font(size, bold=False):
+    from PIL import ImageFont
+    candidates = [
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
+    ]
+    for candidate in candidates:
+        if Path(candidate).exists():
+            return ImageFont.truetype(candidate, size)
+    return ImageFont.load_default()
+
+
+def _load_social_avatar(player, size):
+    from PIL import Image, ImageDraw, ImageOps
+    image = None
+    try:
+        local = (player.get("avatar_file") if isinstance(player, dict) else player["avatar_file"]) or ""
+    except Exception:
+        local = ""
+    if local:
+        path = UPLOAD_DIR / Path(local).name
+        if path.exists() and path.is_file():
+            try:
+                image = Image.open(path).convert("RGB")
+            except Exception:
+                image = None
+    if image is None:
+        try:
+            remote = social_avatar_src(player)
+            parsed = urlparse(remote)
+            host = parsed.netloc.lower().split(":")[0]
+            allowed = (
+                host.endswith("steamstatic.com") or host.endswith("akamaihd.net")
+                or host == "lh3.googleusercontent.com"
+            )
+            if remote and parsed.scheme in ("http", "https") and allowed:
+                response = requests.get(remote, timeout=6, stream=True)
+                response.raise_for_status()
+                data = response.raw.read(4 * 1024 * 1024 + 1)
+                if len(data) <= 4 * 1024 * 1024:
+                    image = Image.open(io.BytesIO(data)).convert("RGB")
+        except Exception:
+            image = None
+    if image is None:
+        image = Image.new("RGB", (size, size), "#181d25")
+        draw = ImageDraw.Draw(image)
+        draw.ellipse((5, 5, size - 5, size - 5), fill="#2a1511", outline="#e95d20", width=5)
+        nickname = "?"
+        try:
+            nickname = (player.get("nickname") if isinstance(player, dict) else player["nickname"]) or "?"
+        except Exception:
+            pass
+        initial = nickname.strip()[:1].upper() or "?"
+        font = _social_share_font(max(size // 3, 24), True)
+        box = draw.textbbox((0, 0), initial, font=font)
+        draw.text(((size - (box[2] - box[0])) / 2, (size - (box[3] - box[1])) / 2 - 8), initial, font=font, fill="#ffffff")
+    image = ImageOps.fit(image, (size, size), method=Image.Resampling.LANCZOS)
+    mask = Image.new("L", (size, size), 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, size - 1, size - 1), fill=255)
+    return image, mask
+
+
+def _draw_centered(draw, xy, text_value, font, fill, max_width=None):
+    text_value = str(text_value or "")
+    if max_width:
+        while len(text_value) > 3 and draw.textbbox((0, 0), text_value, font=font)[2] > max_width:
+            text_value = text_value[:-2].rstrip() + "…"
+    box = draw.textbbox((0, 0), text_value, font=font)
+    draw.text((xy[0] - (box[2] - box[0]) / 2, xy[1]), text_value, font=font, fill=fill)
+
+
+def _fit_social_font(draw, text_value, max_size, min_size, max_width, bold=True):
+    for size in range(max_size, min_size - 1, -2):
+        font = _social_share_font(size, bold)
+        if draw.textbbox((0, 0), str(text_value), font=font)[2] <= max_width:
+            return font
+    return _social_share_font(min_size, bold)
+
+
+def _draw_social_wrapped(draw, xy, text_value, font, fill, max_width, max_lines=2, line_gap=8):
+    words = str(text_value or "").split()
+    lines = []
+    current = ""
+    while words and len(lines) < max_lines:
+        word = words.pop(0)
+        candidate = f"{current} {word}".strip()
+        if draw.textbbox((0, 0), candidate, font=font)[2] <= max_width or not current:
+            current = candidate
+        else:
+            lines.append(current)
+            current = word
+    if current and len(lines) < max_lines:
+        lines.append(current)
+    if words and lines:
+        last = lines[-1]
+        while last and draw.textbbox((0, 0), last + "…", font=font)[2] > max_width:
+            last = last[:-1].rstrip()
+        lines[-1] = last + "…"
+    y = xy[1]
+    for line in lines:
+        draw.text((xy[0], y), line, font=font, fill=fill)
+        box = draw.textbbox((xy[0], y), line, font=font)
+        y += (box[3] - box[1]) + line_gap
+    return y
+
+
+def _render_profile_share_card(profile):
+    from PIL import Image, ImageDraw
+    canvas = Image.new("RGB", (1200, 630), "#07090d")
+    draw = ImageDraw.Draw(canvas)
+    draw.rounded_rectangle((45, 42, 1155, 588), radius=30, fill="#0d1118", outline="#e95d20", width=3)
+    draw.rectangle((45, 42, 63, 588), fill="#e95d20")
+    draw.text((98, 88), "CHAMAS FLAMEJANTES", font=_social_share_font(30, True), fill="#f47a45")
+    draw.text((98, 132), "PERFIL OFICIAL • ARENA X1", font=_social_share_font(18, True), fill="#87919b")
+    avatar, mask = _load_social_avatar(profile, 270)
+    canvas.paste(avatar, (100, 215), mask)
+    draw.ellipse((95, 210, 375, 490), outline="#f47a45", width=7)
+    name_font = _fit_social_font(draw, profile["nickname"], 56, 30, 665, True)
+    draw.text((435, 225), profile["nickname"], font=name_font, fill="#ffffff")
+    quote_text = (profile.get("quote") or "Pronto para a próxima batalha.")[:120]
+    _draw_social_wrapped(draw, (438, 305), f"“{quote_text}”", _social_share_font(24), "#c3c9ce", 655, 2)
+    stats = profile["stats"]
+    draw.text((438, 390), f"{stats['wins']} VITÓRIAS", font=_social_share_font(31, True), fill="#70d7a4")
+    draw.text((680, 390), f"{stats['losses']} DERROTAS", font=_social_share_font(31, True), fill="#e97970")
+    draw.text((438, 454), f"ELO 1X1: {profile.get('elo_1v1') or 'SEM ELO'}", font=_social_share_font(24, True), fill="#f3a067")
+    draw.text((98, 535), "chamasflamejantes.com.br", font=_social_share_font(20, True), fill="#87919b")
+    output = io.BytesIO()
+    canvas.save(output, "PNG", optimize=True)
+    output.seek(0)
+    return output
+
+
+def _render_duel_share_card(duel):
+    from PIL import Image, ImageDraw
+    canvas = Image.new("RGB", (1200, 630), "#07090d")
+    draw = ImageDraw.Draw(canvas)
+    draw.rounded_rectangle((45, 42, 1155, 588), radius=30, fill="#0d1118", outline="#e95d20", width=3)
+    draw.text((75, 70), "CHAMAS FLAMEJANTES", font=_social_share_font(28, True), fill="#f47a45")
+    _draw_centered(draw, (600, 122), "RESULTADO OFICIAL • ARENA X1", _social_share_font(23, True), "#a3abb2")
+    winner, loser = duel["winner"], duel["loser"]
+    winner_avatar, winner_mask = _load_social_avatar(winner, 225)
+    loser_avatar, loser_mask = _load_social_avatar(loser, 190)
+    canvas.paste(winner_avatar, (172, 195), winner_mask)
+    canvas.paste(loser_avatar, (825, 212), loser_mask)
+    draw.ellipse((166, 189, 403, 426), outline="#f3a067", width=8)
+    draw.ellipse((819, 206, 1021, 408), outline="#6b737c", width=5)
+    _draw_centered(draw, (285, 450), winner["nickname"], _social_share_font(33, True), "#ffffff", 360)
+    _draw_centered(draw, (920, 435), loser["nickname"], _social_share_font(28, True), "#aeb5bb", 300)
+    _draw_centered(draw, (285, 500), "VENCEDOR", _social_share_font(24, True), "#f47a45")
+    _draw_centered(draw, (920, 480), "DERROTADO", _social_share_font(20, True), "#777f88")
+    _draw_centered(draw, (600, 280), "VS", _social_share_font(55, True), "#f47a45")
+    _draw_centered(draw, (600, 355), f"PARTIDA #{duel['match_id']}", _social_share_font(22, True), "#ffffff")
+    if duel.get("match_map") or duel.get("match_duration"):
+        match_summary = " • ".join(value for value in (duel.get("match_map"), duel.get("match_duration")) if value)
+        _draw_centered(draw, (600, 395), match_summary, _social_share_font(17, True), "#929ba4", 330)
+    draw.text((75, 548), "Resultado verificado pelo AoMStats", font=_social_share_font(18), fill="#7f8993")
+    output = io.BytesIO()
+    canvas.save(output, "PNG", optimize=True)
+    output.seek(0)
+    return output
+
+
+@app.get("/midia/perfil/<int:player_id>.png")
+def social_profile_share_image(player_id):
+    player = get_social_player(player_id)
+    if not player:
+        abort(404)
+    response = send_file(_render_profile_share_card(social_player_payload(player)), mimetype="image/png", download_name=f"perfil-{player_id}.png")
+    response.headers["Cache-Control"] = "public, max-age=900"
+    return response
+
+
+@app.get("/midia/duelo/<share_token>.png")
+def social_duel_share_image(share_token):
+    row = social_duel_row(share_token=share_token)
+    if not row or row["status"] != "completed":
+        abort(404)
+    response = send_file(_render_duel_share_card(social_duel_payload(row)), mimetype="image/png", download_name=f"duelo-{row['id']}.png")
+    response.headers["Cache-Control"] = "public, max-age=900"
+    return response
+
+
+@app.get("/arena/resultado/<share_token>")
+def social_duel_result_share(share_token):
+    row = social_duel_row(share_token=share_token)
+    if not row or row["status"] != "completed":
+        abort(404)
+    duel = social_duel_payload(row)
+    result_url = absolute_site_url(url_for("social_duel_result_share", share_token=share_token))
+    share = build_share_links(result_url, f"{duel['winner']['nickname']} venceu na Arena X1")
+    return render_template("social_duel.html", duel=duel, participant=False, share=share, public_result=True)
 
 
 def public_submission_identity(raw_url):
@@ -3402,6 +4469,18 @@ def sitemap_xml():
                 build_id=build_id,
             )
 
+    social_profiles = get_db().execute(
+        "SELECT player_id FROM social_accounts WHERE player_id IS NOT NULL ORDER BY player_id"
+    ).fetchall()
+    for profile in social_profiles:
+        add_url("social_profile", player_id=profile["player_id"])
+
+    completed_duels = get_db().execute(
+        "SELECT share_token FROM social_duels WHERE status='completed' ORDER BY id"
+    ).fetchall()
+    for duel in completed_duels:
+        add_url("social_duel_result_share", share_token=duel["share_token"])
+
     unique_paths = list(dict.fromkeys(paths))
     url_nodes = "".join(
         f"<url><loc>{html_lib.escape(SEO_BASE_URL + path, quote=False)}</loc></url>"
@@ -3424,6 +4503,11 @@ def robots_txt():
         "Allow: /",
         "Disallow: /admin",
         "Disallow: /login",
+        "Disallow: /entrar",
+        "Disallow: /auth/",
+        "Disallow: /meu-perfil",
+        "Disallow: /notificacoes",
+        "Disallow: /duelo/",
         "Disallow: /setup",
         f"Sitemap: {SEO_BASE_URL}/sitemap.xml",
         "",
@@ -3433,21 +4517,19 @@ def robots_txt():
 
 @app.get("/health")
 def health():
-    return {"version":"19.2-menu-guia-menor-elo","database":"ok"}
+    return {"version":"20-social-x1-google","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 init_db()
 migrate_v6_db()
-ensure_default_admin()
-print("🔥 CHAMAS FLAMEJANTES V19.2 — MENU GARANTIDO + MENOR ELO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V20 — REDE SOCIAL + ARENA X1\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V19.2 — MENU GARANTIDO + MENOR ELO")
+    print(" 🔥 CHAMAS FLAMEJANTES V20 — REDE SOCIAL + ARENA X1")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
-    print(" Admin padrão: yukinochannyan")
-    print(" Senha padrão: yukinochannyan60")
+    print(" Primeiro painel: abra /setup se ainda não existir um administrador")
     print(" Torneios: ilimitados | FFA | FWG | 1v1 | 2x2 | MD3 1x1/2x2/3x3")
     print("=" * 68 + "\n")
     app.run(host="0.0.0.0", port=int(os.environ.get('PORT',5000)), debug=False)

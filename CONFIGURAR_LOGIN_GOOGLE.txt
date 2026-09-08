@@ -1,0 +1,50 @@
+CONFIGURAR O LOGIN GOOGLE — CHAMAS FLAMEJANTES V20
+===================================================
+
+1. Abra:
+   https://console.cloud.google.com/apis/credentials
+
+2. Crie ou escolha um projeto.
+
+3. Configure a tela de consentimento OAuth:
+   - Nome do app: Chamas Flamejantes
+   - E-mail de suporte: seu e-mail
+   - Público: Externo
+   - Dados solicitados: openid, email e profile
+
+4. Vá em Credenciais > Criar credenciais > ID do cliente OAuth.
+
+5. Escolha o tipo:
+   Aplicativo da Web
+
+6. Em ORIGENS JAVASCRIPT AUTORIZADAS, adicione:
+   https://chamasflamejantes.com.br
+
+7. Em URIs DE REDIRECIONAMENTO AUTORIZADOS, adicione exatamente:
+   https://chamasflamejantes.com.br/auth/google/callback
+
+8. Copie o ID do cliente e a chave secreta.
+
+9. No Railway, abra o serviço WEB > Variables > New Variable e adicione:
+
+   PUBLIC_BASE_URL=https://chamasflamejantes.com.br
+   GOOGLE_CLIENT_ID=COLE_AQUI_O_ID_DO_CLIENTE.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=COLE_AQUI_A_CHAVE_SECRETA
+
+10. Aguarde o novo deploy e abra:
+    https://chamasflamejantes.com.br/health
+
+O resultado deve conter:
+    "google_oauth":"configured"
+
+11. Teste o botão ENTRAR COM GOOGLE:
+    https://chamasflamejantes.com.br/login
+
+IMPORTANTE
+----------
+- Não envie a GOOGLE_CLIENT_SECRET para ninguém e não coloque essa chave no GitHub.
+- Se o app estiver no modo Teste no Google Cloud, adicione os e-mails permitidos
+  em "Usuários de teste". Para liberar a todos, publique o app em Produção.
+- O Google confirma a identidade e o e-mail. Ele não confirma sozinho que a conta
+  Steam pertence à mesma pessoa. O site impede que o mesmo AoMStats seja usado por
+  duas contas, mas não deve afirmar que o e-mail prova a propriedade da Steam.
