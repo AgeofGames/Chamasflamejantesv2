@@ -67,7 +67,7 @@
     <article class="community-highlight best">
       <small>👑 MELHOR DA COMUNIDADE</small>
       {% if avatar_src(community_best) %}<img src="{{ avatar_src(community_best) }}" class="community-avatar">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}
-      <h3>{{ community_best.nickname }}</h3>{% if community_best.has_elo %}<strong>{{ community_best.community_elo }} ELO</strong>{% else %}<strong class="no-elo-badge big">SEM ELO</strong><span class="level-line">{{ community_level_text(community_best) }}</span>{% endif %}<span class="normal-record">{{ community_best.normal_wins }}V • {{ community_best.normal_losses }}D em normais</span>{% if community_best.quote %}<span class="player-quote">“{{community_best.quote}}”</span>{% endif %}
+      <h3{% if player_name_color(community_best) %} style="color:{{player_name_color(community_best)}}"{% endif %}>{{ community_best.nickname }}</h3>{% if community_best.has_elo %}<strong>{{ community_best.community_elo }} ELO</strong>{% else %}<strong class="no-elo-badge big">SEM ELO</strong><span class="level-line">{{ community_level_text(community_best) }}</span>{% endif %}<span class="normal-record">{{ community_best.normal_wins }}V • {{ community_best.normal_losses }}D em normais</span>{% if community_best.quote %}<span class="player-quote">“{{community_best.quote}}”</span>{% endif %}
       {% if community_best.aomstats_url %}<a class="neon-profile" target="_blank" href="{{ community_best.aomstats_url }}">PERFIL AOMSTATS ↗</a>{% endif %}
     </article>
     {% endif %}
@@ -75,7 +75,7 @@
     <article class="community-highlight worst">
       <small>📉 MENOR ELO</small>
       {% if avatar_src(community_worst) %}<img src="{{ avatar_src(community_worst) }}" class="community-avatar">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}
-      <h3>{{ community_worst.nickname }}</h3>{% if community_worst.has_elo %}<strong>{{ community_worst.community_elo }} ELO</strong>{% else %}<strong class="no-elo-badge big">SEM ELO</strong><span class="level-line">{{ community_level_text(community_worst) }}</span>{% endif %}<span class="normal-record">{{ community_worst.normal_wins }}V • {{ community_worst.normal_losses }}D em normais</span>{% if community_worst.quote %}<span class="player-quote">“{{community_worst.quote}}”</span>{% endif %}
+      <h3{% if player_name_color(community_worst) %} style="color:{{player_name_color(community_worst)}}"{% endif %}>{{ community_worst.nickname }}</h3>{% if community_worst.has_elo %}<strong>{{ community_worst.community_elo }} ELO</strong>{% else %}<strong class="no-elo-badge big">SEM ELO</strong><span class="level-line">{{ community_level_text(community_worst) }}</span>{% endif %}<span class="normal-record">{{ community_worst.normal_wins }}V • {{ community_worst.normal_losses }}D em normais</span>{% if community_worst.quote %}<span class="player-quote">“{{community_worst.quote}}”</span>{% endif %}
       {% if community_worst.aomstats_url %}<a class="neon-profile danger-neon" target="_blank" href="{{ community_worst.aomstats_url }}">PERFIL AOMSTATS ↗</a>{% endif %}
     </article>
     {% endif %}

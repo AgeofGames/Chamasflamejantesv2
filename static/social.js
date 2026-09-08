@@ -1,6 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
   const modal = document.getElementById("profile-modal");
   const content = document.getElementById("profile-modal-content");
+  const notifications = document.getElementById("notification-popover");
+  const notificationToggle = document.querySelector("[data-notification-toggle]");
+
+  const setNotificationsOpen = (open) => {
+    if (!notifications) return;
+    notifications.hidden = !open;
+    if (notificationToggle) notificationToggle.setAttribute("aria-expanded", open ? "true" : "false");
+  };
 
   const closeModal = () => {
     if (!modal) return;
@@ -10,6 +18,20 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   document.addEventListener("click", async (event) => {
+    const notificationButton = event.target.closest("[data-notification-toggle],[data-open-notifications]");
+    if (notificationButton && notifications) {
+      event.preventDefault();
+      setNotificationsOpen(notifications.hidden);
+      return;
+    }
+    if (event.target.closest("[data-notification-close]")) {
+      setNotificationsOpen(false);
+      return;
+    }
+    if (notifications && !notifications.hidden && !event.target.closest("#notification-popover")) {
+      setNotificationsOpen(false);
+    }
+
     const trigger = event.target.closest(".profile-popup-trigger[data-profile-card-url]");
     if (trigger && modal && content) {
       event.preventDefault();
@@ -55,7 +77,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeModal();
+    if (event.key === "Escape") {
+      closeModal();
+      setNotificationsOpen(false);
+    }
   });
 
   const search = document.getElementById("arena-player-search");

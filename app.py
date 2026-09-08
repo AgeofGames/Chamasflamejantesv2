@@ -281,6 +281,43 @@ def normalize_profile_url(raw: str):
     return f"https://aomstats.io/profile/{profile_id}", profile_id
 
 
+_AOM_COLOR_PREFIX_RE = re.compile(
+    r"^\s*<color\s*=?\s*([0-9]*\.?[0-9]+)\s*,\s*([0-9]*\.?[0-9]+)\s*,\s*([0-9]*\.?[0-9]+)\s*>\s*",
+    re.IGNORECASE,
+)
+
+
+def parse_aom_nickname(raw: str):
+    """Oculta o código <colorR,G,B> do AoM e devolve nome + cor CSS segura."""
+    raw_name = html_lib.unescape(str(raw or "")).strip()
+    color = ""
+    match = _AOM_COLOR_PREFIX_RE.match(raw_name)
+    if match:
+        components = [float(match.group(index)) for index in (1, 2, 3)]
+        if any(component > 1 for component in components):
+            components = [component / 255 for component in components]
+        rgb = [max(0, min(255, round(component * 255))) for component in components]
+        color = "#{:02x}{:02x}{:02x}".format(*rgb)
+        display_name = raw_name[match.end():].strip()
+    else:
+        # Mesmo um código fora do padrão nunca deve aparecer como parte do nick.
+        display_name = re.sub(r"^\s*<color[^>]*>\s*", "", raw_name, flags=re.IGNORECASE).strip()
+    return (display_name or "Jogador")[:80], color, raw_name[:180]
+
+
+def player_name_color(player):
+    if not player:
+        return ""
+    try:
+        color = player["nickname_color"] or ""
+    except (KeyError, TypeError, IndexError):
+        color = ""
+    return color if re.fullmatch(r"#[0-9a-fA-F]{6}", str(color)) else ""
+
+
+app.jinja_env.globals["player_name_color"] = player_name_color
+
+
 def _first_srcset_url(value: str):
     if not value:
         return ""
@@ -610,9 +647,12 @@ def fetch_aomstats(profile_url: str):
     if not nickname:
         raise ValueError("Não foi possível identificar o jogador no AoMStats.")
 
+    clean_nickname, nickname_color, nickname_raw = parse_aom_nickname(nickname)
     normal_stats = fetch_aomstats_normal_stats(profile_url, headers=headers)
     return {
-        "nickname": nickname,
+        "nickname": clean_nickname,
+        "nickname_raw": nickname_raw,
+        "nickname_color": nickname_color,
         "elo_1v1": elos["1v1"],
         "elo_team": elos["team"],
         "avatar_url": avatar_url,
@@ -1113,6 +1153,9 @@ def upsert_public_player(raw_url, nickname, manual_elo, discord, tournament, upl
     nickname = (info.get("nickname") if info else "") or (nickname or "").strip()
     if not nickname:
         raise ValueError("Não consegui obter o Nick. Digite o Nick manualmente.")
+    clean_nickname, nickname_color, nickname_raw = parse_aom_nickname(
+        (info or {}).get("nickname_raw") or nickname
+    )
     quote = (quote or "").strip()[:220]
 
     fetched_elo = None
@@ -1176,7 +1219,7 @@ def upsert_public_player(raw_url, nickname, manual_elo, discord, tournament, upl
         # Se a consulta falhar, não apagamos Elo/estatísticas já conhecidas.
         db.execute(
             """UPDATE players SET
-               nickname=?, discord=?, aomstats_url=?,
+               nickname=?, nickname_raw=?, nickname_color=?, discord=?, aomstats_url=?,
                elo_1v1=COALESCE(?,elo_1v1),
                elo_team=COALESCE(?,elo_team),
                elo_verified=MAX(elo_verified,?),
@@ -1190,10 +1233,11 @@ def upsert_public_player(raw_url, nickname, manual_elo, discord, tournament, upl
                normal_level_label=CASE WHEN ? THEN ? ELSE normal_level_label END,
                normal_stats_available=CASE WHEN ? THEN 1 ELSE normal_stats_available END,
                normal_stats_updated_at=CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE normal_stats_updated_at END,
-               updated_at=CURRENT_TIMESTAMP
+               is_active=1,updated_at=CURRENT_TIMESTAMP
                WHERE id=?""",
             (
-                nickname[:80], (discord or existing["discord"] or "")[:80], profile_url,
+                clean_nickname, nickname_raw, (info or {}).get("nickname_color") or nickname_color,
+                (discord or existing["discord"] or "")[:80], profile_url,
                 elo_1v1, elo_team, verified, final_remote, final_file,
                 quote, quote,
                 stats_available, stat_values["normal_wins"],
@@ -1211,12 +1255,13 @@ def upsert_public_player(raw_url, nickname, manual_elo, discord, tournament, upl
 
     db.execute(
         """INSERT INTO players
-           (nickname,discord,aomstats_url,aomstats_profile_id,elo_1v1,elo_team,elo_verified,
+           (nickname,nickname_raw,nickname_color,discord,aomstats_url,aomstats_profile_id,elo_1v1,elo_team,elo_verified,
             avatar_url,avatar_file,quote,normal_wins,normal_losses,normal_games,normal_win_rate,
             normal_level,normal_level_label,normal_stats_available,normal_stats_updated_at)
-           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE '' END)""",
+           VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE '' END)""",
         (
-            nickname[:80], (discord or "")[:80], profile_url, profile_id,
+            clean_nickname, nickname_raw, (info or {}).get("nickname_color") or nickname_color,
+            (discord or "")[:80], profile_url, profile_id,
             elo_1v1, elo_team, verified, avatar_url, new_manual_file or cached_file, quote,
             stat_values["normal_wins"], stat_values["normal_losses"], stat_values["normal_games"],
             stat_values["normal_win_rate"], stat_values["normal_level"], stat_values["normal_level_label"],
@@ -1261,6 +1306,9 @@ def create_manual_player(nickname, elo, discord, aomstats_url, tournament, uploa
         fetched = info.get("elo_team") if tournament["elo_mode"] == "team" else info.get("elo_1v1")
         if fetched is not None:
             elo = int(fetched)
+    clean_nickname, nickname_color, nickname_raw = parse_aom_nickname(
+        (info or {}).get("nickname_raw") or nickname
+    )
 
     avatar_url = (info or {}).get("avatar_url", "") or ""
     if direct_avatar:
@@ -1285,19 +1333,21 @@ def create_manual_player(nickname, elo, discord, aomstats_url, tournament, uploa
 
     if existing:
         db.execute(
-            """UPDATE players SET nickname=?,discord=?,aomstats_url=?,elo_1v1=COALESCE(?,elo_1v1),elo_team=COALESCE(?,elo_team),
+            """UPDATE players SET nickname=?,nickname_raw=?,nickname_color=?,discord=?,aomstats_url=?,elo_1v1=COALESCE(?,elo_1v1),elo_team=COALESCE(?,elo_team),
                elo_verified=MAX(elo_verified,?),avatar_url=CASE WHEN ?<>'' THEN ? ELSE avatar_url END,
-               avatar_file=CASE WHEN ?<>'' THEN ? ELSE avatar_file END,updated_at=CURRENT_TIMESTAMP WHERE id=?""",
-            (nickname[:80], (discord or existing["discord"] or "")[:80], profile_url or existing["aomstats_url"], elo_1v1, elo_team,
+               avatar_file=CASE WHEN ?<>'' THEN ? ELSE avatar_file END,is_active=1,updated_at=CURRENT_TIMESTAMP WHERE id=?""",
+            (clean_nickname, nickname_raw, (info or {}).get("nickname_color") or nickname_color,
+             (discord or existing["discord"] or "")[:80], profile_url or existing["aomstats_url"], elo_1v1, elo_team,
              verified, avatar_url, avatar_url, avatar_file, avatar_file, existing["id"])
         )
         db.commit()
         return existing["id"]
 
     db.execute(
-        """INSERT INTO players(nickname,discord,aomstats_url,aomstats_profile_id,elo_1v1,elo_team,elo_verified,avatar_url,avatar_file)
-           VALUES (?,?,?,?,?,?,?,?,?)""",
-        (nickname[:80], (discord or "")[:80], profile_url, profile_id, elo_1v1, elo_team, verified, avatar_url, avatar_file)
+        """INSERT INTO players(nickname,nickname_raw,nickname_color,discord,aomstats_url,aomstats_profile_id,elo_1v1,elo_team,elo_verified,avatar_url,avatar_file)
+           VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+        (clean_nickname, nickname_raw, (info or {}).get("nickname_color") or nickname_color,
+         (discord or "")[:80], profile_url, profile_id, elo_1v1, elo_team, verified, avatar_url, avatar_file)
     )
     db.commit()
     return db.execute("SELECT id FROM players WHERE aomstats_profile_id=?", (profile_id,)).fetchone()["id"]
@@ -1549,6 +1599,24 @@ def migrate_v6_db():
     if not _has_column(db, "players", "quote"):
         db.execute("ALTER TABLE players ADD COLUMN quote TEXT NOT NULL DEFAULT ''")
 
+    # V21 — nome colorido do AoM, participação automática e exclusão recuperável.
+    player_v21_cols = {
+        "nickname_raw": "TEXT NOT NULL DEFAULT ''",
+        "nickname_color": "TEXT NOT NULL DEFAULT ''",
+        "is_active": "INTEGER NOT NULL DEFAULT 1",
+    }
+    for col, definition in player_v21_cols.items():
+        if not _has_column(db, "players", col):
+            db.execute(f"ALTER TABLE players ADD COLUMN {col} {definition}")
+
+    for player in db.execute("SELECT id,nickname,nickname_raw FROM players").fetchall():
+        source_name = player["nickname_raw"] or player["nickname"]
+        clean_name, name_color, raw_name = parse_aom_nickname(source_name)
+        db.execute(
+            "UPDATE players SET nickname=?,nickname_raw=?,nickname_color=? WHERE id=?",
+            (clean_name, raw_name, name_color, player["id"]),
+        )
+
     # V20 — a conta Google passa a ser a identidade do jogador. Os perfis continuam
     # na tabela players para preservar torneios, Elo, avatares e cadastros antigos.
     db.executescript("""
@@ -1611,6 +1679,16 @@ def migrate_v6_db():
     CREATE INDEX IF NOT EXISTS idx_social_notifications_account
         ON social_notifications(account_id,is_read,created_at DESC);
     """)
+
+    # Todo perfil Google já vinculado ao AoMStats participa automaticamente das
+    # duas classificações. Perfis sem AoMStats continuam fora até vincularem.
+    db.execute(
+        """INSERT OR IGNORE INTO community_members(player_id,community_elo,notes)
+           SELECT p.id,COALESCE(p.elo_1v1,0),'Entrada automática pelo perfil do site'
+           FROM social_accounts sa JOIN players p ON p.id=sa.player_id
+           WHERE sa.player_id IS NOT NULL AND p.is_active=1
+             AND COALESCE(p.aomstats_profile_id,'')<>'' AND COALESCE(p.aomstats_url,'')<>''"""
+    )
 
     # Copia uma única vez os duelos V11 para o novo histórico, sem alterar os originais.
     legacy_duels = db.execute(
@@ -1690,13 +1768,14 @@ def community_ranking():
               cm.id community_member_id,
               CASE WHEN p.elo_1v1 IS NOT NULL AND p.elo_1v1>0 THEN p.elo_1v1 ELSE 0 END community_elo,
               cm.notes,
-              p.id player_id,p.nickname,p.discord,p.aomstats_url,p.aomstats_profile_id,
+              p.id player_id,p.nickname,p.nickname_raw,p.nickname_color,p.discord,p.aomstats_url,p.aomstats_profile_id,
               p.elo_1v1,p.elo_team,p.elo_verified,p.avatar_url,p.avatar_file,p.quote,
               p.normal_wins,p.normal_losses,p.normal_games,p.normal_win_rate,
               p.normal_level,p.normal_level_label,p.normal_stats_available,p.normal_stats_updated_at,
               CASE WHEN p.elo_1v1 IS NOT NULL AND p.elo_1v1>0 THEN 1 ELSE 0 END has_elo
            FROM community_members cm
            JOIN players p ON p.id=cm.player_id
+           WHERE p.is_active=1 AND COALESCE(p.aomstats_profile_id,'')<>'' AND COALESCE(p.aomstats_url,'')<>''
            ORDER BY
               CASE WHEN p.elo_1v1 IS NOT NULL AND p.elo_1v1>0 THEN 0 ELSE 1 END ASC,
               CASE WHEN p.elo_1v1 IS NOT NULL AND p.elo_1v1>0 THEN p.elo_1v1 ELSE 0 END DESC,
@@ -1806,9 +1885,9 @@ def current_social_account():
     row = get_db().execute(
         """SELECT sa.id account_id,sa.google_sub,sa.email,sa.google_name,sa.google_picture,
                   sa.player_id,sa.created_at,sa.last_login_at,
-                  p.nickname,p.discord,p.aomstats_url,p.aomstats_profile_id,p.elo_1v1,p.elo_team,
+                  p.nickname,p.nickname_raw,p.nickname_color,p.discord,p.aomstats_url,p.aomstats_profile_id,p.elo_1v1,p.elo_team,
                   p.elo_verified,p.avatar_url,p.avatar_file,p.quote,p.normal_wins,p.normal_losses,
-                  p.normal_games,p.normal_win_rate,p.normal_level,p.normal_level_label
+                  p.normal_games,p.normal_win_rate,p.normal_level,p.normal_level_label,p.is_active
            FROM social_accounts sa LEFT JOIN players p ON p.id=sa.player_id
            WHERE sa.id=?""",
         (account_id,),
@@ -1837,9 +1916,9 @@ def social_profile_required(view):
         if not account:
             flash("Entre com o Google para continuar.", "error")
             return redirect(url_for("social_login", next=request.full_path.rstrip("?")))
-        if not account["player_id"]:
+        if not account["player_id"] or not account["aomstats_profile_id"] or not account["is_active"]:
             flash("Vincule primeiro o seu perfil do AoMStats.", "error")
-            return redirect(url_for("social_profile_setup"))
+            return redirect(url_for("social_profile_setup", next=request.full_path.rstrip("?")))
         return view(*args, **kwargs)
     return wrapped
 
@@ -1944,10 +2023,39 @@ def social_duel_payload(row):
     data["match_map"] = str(match_details.get("map") or "").strip()
     duration = int(match_details.get("duration") or 0)
     data["match_duration"] = f"{duration // 60}:{duration % 60:02d}" if duration > 0 else ""
+    events = [{
+        "side": "challenger", "kind": "challenge", "author": data["challenger"],
+        "message": row["message"] or "Prepare-se para a batalha!", "created_at": row["requested_at"],
+    }]
+    if row["status"] in ("accepted", "match_pending", "completed"):
+        events.append({
+            "side": "challenged", "kind": "accepted", "author": data["challenged"],
+            "message": "Desafio aceito. Nos vemos no campo de batalha!", "created_at": row["responded_at"],
+        })
+    elif row["status"] == "refused":
+        events.append({
+            "side": "challenged", "kind": "refused", "author": data["challenged"],
+            "message": "Desafio recusado — fugiu da batalha.", "created_at": row["responded_at"],
+        })
+    if row["match_id"]:
+        submitter = data["challenger"] if row["match_submitted_by"] == row["challenger_id"] else data["challenged"]
+        events.append({
+            "side": "challenger" if submitter["id"] == row["challenger_id"] else "challenged",
+            "kind": "match", "author": submitter,
+            "message": f"ID da partida #{row['match_id']} enviado para verificação.",
+            "created_at": row["match_submitted_at"],
+        })
+    if row["status"] == "completed" and data["winner"]:
+        events.append({
+            "side": "system", "kind": "result", "author": None,
+            "message": f"Resultado confirmado: {data['winner']['nickname']} venceu.",
+            "created_at": row["finished_at"],
+        })
+    data["chat_events"] = events
     endpoint_url = (
         url_for("social_duel_result_share", share_token=row["share_token"])
         if row["status"] == "completed"
-        else url_for("social_duel", duel_id=row["id"])
+        else url_for("social_duel_invite_share", share_token=row["share_token"])
     )
     data["public_url"] = absolute_site_url(endpoint_url)
     return data
@@ -1962,17 +2070,32 @@ def social_duels_query(where="", params=(), limit=100):
     return [social_duel_payload(row) for row in rows]
 
 
+def social_notification_items(account_id, limit=12):
+    rows = get_db().execute(
+        """SELECT n.*,p.nickname actor_name,p.nickname_color actor_name_color,
+                  p.avatar_url,p.avatar_file,d.status duel_status,d.challenged_id
+           FROM social_notifications n
+           LEFT JOIN players p ON p.id=n.actor_player_id
+           LEFT JOIN social_duels d ON d.id=n.duel_id
+           WHERE n.account_id=? ORDER BY n.id DESC LIMIT ?""",
+        (account_id, int(limit)),
+    ).fetchall()
+    return [{key: row[key] for key in row.keys()} for row in rows]
+
+
 @app.context_processor
 def inject_globals_v5():
     try:
         ranking = community_ranking()
         social_user = current_social_account()
         unread_notifications = 0
+        notification_items = []
         if social_user:
             unread_notifications = get_db().execute(
                 "SELECT COUNT(*) c FROM social_notifications WHERE account_id=? AND is_read=0",
                 (social_user["account_id"],),
             ).fetchone()["c"]
+            notification_items = social_notification_items(social_user["account_id"])
         return {
             "site": settings(),
             "nav_tournaments": [t for t in all_tournaments(public_only=True) if t["status"] != "finalizado"][:10],
@@ -1986,6 +2109,7 @@ def inject_globals_v5():
             "site_creator": site_creator_profile(),
             "social_user": social_user,
             "unread_notifications": int(unread_notifications or 0),
+            "social_notification_items": notification_items,
             "google_oauth_configured": GOOGLE_OAUTH_CONFIGURED,
             "public_base_url": PUBLIC_BASE_URL,
         }
@@ -2027,13 +2151,21 @@ def tournament_page(slug):
     winners = winners_for_tournament(t["id"])
     standings = round_robin_standings(t["id"]) if t["format_type"] == "round_robin" and t["matches_generated"] else []
     match_count = get_db().execute("SELECT COUNT(*) c FROM matches WHERE tournament_id=?", (t["id"],)).fetchone()["c"]
+    social_account = current_social_account()
+    viewer_registered = bool(
+        social_account and social_account["player_id"]
+        and player_in_tournament(social_account["player_id"], t["id"])
+    )
     return render_template("tournament.html", tournament=t, entries=active, winners=winners, standings=standings, match_count=match_count,
-                           filled=len(active), spots_left=max(int(t["max_entries"]) - len(active), 0))
+                           filled=len(active), spots_left=max(int(t["max_entries"]) - len(active), 0), viewer_registered=viewer_registered)
 
 
 @app.route("/torneio/<slug>/inscricao", methods=["GET", "POST"])
+@social_profile_required
 def tournament_register(slug):
     t = get_public_tournament(slug)
+    social_account = current_social_account()
+    social_player_id = int(social_account["player_id"])
     filled = tournament_entry_count(t["id"])
     if request.method == "POST":
         require_csrf()
@@ -2047,12 +2179,7 @@ def tournament_register(slug):
         db = get_db()
         try:
             if int(t["team_size"]) == 1:
-                player_id = upsert_public_player(
-                    request.form.get("aomstats_url", ""), request.form.get("nickname", ""),
-                    request.form.get("elo", ""), request.form.get("discord", ""), t,
-                    upload=request.files.get("avatar"),
-                    quote=request.form.get("quote", "")
-                )
+                player_id = social_player_id
                 if player_in_tournament(player_id, t["id"]):
                     raise ValueError("Este jogador já está inscrito nesta modalidade.")
                 db.execute(
@@ -2066,12 +2193,15 @@ def tournament_register(slug):
                 member_ids = []
                 roles = ["FOOD", "WOOD", "GOLD"] if t["mode_key"] == "food_wood_gold" else [f"JOGADOR {i}" for i in range(1, int(t["team_size"]) + 1)]
                 for i in range(1, int(t["team_size"]) + 1):
-                    pid = upsert_public_player(
-                        request.form.get(f"member_{i}_aomstats", ""), request.form.get(f"member_{i}_nickname", ""),
-                        request.form.get(f"member_{i}_elo", ""), request.form.get("captain_discord", "" if i > 1 else request.form.get("captain_discord", "")), t,
-                        upload=request.files.get(f"member_{i}_avatar"),
-                        quote=request.form.get(f"member_{i}_quote", "")
-                    )
+                    if i == 1:
+                        pid = social_player_id
+                    else:
+                        pid = upsert_public_player(
+                            request.form.get(f"member_{i}_aomstats", ""), request.form.get(f"member_{i}_nickname", ""),
+                            request.form.get(f"member_{i}_elo", ""), request.form.get("captain_discord", ""), t,
+                            upload=request.files.get(f"member_{i}_avatar"),
+                            quote=request.form.get(f"member_{i}_quote", "")
+                        )
                     if pid in member_ids:
                         raise ValueError("O mesmo jogador não pode ocupar duas vagas na mesma equipe.")
                     if player_in_tournament(pid, t["id"]):
@@ -2095,7 +2225,12 @@ def tournament_register(slug):
             db.rollback()
             flash("Não foi possível concluir: jogador/equipe duplicado nesta modalidade.", "error")
 
-    return render_template("register.html", tournament=t, filled=filled, spots_left=max(int(t["max_entries"]) - filled, 0))
+    return render_template(
+        "register.html", tournament=t, filled=filled,
+        spots_left=max(int(t["max_entries"]) - filled, 0),
+        registration_player=social_player_payload(get_social_player(social_player_id)),
+        already_registered=player_in_tournament(social_player_id, t["id"]),
+    )
 
 
 @app.get("/torneio/<slug>/participantes")
@@ -2105,8 +2240,14 @@ def tournament_participants(slug):
     sort = request.args.get("sort", "order")
     if sort == "elo" and int(t["team_size"]) == 1:
         entries.sort(key=lambda e: -(e["elo_team"] if t["elo_mode"] == "team" else e["elo_1v1"] or 0))
+    social_account = current_social_account()
+    viewer_registered = bool(
+        social_account and social_account["player_id"]
+        and player_in_tournament(social_account["player_id"], t["id"])
+    )
     return render_template("participants.html", tournament=t, entries=entries, sort=sort,
-                           filled=len(entries), spots_left=max(int(t["max_entries"]) - len(entries), 0))
+                           filled=len(entries), spots_left=max(int(t["max_entries"]) - len(entries), 0),
+                           viewer_registered=viewer_registered)
 
 
 @app.get("/torneio/<slug>/confrontos")
@@ -2580,8 +2721,9 @@ def admin_player_edit(player_id):
             flash(str(exc), "error"); return redirect(url_for("admin_tournament", tournament_id=tournament_id))
     elo_1v1 = elo if t["elo_mode"] == "1v1" else p["elo_1v1"]
     elo_team = elo if t["elo_mode"] == "team" else p["elo_team"]
-    db.execute("""UPDATE players SET nickname=?,discord=?,elo_1v1=?,elo_team=?,avatar_url=?,avatar_file=?,quote=?,updated_at=CURRENT_TIMESTAMP WHERE id=?""",
-               (request.form.get("nickname", p["nickname"])[:80], request.form.get("discord", p["discord"])[:80], elo_1v1, elo_team, avatar_url, avatar_file,
+    clean_name, name_color, raw_name = parse_aom_nickname(request.form.get("nickname", p["nickname"]))
+    db.execute("""UPDATE players SET nickname=?,nickname_raw=?,nickname_color=?,discord=?,elo_1v1=?,elo_team=?,avatar_url=?,avatar_file=?,quote=?,updated_at=CURRENT_TIMESTAMP WHERE id=?""",
+               (clean_name, raw_name, name_color, request.form.get("discord", p["discord"])[:80], elo_1v1, elo_team, avatar_url, avatar_file,
                 (request.form.get("quote", p["quote"] or "") or "")[:220], player_id)); db.commit()
     flash("Jogador atualizado.", "success")
     return redirect(url_for("admin_tournament", tournament_id=tournament_id))
@@ -2606,14 +2748,15 @@ def admin_player_refresh(player_id):
             avatar_file = cache_remote_avatar(avatar_url, p["aomstats_profile_id"]) or ""
 
         db.execute(
-            """UPDATE players SET nickname=?,elo_1v1=?,elo_team=?,
+            """UPDATE players SET nickname=?,nickname_raw=?,nickname_color=?,elo_1v1=?,elo_team=?,
                elo_verified=?,avatar_url=?,avatar_file=?,
                normal_wins=?,normal_losses=?,normal_games=?,normal_win_rate=?,
                normal_level=?,normal_level_label=?,normal_stats_available=?,
                normal_stats_updated_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP
                WHERE id=?""",
             (
-                info["nickname"], info.get("elo_1v1"), info.get("elo_team"),
+                info["nickname"], info.get("nickname_raw", info["nickname"]), info.get("nickname_color", ""),
+                info.get("elo_1v1"), info.get("elo_team"),
                 1 if (info.get("elo_1v1") is not None or info.get("elo_team") is not None) else p["elo_verified"],
                 avatar_url, avatar_file,
                 info.get("normal_wins",0), info.get("normal_losses",0), info.get("normal_games",0),
@@ -2764,14 +2907,15 @@ def admin_refresh_all_avatars():
             if not avatar_file and avatar_url and not _is_steam_avatar_url(avatar_url):
                 avatar_file = cache_remote_avatar(avatar_url, p["aomstats_profile_id"]) or ""
             db.execute(
-                """UPDATE players SET nickname=?,elo_1v1=?,elo_team=?,
+                """UPDATE players SET nickname=?,nickname_raw=?,nickname_color=?,elo_1v1=?,elo_team=?,
                    elo_verified=?,avatar_url=?,avatar_file=?,
                    normal_wins=?,normal_losses=?,normal_games=?,normal_win_rate=?,
                    normal_level=?,normal_level_label=?,normal_stats_available=?,
                    normal_stats_updated_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP
                    WHERE id=?""",
                 (
-                    info["nickname"],info.get("elo_1v1"),info.get("elo_team"),
+                    info["nickname"],info.get("nickname_raw",info["nickname"]),info.get("nickname_color", ""),
+                    info.get("elo_1v1"),info.get("elo_team"),
                     1 if (info.get("elo_1v1") is not None or info.get("elo_team") is not None) else p["elo_verified"],
                     avatar_url,avatar_file,
                     info.get("normal_wins",0),info.get("normal_losses",0),info.get("normal_games",0),
@@ -3121,14 +3265,15 @@ def admin_community_refresh(member_id):
         local = local or cached
 
         db.execute(
-            """UPDATE players SET nickname=?,elo_1v1=?,elo_team=?,elo_verified=?,
+            """UPDATE players SET nickname=?,nickname_raw=?,nickname_color=?,elo_1v1=?,elo_team=?,elo_verified=?,
                avatar_url=?,avatar_file=?,
                normal_wins=?,normal_losses=?,normal_games=?,normal_win_rate=?,
                normal_level=?,normal_level_label=?,normal_stats_available=?,
                normal_stats_updated_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP
                WHERE id=?""",
             (
-                info["nickname"], info.get("elo_1v1"), info.get("elo_team"),
+                info["nickname"], info.get("nickname_raw", info["nickname"]), info.get("nickname_color", ""),
+                info.get("elo_1v1"), info.get("elo_team"),
                 1 if info.get("elo_1v1") is not None else row["elo_verified"],
                 remote, local,
                 info.get("normal_wins",0), info.get("normal_losses",0), info.get("normal_games",0),
@@ -3171,9 +3316,24 @@ def admin_community_elo(member_id):
 def admin_community_remove(member_id):
     require_csrf()
     db = get_db()
-    db.execute("DELETE FROM community_members WHERE id=?", (member_id,))
+    member = db.execute("SELECT player_id FROM community_members WHERE id=?", (member_id,)).fetchone()
+    if not member:
+        abort(404)
+    player_id = member["player_id"]
+    # Preserva inscrições e resultados antigos, mas remove integralmente o acesso
+    # social. Se a pessoa voltar a entrar com Google, poderá criar a conta de novo.
+    db.execute(
+        """UPDATE social_duels SET status='cancelled',response_note='Conta removida',
+           finished_at=CURRENT_TIMESTAMP
+           WHERE status IN ('pending','accepted','match_pending')
+             AND (challenger_id=? OR challenged_id=?)""",
+        (player_id, player_id),
+    )
+    db.execute("DELETE FROM social_accounts WHERE player_id=?", (player_id,))
+    db.execute("DELETE FROM community_members WHERE player_id=?", (player_id,))
+    db.execute("UPDATE players SET is_active=0,updated_at=CURRENT_TIMESTAMP WHERE id=?", (player_id,))
     db.commit()
-    flash("Participante removido do ranking da comunidade.", "success")
+    flash("Conta removida do site. O histórico antigo foi preservado e o jogador poderá se cadastrar novamente.", "success")
     return redirect(url_for("admin"))
 
 
@@ -3189,8 +3349,10 @@ def admin_backup():
 def duel_ranking():
     """Ranking da rede social, calculado somente com resultados confirmados pelo AoMStats."""
     players = get_db().execute(
-        """SELECT p.*,sa.google_picture FROM social_accounts sa
-           JOIN players p ON p.id=sa.player_id WHERE sa.player_id IS NOT NULL"""
+        """SELECT p.*,COALESCE(sa.google_picture,'') google_picture
+           FROM players p LEFT JOIN social_accounts sa ON sa.player_id=p.id
+           WHERE p.is_active=1 AND COALESCE(p.aomstats_profile_id,'')<>''
+             AND COALESCE(p.aomstats_url,'')<>''"""
     ).fetchall()
     ranking = []
     for player in players:
@@ -3312,6 +3474,17 @@ def social_google_callback():
                 (claims["sub"], claims["email"][:254], claims.get("name", "")[:120], claims.get("picture", "")[:1000]),
             )
             account_id = cursor.lastrowid
+    linked = db.execute(
+        """SELECT p.id,p.elo_1v1 FROM social_accounts sa JOIN players p ON p.id=sa.player_id
+           WHERE sa.id=? AND p.is_active=1 AND COALESCE(p.aomstats_url,'')<>''""",
+        (account_id,),
+    ).fetchone()
+    if linked:
+        db.execute(
+            """INSERT INTO community_members(player_id,community_elo,notes) VALUES (?,?,?)
+               ON CONFLICT(player_id) DO UPDATE SET community_elo=excluded.community_elo,updated_at=CURRENT_TIMESTAMP""",
+            (linked["id"], int(linked["elo_1v1"] or 0), "Entrada automática pelo perfil do site"),
+        )
     db.commit()
     session["social_account_id"] = account_id
     session.permanent = True
@@ -3319,7 +3492,7 @@ def social_google_callback():
     account = current_social_account()
     next_url = safe_next_url(session.pop("google_oauth_next", ""))
     if not account["player_id"]:
-        return redirect(url_for("social_profile_setup"))
+        return redirect(url_for("social_profile_setup", next=next_url))
     flash("Login Google concluído.", "success")
     return redirect(next_url)
 
@@ -3366,12 +3539,13 @@ def save_social_profile(account, raw_url, quote_text, upload=None, avatar_mode="
             remove_local_avatar(old_file)
             final_file = new_avatar_file
         db.execute(
-            """UPDATE players SET nickname=?,aomstats_url=?,elo_1v1=?,elo_team=?,elo_verified=?,
+            """UPDATE players SET nickname=?,nickname_raw=?,nickname_color=?,aomstats_url=?,elo_1v1=?,elo_team=?,elo_verified=?,
                avatar_url=?,avatar_file=?,quote=?,normal_wins=?,normal_losses=?,normal_games=?,
                normal_win_rate=?,normal_level=?,normal_level_label=?,normal_stats_available=?,
-               normal_stats_updated_at=CURRENT_TIMESTAMP,updated_at=CURRENT_TIMESTAMP WHERE id=?""",
+               normal_stats_updated_at=CURRENT_TIMESTAMP,is_active=1,updated_at=CURRENT_TIMESTAMP WHERE id=?""",
             (
-                info["nickname"][:80], profile_url, info.get("elo_1v1"), info.get("elo_team"),
+                info["nickname"][:80], info.get("nickname_raw", info["nickname"])[:180],
+                info.get("nickname_color", ""), profile_url, info.get("elo_1v1"), info.get("elo_team"),
                 1 if info.get("elo_1v1") is not None or info.get("elo_team") is not None else 0,
                 info.get("avatar_url", "")[:1000], final_file, quote_text,
                 info.get("normal_wins", 0), info.get("normal_losses", 0), info.get("normal_games", 0),
@@ -3383,12 +3557,13 @@ def save_social_profile(account, raw_url, quote_text, upload=None, avatar_mode="
     else:
         cursor = db.execute(
             """INSERT INTO players
-               (nickname,discord,aomstats_url,aomstats_profile_id,elo_1v1,elo_team,elo_verified,
+               (nickname,nickname_raw,nickname_color,discord,aomstats_url,aomstats_profile_id,elo_1v1,elo_team,elo_verified,
                 avatar_url,avatar_file,quote,normal_wins,normal_losses,normal_games,normal_win_rate,
                 normal_level,normal_level_label,normal_stats_available,normal_stats_updated_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)""",
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,CURRENT_TIMESTAMP)""",
             (
-                info["nickname"][:80], "", profile_url, profile_id, info.get("elo_1v1"), info.get("elo_team"),
+                info["nickname"][:80], info.get("nickname_raw", info["nickname"])[:180],
+                info.get("nickname_color", ""), "", profile_url, profile_id, info.get("elo_1v1"), info.get("elo_team"),
                 1 if info.get("elo_1v1") is not None or info.get("elo_team") is not None else 0,
                 info.get("avatar_url", "")[:1000], new_avatar_file, quote_text,
                 info.get("normal_wins", 0), info.get("normal_losses", 0), info.get("normal_games", 0),
@@ -3397,7 +3572,19 @@ def save_social_profile(account, raw_url, quote_text, upload=None, avatar_mode="
             ),
         )
         player_id = cursor.lastrowid
+
+    old_player_id = account["player_id"]
+    if old_player_id and int(old_player_id) != int(player_id):
+        db.execute("DELETE FROM community_members WHERE player_id=?", (old_player_id,))
+        db.execute("UPDATE players SET is_active=0,updated_at=CURRENT_TIMESTAMP WHERE id=?", (old_player_id,))
     db.execute("UPDATE social_accounts SET player_id=? WHERE id=?", (player_id, account["account_id"]))
+    db.execute(
+        """INSERT INTO community_members(player_id,community_elo,notes)
+           VALUES (?,?,?)
+           ON CONFLICT(player_id) DO UPDATE SET
+             community_elo=excluded.community_elo,updated_at=CURRENT_TIMESTAMP""",
+        (player_id, int(info.get("elo_1v1") or 0), "Entrada automática pelo perfil do site"),
+    )
     db.commit()
     return player_id
 
@@ -3406,6 +3593,7 @@ def save_social_profile(account, raw_url, quote_text, upload=None, avatar_mode="
 @social_login_required
 def social_profile_setup():
     account = current_social_account()
+    next_url = safe_next_url(request.values.get("next"), "social_my_profile")
     if request.method == "POST":
         require_csrf()
         try:
@@ -3414,15 +3602,22 @@ def social_profile_setup():
                 request.files.get("avatar"), request.form.get("avatar_mode", "keep"),
             )
             flash("Perfil criado e preenchido pelo AoMStats.", "success")
-            return redirect(url_for("social_profile", player_id=player_id))
+            return redirect(next_url if next_url != url_for("social_my_profile") else url_for("social_profile", player_id=player_id))
         except ValueError as exc:
             flash(str(exc), "error")
-    return render_template("social_profile_edit.html", account=account, player=None, setup_mode=True)
+    return render_template("social_profile_edit.html", account=account, player=None, setup_mode=True, next_url=next_url)
 
 
-@app.route("/meu-perfil", methods=["GET", "POST"])
+@app.get("/meu-perfil")
 @social_profile_required
 def social_my_profile():
+    account = current_social_account()
+    return redirect(url_for("social_profile", player_id=account["player_id"]))
+
+
+@app.route("/meu-perfil/editar", methods=["GET", "POST"])
+@social_profile_required
+def social_profile_edit():
     account = current_social_account()
     player = get_social_player(account["player_id"])
     if request.method == "POST":
@@ -3442,7 +3637,7 @@ def social_my_profile():
 @app.get("/perfil/<int:player_id>")
 def social_profile(player_id):
     player = get_social_player(player_id)
-    if not player:
+    if not player or not player["is_active"]:
         abort(404)
     profile = social_player_payload(player)
     viewer = current_social_account()
@@ -3466,7 +3661,7 @@ def social_profile(player_id):
 @app.get("/perfil/<int:player_id>/card")
 def social_profile_card(player_id):
     player = get_social_player(player_id)
-    if not player:
+    if not player or not player["is_active"]:
         abort(404)
     profile = social_player_payload(player)
     viewer = current_social_account()
@@ -3484,7 +3679,7 @@ def social_challenge_player(player_id):
     viewer = current_social_account()
     challenger_id = int(viewer["player_id"])
     target = get_social_player(player_id)
-    if not target or not target["social_enabled"]:
+    if not target or not target["is_active"] or not target["social_enabled"]:
         abort(404)
     if challenger_id == player_id:
         flash("Você não pode desafiar a si mesmo.", "error")
@@ -3615,20 +3810,38 @@ def verify_social_duel_match(duel, fetched_result=None):
 def x1_page():
     viewer = current_social_account()
     players = [social_player_payload(row) for row in get_db().execute(
-        """SELECT p.*,sa.google_picture FROM social_accounts sa JOIN players p ON p.id=sa.player_id
-           WHERE sa.player_id IS NOT NULL ORDER BY LOWER(p.nickname)"""
+        """SELECT p.*,COALESCE(sa.google_picture,'') google_picture
+           FROM players p LEFT JOIN social_accounts sa ON sa.player_id=p.id
+           WHERE p.is_active=1 AND COALESCE(p.aomstats_profile_id,'')<>''
+             AND COALESCE(p.aomstats_url,'')<>'' ORDER BY LOWER(p.nickname)"""
     ).fetchall()]
     ranking = duel_ranking()
-    received = []
     active = []
     if viewer and viewer["player_id"]:
-        received = social_duels_query("challenged_id=? AND status='pending'", (viewer["player_id"],), 30)
         active = social_duels_query(
-            "(challenger_id=? OR challenged_id=?) AND status IN ('accepted','match_pending')",
+            "(challenger_id=? OR challenged_id=?) AND status IN ('pending','accepted','match_pending')",
             (viewer["player_id"], viewer["player_id"]), 30,
         )
-    history = social_duels_query("status IN ('completed','refused')", (), 60)
-    return render_template('x1.html', players=players, ranking=ranking, received=received, active=active, duels=history)
+    return render_template('x1.html', players=players, ranking=ranking, active=active)
+
+
+@app.get('/x1/historico')
+def social_duel_history():
+    viewer = current_social_account()
+    player_id = request.args.get("jogador", type=int)
+    if player_id:
+        player = get_social_player(player_id)
+        if not player:
+            abort(404)
+        duels = social_duels_query(
+            "(challenger_id=? OR challenged_id=?) AND status IN ('completed','refused')",
+            (player_id, player_id), 150,
+        )
+        title = f"Histórico de {player['nickname']}"
+    else:
+        duels = social_duels_query("status IN ('completed','refused')", (), 150)
+        title = "Histórico de duelos"
+    return render_template("social_duel_history.html", duels=duels, history_title=title, viewer=viewer)
 
 
 @app.get("/duelo/<int:duel_id>")
@@ -3736,6 +3949,12 @@ def social_duel_submit_match(duel_id):
            match_submitted_at=CURRENT_TIMESTAMP WHERE id=?""",
         (match_id, result["match_url"], viewer["player_id"], duel_id),
     )
+    if result["state"] != "completed":
+        other_id = duel["challenged_id"] if viewer["player_id"] == duel["challenger_id"] else duel["challenger_id"]
+        create_social_notification(
+            other_id, viewer["player_id"], duel_id, "match",
+            f"{viewer['nickname']} enviou a partida #{match_id} para verificação.",
+        )
     db.commit()
     stored_duel = social_duel_row(duel_id=duel_id)
     try:
@@ -3779,13 +3998,8 @@ def social_notifications():
         require_csrf()
         get_db().execute("UPDATE social_notifications SET is_read=1 WHERE account_id=?", (account["account_id"],))
         get_db().commit()
-        return redirect(url_for("social_notifications"))
-    rows = get_db().execute(
-        """SELECT n.*,p.nickname actor_name,p.avatar_url,p.avatar_file
-           FROM social_notifications n LEFT JOIN players p ON p.id=n.actor_player_id
-           WHERE n.account_id=? ORDER BY n.id DESC LIMIT 100""",
-        (account["account_id"],),
-    ).fetchall()
+        return redirect(safe_next_url(request.form.get("next"), "social_notifications"))
+    rows = social_notification_items(account["account_id"], 100)
     return render_template("social_notifications.html", notifications=rows)
 
 
@@ -3924,7 +4138,7 @@ def _render_profile_share_card(profile):
     canvas.paste(avatar, (100, 215), mask)
     draw.ellipse((95, 210, 375, 490), outline="#f47a45", width=7)
     name_font = _fit_social_font(draw, profile["nickname"], 56, 30, 665, True)
-    draw.text((435, 225), profile["nickname"], font=name_font, fill="#ffffff")
+    draw.text((435, 225), profile["nickname"], font=name_font, fill=player_name_color(profile) or "#ffffff")
     quote_text = (profile.get("quote") or "Pronto para a próxima batalha.")[:120]
     _draw_social_wrapped(draw, (438, 305), f"“{quote_text}”", _social_share_font(24), "#c3c9ce", 655, 2)
     stats = profile["stats"]
@@ -3952,8 +4166,8 @@ def _render_duel_share_card(duel):
     canvas.paste(loser_avatar, (825, 212), loser_mask)
     draw.ellipse((166, 189, 403, 426), outline="#f3a067", width=8)
     draw.ellipse((819, 206, 1021, 408), outline="#6b737c", width=5)
-    _draw_centered(draw, (285, 450), winner["nickname"], _social_share_font(33, True), "#ffffff", 360)
-    _draw_centered(draw, (920, 435), loser["nickname"], _social_share_font(28, True), "#aeb5bb", 300)
+    _draw_centered(draw, (285, 450), winner["nickname"], _social_share_font(33, True), player_name_color(winner) or "#ffffff", 360)
+    _draw_centered(draw, (920, 435), loser["nickname"], _social_share_font(28, True), player_name_color(loser) or "#aeb5bb", 300)
     _draw_centered(draw, (285, 500), "VENCEDOR", _social_share_font(24, True), "#f47a45")
     _draw_centered(draw, (920, 480), "DERROTADO", _social_share_font(20, True), "#777f88")
     _draw_centered(draw, (600, 280), "VS", _social_share_font(55, True), "#f47a45")
@@ -3962,6 +4176,39 @@ def _render_duel_share_card(duel):
         match_summary = " • ".join(value for value in (duel.get("match_map"), duel.get("match_duration")) if value)
         _draw_centered(draw, (600, 395), match_summary, _social_share_font(17, True), "#929ba4", 330)
     draw.text((75, 548), "Resultado verificado pelo AoMStats", font=_social_share_font(18), fill="#7f8993")
+    output = io.BytesIO()
+    canvas.save(output, "PNG", optimize=True)
+    output.seek(0)
+    return output
+
+
+def _render_challenge_share_card(duel):
+    from PIL import Image, ImageDraw
+    canvas = Image.new("RGB", (1200, 630), "#07090d")
+    draw = ImageDraw.Draw(canvas)
+    draw.rounded_rectangle((45, 42, 1155, 588), radius=30, fill="#0d1118", outline="#e95d20", width=3)
+    draw.rectangle((45, 42, 63, 588), fill="#e95d20")
+    draw.text((92, 72), "CHAMAS FLAMEJANTES", font=_social_share_font(28, True), fill="#f47a45")
+    _draw_centered(draw, (600, 120), "DESAFIO NA ARENA X1", _social_share_font(30, True), "#ffffff")
+
+    challenger, challenged = duel["challenger"], duel["challenged"]
+    first_avatar, first_mask = _load_social_avatar(challenger, 210)
+    second_avatar, second_mask = _load_social_avatar(challenged, 210)
+    canvas.paste(first_avatar, (180, 205), first_mask)
+    canvas.paste(second_avatar, (810, 205), second_mask)
+    draw.ellipse((174, 199, 396, 421), outline="#f47a45", width=7)
+    draw.ellipse((804, 199, 1026, 421), outline="#f47a45", width=7)
+
+    first_color = player_name_color(challenger) or "#ffffff"
+    second_color = player_name_color(challenged) or "#ffffff"
+    first_font = _fit_social_font(draw, challenger["nickname"], 32, 20, 360, True)
+    second_font = _fit_social_font(draw, challenged["nickname"], 32, 20, 360, True)
+    _draw_centered(draw, (285, 445), challenger["nickname"], first_font, first_color, 360)
+    _draw_centered(draw, (915, 445), challenged["nickname"], second_font, second_color, 360)
+    _draw_centered(draw, (600, 275), "VS", _social_share_font(64, True), "#f47a45")
+    _draw_centered(draw, (600, 355), "VOCÊ FOI DESAFIADO", _social_share_font(23, True), "#c5cbd0")
+    _draw_centered(draw, (600, 505), "ABRA O LINK PARA ACEITAR OU RECUSAR", _social_share_font(20, True), "#f3a067")
+    draw.text((92, 548), "chamasflamejantes.com.br", font=_social_share_font(18, True), fill="#7f8993")
     output = io.BytesIO()
     canvas.save(output, "PNG", optimize=True)
     output.seek(0)
@@ -3986,6 +4233,41 @@ def social_duel_share_image(share_token):
     response = send_file(_render_duel_share_card(social_duel_payload(row)), mimetype="image/png", download_name=f"duelo-{row['id']}.png")
     response.headers["Cache-Control"] = "public, max-age=900"
     return response
+
+
+@app.get("/midia/desafio/<share_token>.png")
+def social_duel_invite_share_image(share_token):
+    row = social_duel_row(share_token=share_token)
+    if not row or row["status"] == "completed":
+        abort(404)
+    response = send_file(
+        _render_challenge_share_card(social_duel_payload(row)),
+        mimetype="image/png", download_name=f"desafio-{row['id']}.png",
+    )
+    response.headers["Cache-Control"] = "public, max-age=900"
+    return response
+
+
+@app.get("/arena/desafio/<share_token>")
+def social_duel_invite_share(share_token):
+    row = social_duel_row(share_token=share_token)
+    if not row:
+        abort(404)
+    if row["status"] == "completed":
+        return redirect(url_for("social_duel_result_share", share_token=share_token))
+    viewer = current_social_account()
+    participant = bool(viewer and viewer["player_id"] in (row["challenger_id"], row["challenged_id"]))
+    if viewer and participant:
+        get_db().execute(
+            "UPDATE social_notifications SET is_read=1 WHERE account_id=? AND duel_id=?",
+            (viewer["account_id"], row["id"]),
+        )
+        get_db().commit()
+    duel = social_duel_payload(row)
+    share = build_share_links(duel["public_url"], f"{duel['challenger']['nickname']} x {duel['challenged']['nickname']} — Arena X1")
+    return render_template(
+        "social_duel.html", duel=duel, participant=participant, share=share, public_invite=True,
+    )
 
 
 @app.get("/arena/resultado/<share_token>")
@@ -4433,6 +4715,7 @@ def sitemap_xml():
         "tournament_history",
         "community_page",
         "x1_page",
+        "social_duel_history",
         "maps_page",
         "programs_page",
         "knowledge_page",
@@ -4470,7 +4753,8 @@ def sitemap_xml():
             )
 
     social_profiles = get_db().execute(
-        "SELECT player_id FROM social_accounts WHERE player_id IS NOT NULL ORDER BY player_id"
+        """SELECT id player_id FROM players WHERE is_active=1
+           AND COALESCE(aomstats_profile_id,'')<>'' AND COALESCE(aomstats_url,'')<>'' ORDER BY id"""
     ).fetchall()
     for profile in social_profiles:
         add_url("social_profile", player_id=profile["player_id"])
@@ -4508,6 +4792,7 @@ def robots_txt():
         "Disallow: /meu-perfil",
         "Disallow: /notificacoes",
         "Disallow: /duelo/",
+        "Disallow: /arena/desafio/",
         "Disallow: /setup",
         f"Sitemap: {SEO_BASE_URL}/sitemap.xml",
         "",
@@ -4517,16 +4802,16 @@ def robots_txt():
 
 @app.get("/health")
 def health():
-    return {"version":"20-social-x1-google","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"21-arena-unificada","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 init_db()
 migrate_v6_db()
-print("🔥 CHAMAS FLAMEJANTES V20 — REDE SOCIAL + ARENA X1\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V21 — ARENA UNIFICADA\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V20 — REDE SOCIAL + ARENA X1")
+    print(" 🔥 CHAMAS FLAMEJANTES V21 — ARENA UNIFICADA")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

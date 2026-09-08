@@ -4,11 +4,12 @@
 <section class="profile-editor-shell">
   <aside class="profile-account-card">
     {% if player and social_avatar_src(player) %}<img src="{{social_avatar_src(player)}}" alt="Sua foto">{% elif account.google_picture %}<img src="{{account.google_picture}}" alt="Sua foto Google">{% else %}<span class="profile-big-fallback">🔥</span>{% endif %}
-    <small>MINHA CONTA</small><h1>{{player.nickname if player else account.google_name}}</h1><p>{{account.email}}</p><em><b>G</b> Conta Google conectada</em>
+    <small>MINHA CONTA</small><h1{% if player and player_name_color(player) %} style="color:{{player_name_color(player)}}"{% endif %}>{{player.nickname if player else account.google_name}}</h1><p>{{account.email}}</p><em><b>G</b> Conta Google conectada</em>
     <dl><div><dt>Perfil</dt><dd>{{'Configuração inicial' if setup_mode else 'Ativo na Arena X1'}}</dd></div><div><dt>Membro desde</dt><dd>{{account.created_at}}</dd></div></dl>
   </aside>
   <form class="profile-editor-form" method="post" enctype="multipart/form-data">
     <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+    {% if setup_mode and next_url %}<input type="hidden" name="next" value="{{next_url}}">{% endif %}
     <span class="eyebrow">{{'PRIMEIRO ACESSO' if setup_mode else 'PERSONALIZAR PERFIL'}}</span>
     <h2>{{'Vincule seu AoMStats' if setup_mode else 'Editar meu perfil'}}</h2>
     <p>O nome, o Elo e a foto padrão são preenchidos automaticamente pelo AoMStats/Steam.</p>

@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V20 — MINI REDE SOCIAL + ARENA X1
+# 🔥 CHAMAS FLAMEJANTES V21 — ARENA UNIFICADA
 
 Build configurado com Railpack, o construtor atual do Railway.
 
@@ -63,6 +63,14 @@ Em uma instalação totalmente nova, abra `/setup` uma única vez e crie o prime
 - Classificação, confrontos, vencedores e histórico.
 - Elo da Comunidade, frases e patrocinadores.
 - Mini rede social com login Google, perfil público e frase pessoal.
+- Ao vincular o AoMStats, o jogador entra automaticamente no Elo da Comunidade e na Arena X1; sem AoMStats ele não aparece nessas áreas.
+- Cards compactos de jogadores e ranking da Arena posicionado ao lado da lista.
+- Histórico de duelos em página própria, acessível por botão na Arena e nos perfis.
+- Janela flutuante de notificações em formato de conversa, com aceite e recusa do desafio no próprio painel.
+- Tela pública do perfil limpa, com a edição de AoMStats, frase e foto aberta somente pelo botão “Alterar meus dados”.
+- Códigos de nick como `<color1,0.2,0.6>` são ocultados e a cor correspondente é aplicada ao nome.
+- Inscrição individual em torneio feita em um clique com o AoMStats já vinculado à conta Google.
+- Exclusão administrativa desativa a conta, preserva os resultados antigos e permite que o jogador se cadastre novamente.
 - Perfil preenchido automaticamente pelo AoMStats, foto Steam por padrão e upload opcional pelo PC.
 - Cards de perfil no estilo da Área de Conhecimento e janela flutuante ao clicar nas fotos.
 - Desafio X1 criado somente dentro do perfil do jogador-alvo.
@@ -73,6 +81,7 @@ Em uma instalação totalmente nova, abra `/setup` uma única vez e crie o prime
 - Estado “Partida em andamento” enquanto o AoMStats ainda não encontrar ou finalizar o ID.
 - Ranking da Arena X1 calculado apenas com resultados confirmados.
 - Cards compartilháveis de perfis e resultados, com metadados Open Graph e fotos dos jogadores.
+- Convites de desafio possuem link público com token e imagem Open Graph própria para aparecer no WhatsApp e em outras redes.
 - Atalhos de compartilhamento para WhatsApp, Telegram, Facebook, X e menu nativo do aparelho.
 - Upload e download de mapas ZIP, RAR e 7Z.
 - Programas oficiais com imagem, descrição, contador de downloads e publicação por arquivo RAR ou URL externa.
@@ -115,7 +124,7 @@ mkdir -p /app/data/uploads && cp -a /app/static/uploads/. /app/data/uploads/ 2>/
 
 Depois faça o novo deploy. Banco e uploads passarão a permanecer no mesmo volume.
 
-A atualização cria automaticamente as tabelas `social_accounts`, `social_duels` e `social_notifications`, sem apagar os registros existentes. Os duelos antigos são copiados uma única vez para o novo histórico. As tabelas `feedback_entries`, `map_requests`, `official_programs` e seus arquivos permanecem preservados.
+A atualização cria ou preserva automaticamente as tabelas `social_accounts`, `social_duels` e `social_notifications`, além dos campos de cor e ativação do perfil, sem apagar inscrições ou resultados existentes. Os duelos antigos são copiados uma única vez para o novo histórico. As tabelas `feedback_entries`, `map_requests`, `official_programs` e seus arquivos permanecem preservados.
 
 A Área de Conhecimento e o Guia de Counters são estáticos e não alteram cadastros. Os catálogos ficam em `knowledge_data/build_orders.json` e `static/counters/units.json`, fora do volume `/app/data`, para permanecerem disponíveis no Railway.
 

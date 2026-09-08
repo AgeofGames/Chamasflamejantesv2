@@ -46,7 +46,7 @@
 <section class="section admin-section">
 <details class="admin-block" open><summary><span>⚡</span> Elo da Comunidade</summary>
 <div class="admin-form">
-<p class="section-copy">Somente o administrador pode cadastrar integrantes deste ranking. Cole o perfil do AoMStats para buscar automaticamente <b>Nick, Elo Sup 1v1 e foto Steam</b>. O maior Elo vira <b>Melhor da Comunidade</b>; o último colocado fica com o título <b>Menor Elo</b>.</p>
+<p class="section-copy">Quem entra com Google e vincula o AoMStats participa automaticamente deste ranking e da Arena X1. O painel também permite cadastrar manualmente um perfil. O maior Elo vira <b>Melhor da Comunidade</b>; o último colocado fica com o título <b>Menor Elo</b>.</p>
 <form method="post" enctype="multipart/form-data" action="{{ url_for('admin_community_add') }}" class="community-aom-form" data-elo-mode="1v1">
 <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
 
@@ -134,7 +134,7 @@
   <span class="rank-num">#{{ loop.index }}</span>
   {% if avatar_src(c) %}<img class="avatar-img small" src="{{ avatar_src(c) }}">{% else %}<span class="avatar small avatar-fire">🔥</span>{% endif %}
   <div class="community-admin-main">
-    <b>{{ c.nickname }}</b>
+    <b{% if player_name_color(c) %} style="color:{{player_name_color(c)}}"{% endif %}>{{ c.nickname }}</b>
     <small>{% if loop.first %}👑 MELHOR DA COMUNIDADE{% elif loop.last and community_members|length>1 %}📉 MENOR ELO{% else %}Ranking da comunidade{% endif %}</small>
     <span class="community-admin-rating">
       {% if c.has_elo %}<strong>{{ c.community_elo }} ELO</strong>
@@ -150,9 +150,9 @@
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     <button class="btn secondary">ATUALIZAR AOMSTATS</button>
   </form>
-  <form method="post" action="{{ url_for('admin_community_remove',member_id=c.community_member_id) }}" onsubmit="return confirm('Remover {{c.nickname}} do ranking?')">
+  <form method="post" action="{{ url_for('admin_community_remove',member_id=c.community_member_id) }}" onsubmit="return confirm('Excluir a conta de {{c.nickname}} do site? O histórico será preservado.')">
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-    <button class="btn danger">REMOVER</button>
+    <button class="btn danger">EXCLUIR CONTA</button>
   </form>
 
   <details class="community-profile-editor">

@@ -1,3 +1,3 @@
-CHAMAS FLAMEJANTES V20 — MINI REDE SOCIAL + ARENA X1
-Login Google • perfis AoMStats • desafios privados • notificações • resultados verificados e compartilháveis • banco preservado.
+CHAMAS FLAMEJANTES V21 — ARENA UNIFICADA
+Login Google • entrada automática no Elo e na Arena • cards compactos • ranking lateral • notificações flutuantes • inscrições rápidas • nomes coloridos • imagem dos desafios.
 Admin existente preservado; em banco novo, crie o primeiro acesso em /setup.

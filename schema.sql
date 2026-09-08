@@ -81,6 +81,8 @@ CREATE TABLE IF NOT EXISTS tournaments (
 CREATE TABLE IF NOT EXISTS players (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     nickname TEXT NOT NULL,
+    nickname_raw TEXT NOT NULL DEFAULT '',
+    nickname_color TEXT NOT NULL DEFAULT '',
     discord TEXT DEFAULT '',
     aomstats_url TEXT DEFAULT '',
     aomstats_profile_id TEXT NOT NULL UNIQUE,
@@ -96,6 +98,7 @@ CREATE TABLE IF NOT EXISTS players (
     normal_level_label TEXT NOT NULL DEFAULT 'Novato',
     normal_stats_available INTEGER NOT NULL DEFAULT 0,
     normal_stats_updated_at TEXT DEFAULT '',
+    is_active INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
