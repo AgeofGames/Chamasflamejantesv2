@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512" role="img" aria-labelledby="title">
+  <title id="title">Chamas Flamejantes</title>
+  <defs>
+    <linearGradient id="fire" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#ffac40"/>
+      <stop offset="1" stop-color="#ed4916"/>
+    </linearGradient>
+    <linearGradient id="core" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#fff6bd"/>
+      <stop offset="1" stop-color="#ffce52"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="29" fill="#101318" stroke="#f47729" stroke-width="2.5"/>
+  <path fill="url(#fire)" d="M35 10C38 21 29 24 36 32C41 29 42 26 41 23C49 31 53 40 46 48C40 55 26 56 19 48C12 40 17 32 24 25C22 33 24 36 28 32C25 24 32 20 35 10Z"/>
+  <path fill="url(#core)" d="M33 32C34 39 28 40 31 44C34 43 36 40 36 38C41 43 41 47 37 50C34 53 28 52 25 48C22 44 27 38 33 32Z"/>
+</svg>

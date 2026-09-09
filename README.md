@@ -1,4 +1,22 @@
-# 🔥 CHAMAS FLAMEJANTES V22.2 — PARTIDAS CUSTOMS/QUICKPLAY
+# 🔥 CHAMAS FLAMEJANTES V22.3 — WHATSAPP E FAVICON
+
+## Atualização da V22.3
+
+- Logo da chama em PNG e ICO, declarado no cabeçalho de todas as páginas. Endereços estáveis `/favicon.png`, `/favicon.ico` e `/apple-touch-icon.png`.
+- Capa disponível também em `/capa-chamas-flamejantes.jpg`, sem login, redirecionamento ou consulta ao banco.
+- Novo link `https://chamasflamejantes.com.br/compartilhar`: abre a página inicial completa e possui seu próprio endereço Open Graph, para testar uma prévia nova. A URL canônica para o Google continua sendo a raiz do site.
+- Botão **Compartilhar site** no rodapé usa esse novo link. No celular, abre o compartilhamento do aparelho quando disponível; nos demais casos, copia o link.
+- Metadados de imagem presentes no HTML inicial. Os cards específicos dos perfis e desafios continuam funcionando.
+
+**Como atualizar:** substitua os arquivos do repositório com este pacote, incluindo as pastas `static/brand` e `static/share`. Preserve o volume e as variáveis do Railway. Espere a implantação ficar ativa; `/health` deve informar `22.3-whatsapp-favicon`.
+
+**WhatsApp:** depois da atualização, cole `https://chamasflamejantes.com.br/compartilhar` em uma mensagem nova e aguarde a prévia antes de enviar. Mensagens antigas e prévias já guardadas pelo aplicativo não são alteradas por este pacote. A capa e os metadados da versão anterior já estavam acessíveis na verificação pública; a descrição antiga na captura indica cache, mas o acesso do robô do WhatsApp não foi observado diretamente.
+
+**Google:** no Search Console, inspecione `https://chamasflamejantes.com.br/` e clique em **Solicitar indexação**. O Google precisa rastrear novamente a página e o ícone; isso pode levar dias ou semanas e a exibição não é garantida. [Orientações oficiais sobre favicons](https://developers.google.com/search/docs/appearance/favicon-in-search).
+
+**Validação:** 32 testes Python e 3 testes JavaScript passaram. Os testes verificam o HTML sem execução de JavaScript, a capa e os ícones com GET/HEAD, MIME e dimensões corretos, cache público, ausência de autenticação, a rota de compartilhamento e os fluxos anteriores. Detalhes em `PREVIAS_V22_3.md`.
+
+Todas as correções das versões anteriores estão incluídas.
 
 ## Correção da V22.2
 
@@ -42,7 +60,7 @@ Todas as melhorias da V22 abaixo estão incluídas.
 - Arquivos estáticos com versão pelo conteúdo, cache e compressão gzip de CSS, JavaScript, JSON e guia HTML. Páginas de conta e tokens não entram em cache compartilhado.
 - Fotos novas redimensionadas para até 512 pixels em WebP; limite de 8 MB. Imagens de listas carregadas sob demanda.
 
-Atualize o conteúdo do repositório com este pacote, mantendo as variáveis do Google, a chave secreta e o volume do Railway. A identificação em `/health` passa a ser `22.2-partidas-customs`.
+Atualize o conteúdo do repositório com este pacote, mantendo as variáveis do Google, a chave secreta e o volume do Railway. A identificação atual em `/health` é `22.3-whatsapp-favicon`.
 
 Build configurado com Railpack, o construtor atual do Railway.
 

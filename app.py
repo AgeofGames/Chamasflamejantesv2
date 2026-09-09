@@ -117,6 +117,7 @@ STATIC_PAGE_BG_INDEX = {
 KNOWLEDGE_DATA_PATH = BASE_DIR / "knowledge_data" / "build_orders.json"
 SEO_BASE_URL = os.environ.get("SEO_BASE_URL", "https://chamasflamejantes.com.br").strip().rstrip("/")
 PUBLIC_BASE_URL = os.environ.get("PUBLIC_BASE_URL", SEO_BASE_URL).strip().rstrip("/")
+SITE_SHARE_PATH = "/compartilhar"
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
 GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
 GOOGLE_OAUTH_CONFIGURED = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
@@ -2199,11 +2200,13 @@ def inject_globals_v5():
             "social_notification_items": notification_items,
             "google_oauth_configured": GOOGLE_OAUTH_CONFIGURED,
             "public_base_url": PUBLIC_BASE_URL,
+            "site_share_url": PUBLIC_BASE_URL + SITE_SHARE_PATH,
         }
     except Exception:
         return {}
 
 
+@app.get(SITE_SHARE_PATH)
 @app.get("/")
 def home():
     open_tournaments = [enriched_tournament(t) for t in tournaments_by_status("inscricoes")]
@@ -4906,10 +4909,35 @@ def robots_txt():
     return app.response_class(content, mimetype="text/plain")
 
 
+@app.get("/favicon.ico")
+def site_favicon_ico():
+    return send_from_directory(BASE_DIR / "static" / "brand", "favicon.ico",
+                               mimetype="image/vnd.microsoft.icon", max_age=86400)
+
+
+@app.get("/favicon.png")
+def site_favicon_png():
+    return send_from_directory(BASE_DIR / "static" / "brand", "favicon-96.png",
+                               mimetype="image/png", max_age=86400)
+
+
+@app.get("/apple-touch-icon.png")
+def site_apple_touch_icon():
+    return send_from_directory(BASE_DIR / "static" / "brand", "apple-touch-icon.png",
+                               mimetype="image/png", max_age=86400)
+
+
+@app.get("/capa-chamas-flamejantes.jpg")
+def site_share_image():
+    # Public, stable URL: no account, database, generated file or redirect needed.
+    return send_from_directory(BASE_DIR / "static" / "share", "chamas-flamejantes-v22-1.jpg",
+                               mimetype="image/jpeg", max_age=86400)
+
+
 @app.get("/health")
 def health():
     get_db().execute('SELECT 1').fetchone()
-    return {"version":"22.2-partidas-customs","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"22.3-whatsapp-favicon","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 @app.errorhandler(400)
@@ -4932,11 +4960,11 @@ def friendly_error(error):
 
 init_db()
 migrate_v6_db()
-print("🔥 CHAMAS FLAMEJANTES V22 — EXPERIÊNCIA ANIMADA\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V22.3 — WHATSAPP E FAVICON\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V22 — EXPERIÊNCIA ANIMADA")
+    print(" 🔥 CHAMAS FLAMEJANTES V22.3 — WHATSAPP E FAVICON")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

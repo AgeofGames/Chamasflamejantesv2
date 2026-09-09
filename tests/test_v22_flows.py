@@ -104,7 +104,7 @@ class SiteFlows(unittest.TestCase):
         crawler = self.client
         headers = {'User-Agent': 'WhatsApp/2.26', 'Accept-Encoding': 'gzip'}
         image_url = None
-        for path in ['/', '/conhecimento', '/programas', '/mapas', '/x1']:
+        for path in ['/', '/compartilhar', '/conhecimento', '/programas', '/mapas', '/x1']:
             with self.subTest(path=path):
                 response = crawler.get(path, headers=headers)
                 self.assertEqual(response.status_code, 200)
@@ -112,8 +112,7 @@ class SiteFlows(unittest.TestCase):
                 images = soup.select('head meta[property="og:image"]')
                 self.assertEqual(len(images), 1)
                 image_url = images[0]['content']
-                self.assertTrue(image_url.startswith(site.PUBLIC_BASE_URL + '/static/share/'))
-                self.assertIn('v=', image_url)
+                self.assertEqual(image_url, site.PUBLIC_BASE_URL + '/capa-chamas-flamejantes.jpg')
                 self.assertEqual(soup.select_one('meta[name="twitter:image"]')['content'], image_url)
                 self.assertEqual(soup.select_one('meta[property="og:image:secure_url"]')['content'], image_url)
                 self.assertEqual(soup.select_one('meta[property="og:image:width"]')['content'], '1200')
@@ -141,6 +140,63 @@ class SiteFlows(unittest.TestCase):
             session.clear()
         invite = BeautifulSoup(crawler.get(f"/arena/desafio/{duel['share_token']}").data, 'html.parser')
         self.assertNotEqual(invite.select_one('meta[property="og:image"]')['content'], image_url)
+
+    def test_new_share_link_opens_the_same_home_without_a_redirect(self):
+        from urllib.robotparser import RobotFileParser
+        home = self.client.get('/')
+        shared = self.client.get('/compartilhar', headers={'User-Agent': 'WhatsApp/2.26'})
+        self.assertEqual(shared.status_code, 200)
+        self.assertNotIn('Location', shared.headers)
+        root = BeautifulSoup(home.data, 'html.parser')
+        new = BeautifulSoup(shared.data, 'html.parser')
+        self.assertEqual(root.select_one('main').get_text(), new.select_one('main').get_text())
+        self.assertEqual(new.select_one('meta[property="og:url"]')['content'], site.PUBLIC_BASE_URL + '/compartilhar')
+        self.assertEqual(new.select_one('link[rel="canonical"]')['href'], site.PUBLIC_BASE_URL + '/')
+        self.assertEqual(root.select_one('link[rel="canonical"]')['href'], site.PUBLIC_BASE_URL + '/')
+        with site.app.test_request_context():
+            self.assertEqual(site.url_for('home'), '/')
+        share_button = new.select_one('.footer-tools [data-native-share]')
+        self.assertEqual(share_button['data-share-url'], site.PUBLIC_BASE_URL + '/compartilhar')
+        # The existing head metadata must be available before any JavaScript executes.
+        self.assertLess(shared.data.index(b'property="og:image"'), 5000)
+        rules = RobotFileParser()
+        rules.parse(self.client.get('/robots.txt').get_data(as_text=True).splitlines())
+        self.assertTrue(rules.can_fetch('WhatsApp', '/compartilhar'))
+        self.assertTrue(rules.can_fetch('facebookexternalhit', '/capa-chamas-flamejantes.jpg'))
+
+    def test_brand_icons_are_declared_and_accessible_without_a_session_or_database(self):
+        from urllib.robotparser import RobotFileParser
+        for path in ['/', '/compartilhar', '/conhecimento', f'/perfil/{self.players[0]}']:
+            page = BeautifulSoup(self.client.get(path).data, 'html.parser')
+            self.assertIsNotNone(page.select_one('link[rel="icon"][href="/favicon.ico"]'))
+            self.assertIsNotNone(page.select_one('link[rel="icon"][href="/favicon.png"][sizes="96x96"]'))
+            self.assertIsNotNone(page.select_one('link[rel="apple-touch-icon"][href="/apple-touch-icon.png"]'))
+        rules = RobotFileParser()
+        rules.parse(self.client.get('/robots.txt').get_data(as_text=True).splitlines())
+        anon = site.app.test_client()
+        assets = [('/favicon.ico', 'image/vnd.microsoft.icon', (256, 256)),
+                  ('/favicon.png', 'image/png', (96, 96)),
+                  ('/apple-touch-icon.png', 'image/png', (180, 180)),
+                  ('/capa-chamas-flamejantes.jpg', 'image/jpeg', (1200, 630))]
+        with patch.object(site, 'get_db', side_effect=AssertionError('Public image used the database')):
+            for path, mime, size in assets:
+                with self.subTest(path=path):
+                    self.assertTrue(rules.can_fetch('Googlebot-Image', path))
+                    with anon.get(path, headers={'User-Agent': 'Googlebot-Image/1.0'}) as asset:
+                        self.assertEqual(asset.status_code, 200)
+                        self.assertEqual(asset.mimetype, mime)
+                        self.assertNotIn('Set-Cookie', asset.headers)
+                        self.assertNotIn('Location', asset.headers)
+                        self.assertIn('public', asset.headers['Cache-Control'])
+                        with Image.open(io.BytesIO(asset.data)) as decoded:
+                            self.assertEqual(decoded.size, size)
+                            if path.endswith('.ico'):
+                                self.assertTrue({(16,16),(32,32),(48,48),(96,96),(256,256)}.issubset(decoded.ico.sizes()))
+                        with anon.head(path) as head:
+                            self.assertEqual(head.status_code, 200)
+                            self.assertEqual(head.content_length, len(asset.data))
+                        with anon.get(path, headers={'If-None-Match':asset.headers['ETag']}) as cached:
+                            self.assertEqual(cached.status_code, 304)
 
     def test_arena_roster_flags_and_batched_stats(self):
         a,b=self.players[:2]

@@ -1,4 +1,5 @@
-CHAMAS FLAMEJANTES V22.2 — PARTIDAS CUSTOMS/QUICKPLAY
+CHAMAS FLAMEJANTES V22.3 — PRÉVIA NO WHATSAPP E FAVICON
+Logo da chama em ICO/PNG, endereço público da capa e novo link /compartilhar.
 Correção da confirmação de duelos pelo histórico do AoMStats, consulta com limite de tempo e opção de corrigir o ID.
 Capa para WhatsApp e outras redes, metadados Open Graph completos e imagem pública otimizada.
 Navegação responsiva • animações leves • perfil compacto • notificações atualizadas • checklist de estudo • consultas em lote • arquivos versionados e comprimidos.

@@ -6,13 +6,13 @@
   <meta name="theme-color" content="{{ site.accent_color if site else '#e95d20' }}">
   <meta name="description" content="{% block meta_description %}Comunidade, torneios, conhecimento e Arena X1 de Age of Mythology: Retold.{% endblock %}">
   <title>{% block title %}{{ site.title if site else 'Chamas Flamejantes' }}{% endblock %}</title>
-  <meta name="csrf-token" content="{{csrf_token()}}">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" href="{{url_for('site_favicon_ico')}}" type="image/vnd.microsoft.icon" sizes="16x16 32x32 48x48 64x64 96x96 128x128 256x256">
+  <link rel="icon" href="{{url_for('site_favicon_png')}}" type="image/png" sizes="96x96">
+  <link rel="apple-touch-icon" href="{{url_for('site_apple_touch_icon')}}" sizes="180x180">
+  {% if request.endpoint == 'home' %}<link rel="canonical" href="{{public_base_url}}{{url_for('home')}}">{% endif %}
   {% block social_meta %}
   {% set share_base = public_base_url if public_base_url is defined else 'https://chamasflamejantes.com.br' %}
-  {% set share_image = share_base ~ url_for('static', filename='share/chamas-flamejantes-v22-1.jpg') %}
+  {% set share_image = share_base ~ url_for('site_share_image') %}
   {% set share_title = 'Chamas Flamejantes • Age of Mythology: Retold' %}
   {% set share_description = 'Build orders, torneios, mapas e duelos na Arena X1. Faça parte da comunidade Chamas Flamejantes!' %}
   {% set share_image_alt = 'Chamas Flamejantes: Zeus e Rá, 113 build orders, torneios e Arena X1 de Age of Mythology: Retold.' %}
@@ -34,6 +34,10 @@
   <meta name="twitter:image" content="{{ share_image }}">
   <meta name="twitter:image:alt" content="{{ share_image_alt }}">
   {% endblock %}
+  <meta name="csrf-token" content="{{csrf_token()}}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="{{url_for('static',filename='style.css')}}">
   <link rel="stylesheet" href="{{url_for('static',filename='v11.css')}}">
   <link rel="stylesheet" href="{{url_for('static',filename='knowledge.css')}}">
@@ -92,5 +96,5 @@
     <span><small>CRIADOR DO SITE</small><strong>{{site_creator.nickname if site_creator else 'Criador do site'}}</strong><em>Ver perfil no AoMStats ↗</em></span>
   </a>
 </div>
-<div class="footer-bottom"><span>Chamas Flamejantes • Comunidade de Age of Mythology: Retold</span><div class="footer-tools"><button type="button" data-motion-toggle aria-pressed="false">Reduzir animações</button><a href="{{url_for('feedback_page')}}">Enviar feedback</a></div></div>
+<div class="footer-bottom"><span>Chamas Flamejantes • Comunidade de Age of Mythology: Retold</span><div class="footer-tools"><button type="button" data-native-share data-share-url="{{site_share_url}}" data-share-title="Chamas Flamejantes • Age of Mythology: Retold">Compartilhar site</button><button type="button" data-motion-toggle aria-pressed="false">Reduzir animações</button><a href="{{url_for('feedback_page')}}">Enviar feedback</a></div></div>
 </footer></body></html>
