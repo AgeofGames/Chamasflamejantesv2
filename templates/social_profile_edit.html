@@ -3,7 +3,7 @@
 {% block content %}
 <section class="profile-editor-shell">
   <aside class="profile-account-card">
-    {% if player and social_avatar_src(player) %}<img src="{{social_avatar_src(player)}}" alt="Sua foto">{% elif account.google_picture %}<img src="{{account.google_picture}}" alt="Sua foto Google">{% else %}<span class="profile-big-fallback">🔥</span>{% endif %}
+    {% if player and social_avatar_src(player) %}<img decoding="async" src="{{social_avatar_src(player)}}" alt="Sua foto">{% elif account.google_picture %}<img decoding="async" src="{{account.google_picture}}" alt="Sua foto Google">{% else %}<span class="profile-big-fallback">🔥</span>{% endif %}
     <small>MINHA CONTA</small><h1{% if player and player_name_color(player) %} style="color:{{player_name_color(player)}}"{% endif %}>{{player.nickname if player else account.google_name}}</h1><p>{{account.email}}</p><em><b>G</b> Conta Google conectada</em>
     <dl><div><dt>Perfil</dt><dd>{{'Configuração inicial' if setup_mode else 'Ativo na Arena X1'}}</dd></div><div><dt>Membro desde</dt><dd>{{account.created_at}}</dd></div></dl>
   </aside>
@@ -14,6 +14,7 @@
     <h2>{{'Vincule seu AoMStats' if setup_mode else 'Editar meu perfil'}}</h2>
     <p>O nome, o Elo e a foto padrão são preenchidos automaticamente pelo AoMStats/Steam.</p>
     <label class="full"><span>Link do seu AoMStats</span><input type="url" name="aomstats_url" required value="{{player.aomstats_url if player else ''}}" placeholder="https://aomstats.io/profile/1076869557"></label>
+    {% if not setup_mode %}<label class="check full"><input type="checkbox" name="sync_aomstats" value="1"><span>Atualizar nome, Elo e foto original pelo AoMStats</span></label>{% endif %}
     <label class="full"><span>Sua frase</span><textarea name="quote" maxlength="220" placeholder="Escreva a frase que aparecerá no seu card…">{{player.quote if player else ''}}</textarea><small>Até 220 caracteres.</small></label>
     <div class="avatar-choice full">
       <div><b>Foto do perfil</b><span>Por padrão será usada a foto encontrada no AoMStats/Steam.</span></div>

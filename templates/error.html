@@ -1,0 +1,5 @@
+{% extends 'base.html' %}
+{% block title %}{{error_title}} • Chamas Flamejantes{% endblock %}
+{% block content %}
+<section class="page-hero compact"><span class="eyebrow">{{error_code}} • CHAMAS FLAMEJANTES</span><h1>{{error_title}}</h1><p>{{error_message}}</p><div class="arena-hero-actions"><a class="btn primary" href="{{url_for('home')}}">PÁGINA INICIAL</a><a class="btn" href="{{url_for('x1_page')}}">IR PARA A ARENA</a></div></section>
+{% endblock %}

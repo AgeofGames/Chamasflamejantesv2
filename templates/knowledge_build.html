@@ -2,7 +2,7 @@
 {% block title %}{{ build.title }} • {{ build.god }}{% endblock %}
 {% block content %}
 <section class="build-detail-hero">
-  <div class="build-detail-god"><img src="{{ url_for('static',filename='knowledge/gods/'~image_name~'.webp') }}" alt="{{ build.god }}"><span>{{ pantheon.symbol }}</span></div>
+  <div class="build-detail-god"><img decoding="async" src="{{ url_for('static',filename='knowledge/gods/'~image_name~'.webp') }}" alt="{{ build.god }}"><span>{{ pantheon.symbol }}</span></div>
   <div class="build-detail-title">
     <a class="knowledge-back" href="{{ url_for('knowledge_god_page',god_slug=god_slug) }}">← Builds de {{ build.god }}</a>
     <span class="eyebrow">{{ pantheon.name }} • {{ build.difficulty }}</span>

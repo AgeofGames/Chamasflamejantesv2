@@ -3,19 +3,22 @@ from __future__ import annotations
 import csv
 import html as html_lib
 import io
+import hashlib
 import json
 import math
 import os
 import re
 import secrets
 import sqlite3
+import threading
 import uuid
 from datetime import datetime, timezone
-from functools import wraps
+from functools import wraps, lru_cache
 from pathlib import Path
 from urllib.parse import quote, urlencode, urljoin, urlparse
 
 import requests
+from site_experience import install_experience
 from bs4 import BeautifulSoup
 from flask import (
     Flask, abort, flash, g, jsonify, redirect, render_template,
@@ -33,6 +36,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.secret_key = os.environ.get("FFA_SECRET_KEY", secrets.token_hex(32))
+install_experience(app)
 try:
     MAX_UPLOAD_MB = int(os.environ.get("MAX_UPLOAD_MB", "250"))
 except ValueError:
@@ -170,7 +174,7 @@ def page_background_url():
 def get_db():
     if "db" not in g:
         DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-        g.db = sqlite3.connect(DB_PATH)
+        g.db = sqlite3.connect(DB_PATH, timeout=15)
         g.db.row_factory = sqlite3.Row
         g.db.execute("PRAGMA foreign_keys = ON")
     return g.db
@@ -686,6 +690,10 @@ def save_uploaded_avatar(file_storage, key: str):
         raise ValueError("Formato inválido. Use JPG, PNG ou WebP.")
     if file_storage.mimetype not in CONTENT_TYPE_EXTENSIONS:
         raise ValueError("O arquivo enviado não parece ser uma imagem JPG, PNG ou WebP.")
+    file_storage.stream.seek(0, 2)
+    if file_storage.stream.tell() > 8 * 1024 * 1024:
+        raise ValueError("Escolha uma foto de até 8 MB.")
+    file_storage.stream.seek(0)
     try:
         from PIL import Image, ImageOps, UnidentifiedImageError
         from PIL.Image import DecompressionBombError
@@ -695,10 +703,10 @@ def save_uploaded_avatar(file_storage, key: str):
             probe.verify()
         file_storage.stream.seek(0)
         with Image.open(file_storage.stream) as source:
-            source = ImageOps.exif_transpose(source)
             if source.width * source.height > 24_000_000:
                 raise ValueError("A imagem possui resolução grande demais. Use até 24 megapixels.")
-            source.thumbnail((1800, 1800), Image.Resampling.LANCZOS)
+            source = ImageOps.exif_transpose(source)
+            source.thumbnail((512, 512), Image.Resampling.LANCZOS)
             if source.mode not in ("RGB", "RGBA"):
                 source = source.convert("RGBA" if "transparency" in source.info else "RGB")
             sanitized = source.copy()
@@ -707,7 +715,7 @@ def save_uploaded_avatar(file_storage, key: str):
     safe_key = re.sub(r"[^A-Za-z0-9_-]", "_", str(key))[:60] or secrets.token_hex(8)
     filename = f"manual_{safe_key}_{secrets.token_hex(5)}.webp"
     path = UPLOAD_DIR / filename
-    sanitized.save(path, "WEBP", quality=90, method=6)
+    sanitized.save(path, "WEBP", quality=85, method=4)
     return f"uploads/{filename}"
 
 
@@ -1727,6 +1735,9 @@ def migrate_v6_db():
         if entries == 0 and matches == 0 and winners == 0:
             db.execute("DELETE FROM tournaments WHERE id=?", (tid,))
 
+    db.execute("CREATE INDEX IF NOT EXISTS idx_social_duels_challenged_status ON social_duels(challenged_id,status)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_social_notifications_account_recent ON social_notifications(account_id,id DESC)")
+    db.execute("PRAGMA optimize")
     db.execute("INSERT OR REPLACE INTO site_meta(key,value) VALUES ('v6_migrated','1')")
     db.commit()
     db.close()
@@ -1788,7 +1799,7 @@ def community_ranking():
     return [{k:r[k] for k in r.keys()} for r in rows]
 
 
-def site_creator_profile():
+def _site_creator_profile(allow_refresh=False):
     """Exibe o criador com a mesma foto Steam/AoMStats usada pelos jogadores."""
     db = get_db()
     player = db.execute(
@@ -1819,7 +1830,7 @@ def site_creator_profile():
         ).fetchone()
         can_refresh = bool(check and check["allowed"])
 
-    if can_refresh and not (nickname and (avatar_file or avatar_url)):
+    if allow_refresh and can_refresh and not (nickname and (avatar_file or avatar_url)):
         db.execute(
             "INSERT OR REPLACE INTO site_meta(key,value) VALUES('site_creator_attempted_at',CURRENT_TIMESTAMP)"
         )
@@ -1848,7 +1859,31 @@ def site_creator_profile():
         "avatar_url": avatar_url,
         "avatar_file": avatar_file,
         "aomstats_url": SITE_CREATOR_AOMSTATS_URL,
+        "refresh_due": can_refresh and not (nickname and (avatar_file or avatar_url)),
     }
+
+
+_creator_refresh_lock = threading.Lock()
+
+
+def site_creator_profile():
+    """Serve cached footer data immediately; a cold external lookup runs separately."""
+    profile = _site_creator_profile()
+    if profile.get('refresh_due') and _creator_refresh_lock.acquire(blocking=False):
+        def refresh():
+            try:
+                with app.app_context():
+                    _site_creator_profile(allow_refresh=True)
+            except Exception:
+                app.logger.info('A foto do criador será atualizada em uma próxima tentativa.')
+            finally:
+                _creator_refresh_lock.release()
+        worker = threading.Thread(target=refresh, daemon=True, name='creator-profile-refresh')
+        try:
+            worker.start()
+        except RuntimeError:
+            _creator_refresh_lock.release()
+    return profile
 
 
 # ============================================================
@@ -1931,7 +1966,10 @@ def safe_next_url(raw, fallback_endpoint="x1_page"):
 
 
 def get_social_player(player_id):
-    return get_db().execute(
+    cache = g.setdefault("social_player_rows", {})
+    if player_id in cache:
+        return cache[player_id]
+    row = get_db().execute(
         """SELECT p.*,
                   CASE WHEN sa.id IS NULL THEN 0 ELSE 1 END social_enabled,
                   COALESCE(sa.google_picture,'') google_picture
@@ -1939,6 +1977,8 @@ def get_social_player(player_id):
            WHERE p.id=?""",
         (player_id,),
     ).fetchone()
+    cache[player_id] = row
+    return row
 
 
 def social_avatar_src(player):
@@ -1957,26 +1997,71 @@ app.jinja_env.globals["social_avatar_src"] = social_avatar_src
 app.jinja_env.globals["social_duel_label"] = lambda status: SOCIAL_DUEL_LABELS.get(status, status)
 
 
+def prime_social_stats(player_ids):
+    """Batch statistics and winning streaks; cache only within this request."""
+    cache = g.setdefault("social_stats", {})
+    missing = sorted({int(pid) for pid in player_ids if pid is not None} - cache.keys())
+    for offset in range(0, len(missing), 400):
+        batch = missing[offset:offset + 400]
+        marks = ",".join("?" for _ in batch)
+        for pid in batch:
+            cache[pid] = dict(wins=0, losses=0, refusals=0, completed=0, rate=0, streak=0)
+        rows = get_db().execute(f"""
+            WITH results AS (
+              SELECT id,challenger_id player_id,status,winner_id,loser_id,0 refusal
+              FROM social_duels WHERE challenger_id IN ({marks}) AND status IN ('completed','refused')
+              UNION ALL
+              SELECT id,challenged_id player_id,status,winner_id,loser_id,(status='refused') refusal
+              FROM social_duels WHERE challenged_id IN ({marks}) AND status IN ('completed','refused')
+            ), classified AS (
+              SELECT *,MAX(CASE WHEN status='completed' AND winner_id<>player_id THEN id ELSE 0 END)
+                OVER (PARTITION BY player_id) last_loss FROM results
+            )
+            SELECT player_id,
+              SUM(status='completed' AND winner_id=player_id) wins,
+              SUM(status='completed' AND loser_id=player_id) losses,
+              SUM(refusal) refusals,SUM(status='completed') completed,
+              SUM(status='completed' AND winner_id=player_id AND id>last_loss) streak
+            FROM classified GROUP BY player_id
+        """, (*batch, *batch)).fetchall()
+        for row in rows:
+            stats = {key: int(row[key] or 0) for key in ('wins','losses','refusals','completed','streak')}
+            stats['rate'] = round(stats['wins'] * 100 / stats['completed'], 1) if stats['completed'] else 0
+            cache[row['player_id']] = stats
+
+
 def social_profile_stats(player_id):
-    row = get_db().execute(
-        """SELECT
-             SUM(CASE WHEN status='completed' AND winner_id=? THEN 1 ELSE 0 END) wins,
-             SUM(CASE WHEN status='completed' AND loser_id=? THEN 1 ELSE 0 END) losses,
-             SUM(CASE WHEN status='refused' AND challenged_id=? THEN 1 ELSE 0 END) refusals,
-             SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) completed
-           FROM social_duels WHERE challenger_id=? OR challenged_id=?""",
-        (player_id, player_id, player_id, player_id, player_id),
-    ).fetchone()
-    wins = int(row["wins"] or 0)
-    losses = int(row["losses"] or 0)
-    completed = int(row["completed"] or 0)
-    return {
-        "wins": wins,
-        "losses": losses,
-        "refusals": int(row["refusals"] or 0),
-        "completed": completed,
-        "rate": round(wins * 100 / completed, 1) if completed else 0,
-    }
+    prime_social_stats([player_id])
+    return dict(g.social_stats[player_id])
+
+
+def prime_social_players(player_ids):
+    cache = g.setdefault('social_player_rows', {})
+    missing = sorted({int(pid) for pid in player_ids if pid is not None} - cache.keys())
+    for offset in range(0, len(missing), 400):
+        batch = missing[offset:offset + 400]
+        marks = ','.join('?' for _ in batch)
+        rows = get_db().execute(f"""SELECT p.*,
+            CASE WHEN sa.id IS NULL THEN 0 ELSE 1 END social_enabled,
+            COALESCE(sa.google_picture,'') google_picture
+            FROM players p LEFT JOIN social_accounts sa ON sa.player_id=p.id
+            WHERE p.id IN ({marks})""", batch).fetchall()
+        cache.update({row['id']: row for row in rows})
+    prime_social_stats(player_ids)
+
+
+def social_roster():
+    if 'social_roster' not in g:
+        rows = get_db().execute("""SELECT p.*,
+            CASE WHEN sa.id IS NULL THEN 0 ELSE 1 END social_enabled,
+            COALESCE(sa.google_picture,'') google_picture
+            FROM players p LEFT JOIN social_accounts sa ON sa.player_id=p.id
+            WHERE p.is_active=1 AND COALESCE(p.aomstats_profile_id,'')<>''
+              AND COALESCE(p.aomstats_url,'')<>'' ORDER BY LOWER(p.nickname)""").fetchall()
+        g.setdefault('social_player_rows', {}).update({row['id']: row for row in rows})
+        prime_social_stats([row['id'] for row in rows])
+        g.social_roster = [social_player_payload(row) for row in rows]
+    return g.social_roster
 
 
 def social_player_payload(player):
@@ -2067,6 +2152,7 @@ def social_duels_query(where="", params=(), limit=100):
         sql += " WHERE " + where
     sql += " ORDER BY id DESC LIMIT ?"
     rows = get_db().execute(sql, (*params, int(limit))).fetchall()
+    prime_social_players({row[key] for row in rows for key in ('challenger_id','challenged_id','winner_id','loser_id') if row[key]})
     return [social_duel_payload(row) for row in rows]
 
 
@@ -2086,7 +2172,7 @@ def social_notification_items(account_id, limit=12):
 @app.context_processor
 def inject_globals_v5():
     try:
-        ranking = community_ranking()
+        ranking = community_ranking() if request.endpoint in ('home', 'community_page', 'admin') else []
         social_user = current_social_account()
         unread_notifications = 0
         notification_items = []
@@ -2100,7 +2186,7 @@ def inject_globals_v5():
             "site": settings(),
             "nav_tournaments": [t for t in all_tournaments(public_only=True) if t["status"] != "finalizado"][:10],
             "admin_logged": bool(session.get("admin_id")),
-            "sponsors": sponsors_list(active_only=True),
+            "sponsors": sponsors_list(active_only=True) if request.endpoint in ('home', 'admin') else [],
             "community_members": ranking,
             "community_best": ranking[0] if ranking else None,
             "community_worst": ranking[-1] if ranking else None,
@@ -3348,31 +3434,9 @@ def admin_backup():
 # ============================================================
 def duel_ranking():
     """Ranking da rede social, calculado somente com resultados confirmados pelo AoMStats."""
-    players = get_db().execute(
-        """SELECT p.*,COALESCE(sa.google_picture,'') google_picture
-           FROM players p LEFT JOIN social_accounts sa ON sa.player_id=p.id
-           WHERE p.is_active=1 AND COALESCE(p.aomstats_profile_id,'')<>''
-             AND COALESCE(p.aomstats_url,'')<>''"""
-    ).fetchall()
-    ranking = []
-    for player in players:
-        item = social_player_payload(player)
-        recent = get_db().execute(
-            """SELECT winner_id FROM social_duels
-               WHERE status='completed' AND (challenger_id=? OR challenged_id=?)
-               ORDER BY id DESC""",
-            (player["id"], player["id"]),
-        ).fetchall()
-        streak = 0
-        for duel in recent:
-            if duel["winner_id"] == player["id"]:
-                streak += 1
-            else:
-                break
-        item["stats"]["streak"] = streak
-        ranking.append(item)
-    ranking.sort(key=lambda p: (-p["stats"]["wins"], p["stats"]["losses"], -p["stats"]["streak"], p["nickname"].lower()))
-    return ranking
+    return sorted(social_roster(), key=lambda p: (
+        -p["stats"]["wins"], p["stats"]["losses"], -p["stats"]["streak"], p["nickname"].lower()
+    ))
 
 
 def _google_profile_from_code(code):
@@ -3505,15 +3569,10 @@ def social_logout():
     return redirect(url_for("home"))
 
 
-def save_social_profile(account, raw_url, quote_text, upload=None, avatar_mode="keep"):
+def save_social_profile(account, raw_url, quote_text, upload=None, avatar_mode="keep", refresh=False):
     profile_url, profile_id = normalize_profile_url(raw_url)
     if not profile_url:
         raise ValueError("Informe um link válido: https://aomstats.io/profile/ID")
-    try:
-        info = fetch_aomstats(profile_url)
-    except Exception as exc:
-        raise ValueError("Não consegui consultar esse perfil no AoMStats agora. Confira o link e tente novamente.") from exc
-
     db = get_db()
     player = db.execute("SELECT * FROM players WHERE aomstats_profile_id=?", (profile_id,)).fetchone()
     if player:
@@ -3522,6 +3581,15 @@ def save_social_profile(account, raw_url, quote_text, upload=None, avatar_mode="
         ).fetchone()
         if owner:
             raise ValueError("Esse perfil AoMStats já pertence a outra conta do site.")
+
+    # Editing a quote or photo does not depend on a third-party service being up.
+    if player and player['id'] == account['player_id'] and not refresh:
+        info = dict(player)
+    else:
+        try:
+            info = fetch_aomstats(profile_url)
+        except Exception as exc:
+            raise ValueError("Não consegui consultar esse perfil no AoMStats agora. Confira o link e tente novamente.") from exc
 
     new_avatar_file = ""
     if upload and upload.filename:
@@ -3608,6 +3676,7 @@ def social_profile_setup():
     return render_template("social_profile_edit.html", account=account, player=None, setup_mode=True, next_url=next_url)
 
 
+@app.get("/perfil")
 @app.get("/meu-perfil")
 @social_profile_required
 def social_my_profile():
@@ -3626,6 +3695,7 @@ def social_profile_edit():
             player_id = save_social_profile(
                 account, request.form.get("aomstats_url", ""), request.form.get("quote", ""),
                 request.files.get("avatar"), request.form.get("avatar_mode", "keep"),
+                refresh=request.form.get("sync_aomstats") == "1",
             )
             flash("Seu perfil foi atualizado.", "success")
             return redirect(url_for("social_profile", player_id=player_id))
@@ -3684,16 +3754,18 @@ def social_challenge_player(player_id):
     if challenger_id == player_id:
         flash("Você não pode desafiar a si mesmo.", "error")
         return redirect(url_for("social_profile", player_id=player_id))
-    duplicate = get_db().execute(
+    db = get_db()
+    db.execute("BEGIN IMMEDIATE")
+    duplicate = db.execute(
         """SELECT id FROM social_duels WHERE status IN ('pending','accepted','match_pending')
            AND ((challenger_id=? AND challenged_id=?) OR (challenger_id=? AND challenged_id=?))""",
         (challenger_id, player_id, player_id, challenger_id),
     ).fetchone()
     if duplicate:
+        db.rollback()
         flash("Já existe um desafio ativo entre vocês.", "error")
         return redirect(url_for("social_duel", duel_id=duplicate["id"]))
     message = (request.form.get("message") or "Prepare-se para a batalha!").strip()[:280]
-    db = get_db()
     cursor = db.execute(
         """INSERT INTO social_duels(challenger_id,challenged_id,message,share_token)
            VALUES (?,?,?,?)""",
@@ -3787,20 +3859,21 @@ def verify_social_duel_match(duel, fetched_result=None):
         }
         winner_id = mapping[result["winner_profile_id"]]
         loser_id = mapping[result["loser_profile_id"]]
-        db.execute(
+        changed = db.execute(
             """UPDATE social_duels SET status='completed',winner_id=?,loser_id=?,match_url=?,
                match_payload=?,match_error='',last_checked_at=CURRENT_TIMESTAMP,finished_at=CURRENT_TIMESTAMP
-               WHERE id=?""",
-            (winner_id, loser_id, result["match_url"], json.dumps(result, ensure_ascii=False), duel["id"]),
+               WHERE id=? AND status IN ('accepted','match_pending') AND match_id=?""",
+            (winner_id, loser_id, result["match_url"], json.dumps(result, ensure_ascii=False), duel["id"], duel['match_id']),
         )
-        winner = get_social_player(winner_id)
-        create_social_notification(winner_id, loser_id, duel["id"], "result", "Vitória confirmada pelo AoMStats! 🔥")
-        create_social_notification(loser_id, winner_id, duel["id"], "result", f"Resultado confirmado: {winner['nickname']} venceu o duelo.")
+        if changed.rowcount:
+            winner = get_social_player(winner_id)
+            create_social_notification(winner_id, loser_id, duel["id"], "result", "Vitória confirmada pelo AoMStats! 🔥")
+            create_social_notification(loser_id, winner_id, duel["id"], "result", f"Resultado confirmado: {winner['nickname']} venceu o duelo.")
     else:
         db.execute(
             """UPDATE social_duels SET status='match_pending',match_url=?,match_error=?,
-               last_checked_at=CURRENT_TIMESTAMP WHERE id=?""",
-            (result["match_url"], result["message"], duel["id"]),
+               last_checked_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('accepted','match_pending') AND match_id=?""",
+            (result["match_url"], result["message"], duel["id"], duel['match_id']),
         )
     db.commit()
     return result
@@ -3809,12 +3882,7 @@ def verify_social_duel_match(duel, fetched_result=None):
 @app.get('/x1')
 def x1_page():
     viewer = current_social_account()
-    players = [social_player_payload(row) for row in get_db().execute(
-        """SELECT p.*,COALESCE(sa.google_picture,'') google_picture
-           FROM players p LEFT JOIN social_accounts sa ON sa.player_id=p.id
-           WHERE p.is_active=1 AND COALESCE(p.aomstats_profile_id,'')<>''
-             AND COALESCE(p.aomstats_url,'')<>'' ORDER BY LOWER(p.nickname)"""
-    ).fetchall()]
+    players = social_roster()
     ranking = duel_ranking()
     active = []
     if viewer and viewer["player_id"]:
@@ -3878,10 +3946,14 @@ def social_duel_accept(duel_id):
         flash("Esse desafio já foi respondido.", "error")
     else:
         db = get_db()
-        db.execute(
+        changed = db.execute(
             """UPDATE social_duels SET status='accepted',response_note='Desafio aceito',
-               responded_at=CURRENT_TIMESTAMP WHERE id=?""", (duel_id,)
+               responded_at=CURRENT_TIMESTAMP WHERE id=? AND status='pending'""", (duel_id,)
         )
+        if not changed.rowcount:
+            db.rollback()
+            flash("Esse desafio já foi respondido ou cancelado.", "error")
+            return redirect(url_for("x1_page"))
         create_social_notification(
             duel["challenger_id"], viewer["player_id"], duel_id, "accepted",
             f"{viewer['nickname']} aceitou o seu desafio.",
@@ -3903,10 +3975,14 @@ def social_duel_refuse(duel_id):
         flash("Esse desafio já foi respondido.", "error")
     else:
         db = get_db()
-        db.execute(
+        changed = db.execute(
             """UPDATE social_duels SET status='refused',response_note='Fugiu da batalha',
-               responded_at=CURRENT_TIMESTAMP,finished_at=CURRENT_TIMESTAMP WHERE id=?""", (duel_id,)
+               responded_at=CURRENT_TIMESTAMP,finished_at=CURRENT_TIMESTAMP WHERE id=? AND status='pending'""", (duel_id,)
         )
+        if not changed.rowcount:
+            db.rollback()
+            flash("Esse desafio já foi respondido ou cancelado.", "error")
+            return redirect(url_for("x1_page"))
         create_social_notification(
             duel["challenger_id"], viewer["player_id"], duel_id, "refused",
             f"{viewer['nickname']} recusou: fugiu da batalha.",
@@ -3928,7 +4004,13 @@ def social_duel_cancel(duel_id):
         flash("Só é possível cancelar enquanto o desafio aguarda resposta.", "error")
         return redirect(url_for("social_duel", duel_id=duel_id))
     db = get_db()
-    db.execute("DELETE FROM social_duels WHERE id=?", (duel_id,))
+    changed = db.execute("DELETE FROM social_duels WHERE id=? AND challenger_id=? AND status='pending'", (duel_id, viewer['player_id']))
+    if not changed.rowcount:
+        db.rollback()
+        flash("Esse desafio já foi respondido.", "error")
+        return redirect(url_for("x1_page"))
+    if duel['legacy_duel_id']:
+        db.execute("DELETE FROM duels WHERE id=?", (duel['legacy_duel_id'],))
     db.commit()
     flash("Desafio cancelado e removido.", "success")
     return redirect(url_for("x1_page"))
@@ -3962,11 +4044,21 @@ def social_duel_submit_match(duel_id):
         flash(str(exc), "error")
         return redirect(url_for("social_duel", duel_id=duel_id))
     db = get_db()
-    db.execute(
-        """UPDATE social_duels SET match_id=?,match_url=?,match_submitted_by=?,
-           match_submitted_at=CURRENT_TIMESTAMP WHERE id=?""",
-        (match_id, result["match_url"], viewer["player_id"], duel_id),
-    )
+    try:
+        changed = db.execute(
+            """UPDATE social_duels SET match_id=?,match_url=?,match_submitted_by=?,
+               match_submitted_at=CURRENT_TIMESTAMP
+               WHERE id=? AND status IN ('accepted','match_pending') AND COALESCE(match_id,'')=?""",
+            (match_id, result["match_url"], viewer["player_id"], duel_id, duel['match_id'] or ''),
+        )
+    except sqlite3.IntegrityError:
+        db.rollback()
+        flash("Esse ID já foi registrado em outro duelo.", "error")
+        return redirect(url_for('social_duel', duel_id=duel_id))
+    if not changed.rowcount:
+        db.rollback()
+        flash("O duelo foi atualizado pelo outro jogador. Confira o estado atual.", "error")
+        return redirect(url_for('social_duel', duel_id=duel_id))
     if result["state"] != "completed":
         other_id = duel["challenged_id"] if viewer["player_id"] == duel["challenger_id"] else duel["challenger_id"]
         create_social_notification(
@@ -4019,6 +4111,25 @@ def social_notifications():
         return redirect(safe_next_url(request.form.get("next"), "social_notifications"))
     rows = social_notification_items(account["account_id"], 100)
     return render_template("social_notifications.html", notifications=rows)
+
+
+@app.get('/api/notificacoes')
+def social_notifications_feed():
+    account = current_social_account()
+    if not account:
+        return jsonify(error='Entre novamente para ver suas notificações.'), 401
+    items = social_notification_items(account['account_id'])
+    unread = get_db().execute(
+        'SELECT COUNT(*) FROM social_notifications WHERE account_id=? AND is_read=0',
+        (account['account_id'],)
+    ).fetchone()[0]
+    cursor = hashlib.sha256(json.dumps([items, unread], sort_keys=True).encode()).hexdigest()[:20]
+    if request.args.get('cursor') == cursor:
+        return '', 204
+    html = app.jinja_env.get_template('_notification_items.html').render(
+        social_notification_items=items, social_user=account,
+    )
+    return jsonify(html=html, unread=unread, cursor=cursor)
 
 
 def build_share_links(url, title):
@@ -4607,10 +4718,16 @@ def admin_groups():
 # ============================================================
 def knowledge_catalog():
     try:
-        with KNOWLEDGE_DATA_PATH.open("r", encoding="utf-8") as source:
-            return json.load(source)
+        stat = KNOWLEDGE_DATA_PATH.stat()
+        return _cached_knowledge_catalog(str(KNOWLEDGE_DATA_PATH), stat.st_mtime_ns, stat.st_size)
     except (OSError, ValueError):
         return {"version": "", "build_count": 0, "gods": {}, "builds": []}
+
+
+@lru_cache(maxsize=2)
+def _cached_knowledge_catalog(path, modified_ns, size):
+    with open(path, encoding='utf-8') as source:
+        return json.load(source)
 
 
 def knowledge_god_slug(god_name):
@@ -4820,16 +4937,35 @@ def robots_txt():
 
 @app.get("/health")
 def health():
-    return {"version":"21.1-perfil-compacto","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    get_db().execute('SELECT 1').fetchone()
+    return {"version":"22-experiencia-animada","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+
+
+@app.errorhandler(400)
+@app.errorhandler(403)
+@app.errorhandler(404)
+@app.errorhandler(413)
+def friendly_error(error):
+    code = error.code
+    copy = {
+        400: ('Confira a solicitação', 'Recarregue a página e tente novamente. Se você estava preenchendo algo, volte para revisar os dados.'),
+        403: ('Ação indisponível', 'Este conteúdo ou ação está reservado à conta responsável. Entre com a conta correta para continuar.'),
+        404: ('Página não encontrada', 'O link pode ter mudado ou o desafio pode ter sido cancelado. Você pode continuar pela Arena ou pela página inicial.'),
+        413: ('Arquivo muito grande', 'Escolha um arquivo menor e tente novamente.'),
+    }
+    title, message = copy[code]
+    if request.path.startswith('/api/'):
+        return jsonify(ok=False, error=message), code
+    return render_template('error.html', error_code=code, error_title=title, error_message=message), code
 
 
 init_db()
 migrate_v6_db()
-print("🔥 CHAMAS FLAMEJANTES V21.1 — PERFIL COMPACTO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V22 — EXPERIÊNCIA ANIMADA\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V21.1 — PERFIL COMPACTO")
+    print(" 🔥 CHAMAS FLAMEJANTES V22 — EXPERIÊNCIA ANIMADA")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

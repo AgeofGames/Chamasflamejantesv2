@@ -1,0 +1,15 @@
+{% set ep=request.endpoint or '' %}
+{% set items=[('home','Início'),('open_tournaments_page','Torneios'),('tournament_history','Histórico'),('community_page','Elo da Comunidade'),('x1_page','Arena X1'),('maps_page','Mapas'),('programs_page','Programas'),('knowledge_page','Conhecimento'),('feedback_page','Feedback')] %}
+<nav class="topbar-nav" id="main-navigation" aria-label="Navegação principal">
+  {% for endpoint,label in items %}
+  {% set current=ep==endpoint or (endpoint=='knowledge_page' and (ep.startswith('knowledge_') or ep in ('hotkeys_guide_page','counter_guide_page'))) or (endpoint=='x1_page' and ep.startswith('social_duel')) or (endpoint=='open_tournaments_page' and ep in ('tournament_page','tournament_register','tournament_participants','tournament_matches','tournament_result')) %}
+  <a href="{{url_for(endpoint)}}"{% if current %} aria-current="page"{% endif %}>{{label}}</a>
+  {% endfor %}
+  <details class="nav-drop">
+    <summary>Ativos <span aria-hidden="true">⌄</span></summary>
+    <div class="nav-menu">
+      {% for nt in nav_tournaments %}<a href="{{url_for('tournament_page',slug=nt.slug)}}"><b>{% if nt.best_of==3 %}MD3 • {% endif %}{{nt.short_name}}</b><small>{{nt.status}} • {{'equipe de '~nt.team_size if nt.team_size>1 else 'individual'}}</small></a>{% else %}<p class="nav-empty">Nenhum torneio ativo no momento.</p>{% endfor %}
+    </div>
+  </details>
+  {% if admin_logged %}<a class="admin-link" href="{{url_for('admin')}}"{% if ep.startswith('admin') %} aria-current="page"{% endif %}>Painel</a>{% endif %}
+</nav>

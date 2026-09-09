@@ -19,6 +19,23 @@
   @media(max-width:520px){.chamas-guide-fallback{padding:7px}.chamas-guide-fallback__nav{grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}.chamas-guide-fallback__nav a{min-height:36px;padding:4px;font-size:8px}}
 </style>
 <script>if(window.self!==window.top){document.documentElement.classList.add("chamas-guide-embedded")}</script>
+<style id="chamas-experience-v22">
+  :root{--guide-ease:cubic-bezier(.22,1,.36,1);color-scheme:dark}
+  .hero-section{padding-top:32px!important;padding-bottom:28px!important;min-height:0!important}
+  .hero-copy h1{font-size:clamp(32px,5vw,60px)!important;line-height:1.1!important}
+  .controls-row,.keyboard-case,.xml-customizer,.unit-card,.how-card{border-radius:12px!important}
+  .unit-card,.keyboard-case button,.mode-trigger,.simulator-button,.xml-jump-button{transition:transform .18s var(--guide-ease),border-color .18s,background-color .18s!important}
+  .results-wrap,.floating-result,.simulator-dialog{animation:guide-panel-in .28s var(--guide-ease)}
+  .unit-card p,.action-note{font-size:14px!important;line-height:1.65!important}
+  :focus-visible{outline:2px solid #ffb17b;outline-offset:3px}
+  @keyframes guide-panel-in{from{opacity:.3;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @media(hover:hover) and (pointer:fine){.unit-card:hover{transform:translateY(-3px)}.mode-trigger:hover,.simulator-button:hover{transform:translateY(-1px)}}
+  @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}}
+  html[data-motion=reduce] *,html[data-motion=reduce] *::before,html[data-motion=reduce] *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
+</style>
+<script>
+  (()=>{const sync=()=>{try{document.documentElement.dataset.motion=localStorage.getItem('chamas-motion')==='reduce'?'reduce':'full'}catch(_){}};sync();window.addEventListener('storage',event=>{if(event.key==='chamas-motion')sync()})})();
+</script>
 </head>
 <body>
   <header class="chamas-guide-fallback">

@@ -6,10 +6,11 @@
 {% endblock %}
 {% block content %}
 <section class="social-profile-page">
+  <div class="profile-page-links"><a href="{{url_for('x1_page')}}">← Jogadores da Arena</a>{% if is_owner %}<a href="{{url_for('social_logout')}}">Sair da conta</a>{% endif %}</div>
   <div class="social-profile-main">
     <article class="profile-identity-card build-library-card">
       <div class="profile-identity-glow"></div>
-      {% if social_avatar_src(profile) %}<img class="profile-identity-avatar" src="{{social_avatar_src(profile)}}" alt="Foto de {{profile.nickname}}">{% else %}<span class="profile-identity-avatar fallback">🔥</span>{% endif %}
+      {% if social_avatar_src(profile) %}<img decoding="async" class="profile-identity-avatar" src="{{social_avatar_src(profile)}}" alt="Foto de {{profile.nickname}}">{% else %}<span class="profile-identity-avatar fallback">🔥</span>{% endif %}
       <small>PERFIL DA ARENA X1</small><h1{% if player_name_color(profile) %} style="color:{{player_name_color(profile)}}"{% endif %}>{{profile.nickname}}</h1>
       {% if profile.quote %}<blockquote>“{{profile.quote}}”</blockquote>{% else %}<blockquote class="muted">Sem frase por enquanto.</blockquote>{% endif %}
       <div class="profile-account-status">{% if profile.social_enabled %}<b>●</b> CONTA GOOGLE ATIVA{% else %}PERFIL DA COMUNIDADE{% endif %}</div>

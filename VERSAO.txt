@@ -1,3 +1,3 @@
-CHAMAS FLAMEJANTES V21.1 — PERFIL COMPACTO
-Avatares circulares nos cards • perfil público menor e proporcional • cancelamento de desafio pendente pelo desafiante • Arena unificada preservada.
+CHAMAS FLAMEJANTES V22 — EXPERIÊNCIA ANIMADA
+Navegação responsiva • animações leves • perfil compacto • notificações atualizadas • checklist de estudo • consultas em lote • arquivos versionados e comprimidos.
 Admin existente preservado; em banco novo, crie o primeiro acesso em /setup.

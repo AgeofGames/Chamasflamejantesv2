@@ -1,4 +1,22 @@
-# 🔥 CHAMAS FLAMEJANTES V21.1 — PERFIL COMPACTO
+# 🔥 CHAMAS FLAMEJANTES V22 — EXPERIÊNCIA ANIMADA
+
+## Melhorias da V22
+
+- Navegação em duas linhas alinhadas no computador e menu recolhível no celular, com todas as abas acessíveis.
+- Animações de entrada ao rolar, hover dos cards, janelas flutuantes e feedback dos botões. As animações são curtas e respeitam a preferência do aparelho; o rodapé permite reduzi-las.
+- Tipografia e espaçamentos consistentes nas páginas públicas, perfis, guias, formulários e painel.
+- Perfil compacto com avatar circular, atalhos de navegação, prévia da foto escolhida e contagem de caracteres.
+- Alteração de frase e foto sem depender do AoMStats. Marque a opção de atualizar os dados quando quiser sincronizar nome, Elo e foto original.
+- Busca de jogadores com contagem e estado vazio; pesquisas adicionais no Elo e nos programas. Busca de mapas preservada.
+- Checklist nas build orders, com progresso salvo apenas no navegador utilizado.
+- Notificações consultadas a cada 45 segundos com a aba visível. A consulta para ao expirar a sessão e mantém as mensagens anteriores durante falhas de rede.
+- Navegação por teclado, foco contido nas janelas de perfil e counters, atalhos Escape e retorno ao controle que abriu o perfil.
+- Proteção contra envios repetidos e respostas simultâneas a desafios; cancelamento não reaparece após reiniciar o serviço.
+- Estatísticas e sequências de vitórias calculadas em lote, índices para desafios e notificações e catálogo de builds em cache.
+- Arquivos estáticos com versão pelo conteúdo, cache e compressão gzip de CSS, JavaScript, JSON e guia HTML. Páginas de conta e tokens não entram em cache compartilhado.
+- Fotos novas redimensionadas para até 512 pixels em WebP; limite de 8 MB. Imagens de listas carregadas sob demanda.
+
+Atualize o conteúdo do repositório com este pacote, mantendo as variáveis do Google, a chave secreta e o volume do Railway. A identificação em `/health` passa a ser `22-experiencia-animada`.
 
 Build configurado com Railpack, o construtor atual do Railway.
 

@@ -6,6 +6,10 @@
   <meta name="theme-color" content="{{ site.accent_color if site else '#e95d20' }}">
   <meta name="description" content="{% block meta_description %}Comunidade, torneios, conhecimento e Arena X1 de Age of Mythology: Retold.{% endblock %}">
   <title>{% block title %}{{ site.title if site else 'Chamas Flamejantes' }}{% endblock %}</title>
+  <meta name="csrf-token" content="{{csrf_token()}}">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   {% block social_meta %}
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Chamas Flamejantes">
@@ -18,40 +22,44 @@
   <link rel="stylesheet" href="{{url_for('static',filename='knowledge.css')}}">
   <link rel="stylesheet" href="{{url_for('static',filename='header.css')}}">
   <link rel="stylesheet" href="{{url_for('static',filename='social.css')}}">
+  {% if request.endpoint in ('knowledge_page','counter_guide_page') %}<link rel="stylesheet" href="{{url_for('static',filename='counters.css')}}">{% endif %}
+  <link rel="stylesheet" href="{{url_for('static',filename='experience.css')}}">
   <script defer src="{{url_for('static',filename='app.js')}}"></script>
-  <script defer src="{{url_for('static',filename='knowledge.js')}}"></script>
+  {% if request.endpoint in ('knowledge_build_orders_page','knowledge_god_page','knowledge_build_page') %}<script defer src="{{url_for('static',filename='knowledge.js')}}"></script>{% endif %}
   <script defer src="{{url_for('static',filename='social.js')}}"></script>
+  <script defer src="{{url_for('static',filename='experience.js')}}"></script>
   <style>:root{--accent:{{site.accent_color if site else '#e95d20'}}}</style>
 </head>
 <body class="bg-{{site.background_preset if site else 'ember'}}" data-page="{{request.endpoint or 'home'}}">
+<a class="skip-link" href="#main-content">Pular para o conteúdo</a>
+<div class="reading-progress" aria-hidden="true"><i></i></div>
 <div class="page-background-art" style="--page-bg-image:url('{{page_background_url}}')"></div><div class="noise"></div>
 <header class="topbar">
   <a class="brand" href="{{url_for('home')}}"><span class="brand-mark">🔥</span><span><strong>{{site.title}}</strong><small>{{site.subtitle}}</small></span></a>
-  <nav class="topbar-nav" aria-label="Navegação principal"><a href="{{url_for('home')}}">Início</a><a href="{{url_for('open_tournaments_page')}}">Torneios Abertos</a><a href="{{url_for('tournament_history')}}">Histórico</a><a href="{{url_for('community_page')}}">Elo da Comunidade</a><a href="{{url_for('x1_page')}}">Arena X1</a><a href="{{url_for('maps_page')}}">Mapas</a><a class="programs-nav-link" href="{{url_for('programs_page')}}">Programas</a><a href="{{url_for('knowledge_page')}}">Conhecimento</a><a href="{{url_for('feedback_page')}}">Feedback</a><div class="nav-drop"><button type="button">Ativos <span aria-hidden="true">▾</span></button><div class="nav-menu">{% for nt in nav_tournaments %}<a href="{{url_for('tournament_page',slug=nt.slug)}}"><b>{% if nt.best_of==3 %}MD3 • {% endif %}{{nt.short_name}}</b><small>{{nt.status}} • {{'equipe de '~nt.team_size if nt.team_size>1 else 'individual'}}</small></a>{% endfor %}</div></div>{% if admin_logged %}<a class="admin-link" href="{{url_for('admin')}}">Painel</a>{% endif %}</nav>
+  {% include '_navigation.html' %}
   <div class="social-nav-actions">
     {% if social_user %}
       <button class="social-nav-notifications" type="button" data-notification-toggle aria-expanded="false" aria-controls="notification-popover" aria-label="Abrir notificações">🔔{% if unread_notifications %}<b>{{unread_notifications}}</b>{% endif %}</button>
       <a class="social-nav-profile" href="{{url_for('social_my_profile') if social_user.player_id else url_for('social_profile_setup')}}">
-        {% if social_avatar_src(social_user) %}<img src="{{social_avatar_src(social_user)}}" alt="">{% else %}<span>🔥</span>{% endif %}
+        {% if social_avatar_src(social_user) %}<img decoding="async" src="{{social_avatar_src(social_user)}}" alt="">{% else %}<span>🔥</span>{% endif %}
         <small{% if social_user.nickname and player_name_color(social_user) %} style="color:{{player_name_color(social_user)}}"{% endif %}>{{social_user.nickname or social_user.google_name or 'Meu perfil'}}</small>
       </a>
     {% else %}
       <a class="social-google-login" href="{{url_for('social_login')}}">Entrar com Google</a>
     {% endif %}
   </div>
+  <button class="mobile-nav-toggle" type="button" aria-expanded="true" aria-controls="main-navigation"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Menu</span></button>
 </header>
 {% if social_user %}<aside class="notification-popover" id="notification-popover" hidden aria-label="Notificações da Arena X1">
   <header><div><small>MENSAGENS DA ARENA</small><h2>Notificações</h2></div><button type="button" data-notification-close aria-label="Fechar">×</button></header>
   <div class="notification-popover-list">
-    {% for n in social_notification_items %}<article class="notification-bubble {% if not n.is_read %}unread{% endif %}">
-      <div class="notification-bubble-head">{% if n.avatar_file or n.avatar_url %}<img src="{{avatar_src(n)}}" alt="">{% else %}<span>🔥</span>{% endif %}<div><strong{% if n.actor_name_color %} style="color:{{n.actor_name_color}}"{% endif %}>{{n.actor_name or 'Arena X1'}}</strong><small>{{n.created_at}}</small></div></div>
-      <p>{{n.message}}</p>
-      <div class="notification-bubble-actions">{% if n.kind=='challenge' and n.duel_status=='pending' and social_user.player_id==n.challenged_id %}<form method="post" action="{{url_for('social_duel_accept',duel_id=n.duel_id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn primary">ACEITAR</button></form><form method="post" action="{{url_for('social_duel_refuse',duel_id=n.duel_id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn danger">RECUSAR</button></form>{% endif %}{% if n.duel_id %}<a href="{{url_for('social_duel',duel_id=n.duel_id)}}">ABRIR CONVERSA →</a>{% endif %}</div>
-    </article>{% else %}<div class="notification-popover-empty"><span>🔔</span><p>Nenhuma mensagem ainda.</p></div>{% endfor %}
+    {% include '_notification_items.html' %}
   </div>
   <footer><form method="post" action="{{url_for('social_notifications')}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><input type="hidden" name="next" value="{{request.full_path.rstrip('?')}}"><button type="submit">MARCAR TODAS COMO LIDAS</button></form><a href="{{url_for('social_notifications')}}">VER HISTÓRICO</a></footer>
 </aside>{% endif %}
-<main>{% with messages=get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-wrap">{% for category,message in messages %}<div class="flash {{category}}">{{message}}</div>{% endfor %}</div>{% endif %}{% endwith %}{% block content %}{% endblock %}</main>
+<main id="main-content" tabindex="-1">{% with messages=get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-wrap" aria-live="polite">{% for category,message in messages %}<div class="flash {{category}}" role="status"><span>{{message}}</span><button type="button" data-dismiss-flash aria-label="Fechar aviso">×</button></div>{% endfor %}</div>{% endif %}{% endwith %}{% block content %}{% endblock %}</main>
+<div class="toast-region" aria-live="polite" aria-atomic="true"></div>
+<button type="button" class="back-to-top" aria-label="Voltar ao topo" hidden>↑</button>
 <div class="profile-modal" id="profile-modal" hidden aria-hidden="true"><button class="profile-modal-backdrop" type="button" data-close-profile aria-label="Fechar"></button><section class="profile-modal-dialog" role="dialog" aria-modal="true" aria-label="Perfil do jogador"><button class="profile-modal-close" type="button" data-close-profile aria-label="Fechar">×</button><div id="profile-modal-content"><div class="profile-modal-loading">Carregando perfil…</div></div></section></div>
 <footer class="site-footer">
 <div class="site-footer-inner">
@@ -62,9 +70,9 @@
 {% if community_links.youtube %}<a class="social-link youtube" href="{{community_links.youtube}}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8zM9.6 15.6V8.4l6.3 3.6-6.3 3.6z"/></svg><span>YouTube</span></a>{% endif %}
 {% if community_links.telegram %}<a class="social-link telegram" href="{{community_links.telegram}}" target="_blank" rel="noopener"><span>Telegram</span></a>{% endif %}</div></div>
   <a class="footer-creator" href="https://aomstats.io/profile/1076869557" target="_blank" rel="noopener">
-    {% if site_creator and avatar_src(site_creator) %}<img src="{{avatar_src(site_creator)}}" alt="Foto de {{site_creator.nickname}}" loading="lazy">{% else %}<span class="creator-avatar-fallback">🔥</span>{% endif %}
+    {% if site_creator and avatar_src(site_creator) %}<img decoding="async" src="{{avatar_src(site_creator)}}" alt="Foto de {{site_creator.nickname}}" loading="lazy">{% else %}<span class="creator-avatar-fallback">🔥</span>{% endif %}
     <span><small>CRIADOR DO SITE</small><strong>{{site_creator.nickname if site_creator else 'Criador do site'}}</strong><em>Ver perfil no AoMStats ↗</em></span>
   </a>
 </div>
-<div class="footer-bottom"><span>Age of Mythology: Retold • SQLite • AoMStats/Steam • Histórico permanente.</span><a href="{{url_for('feedback_page')}}">Enviar feedback</a></div>
+<div class="footer-bottom"><span>Chamas Flamejantes • Comunidade de Age of Mythology: Retold</span><div class="footer-tools"><button type="button" data-motion-toggle aria-pressed="false">Reduzir animações</button><a href="{{url_for('feedback_page')}}">Enviar feedback</a></div></div>
 </footer></body></html>

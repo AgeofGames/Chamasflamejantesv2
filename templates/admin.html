@@ -60,7 +60,7 @@
     <div class="community-profile-preview">
       <div class="community-preview-avatar-wrap">
         <span class="community-preview-placeholder">🔥</span>
-        <img class="aom-avatar-preview" alt="Foto do jogador" hidden>
+        <img decoding="async" class="aom-avatar-preview" alt="Foto do jogador" hidden>
       </div>
       <div class="community-preview-data">
         <strong class="aom-preview-name">Aguardando perfil</strong>
@@ -132,7 +132,7 @@
 {% for c in community_members %}
 <div class="community-admin-row {% if loop.first %}best{% endif %} {% if loop.last and community_members|length>1 %}worst{% endif %}">
   <span class="rank-num">#{{ loop.index }}</span>
-  {% if avatar_src(c) %}<img class="avatar-img small" src="{{ avatar_src(c) }}">{% else %}<span class="avatar small avatar-fire">🔥</span>{% endif %}
+  {% if avatar_src(c) %}<img decoding="async" class="avatar-img small" src="{{ avatar_src(c) }}">{% else %}<span class="avatar small avatar-fire">🔥</span>{% endif %}
   <div class="community-admin-main">
     <b{% if player_name_color(c) %} style="color:{{player_name_color(c)}}"{% endif %}>{{ c.nickname }}</b>
     <small>{% if loop.first %}👑 MELHOR DA COMUNIDADE{% elif loop.last and community_members|length>1 %}📉 MENOR ELO{% else %}Ranking da comunidade{% endif %}</small>
@@ -205,7 +205,7 @@
         <div class="community-profile-preview sponsor-profile-preview">
           <div class="community-preview-avatar-wrap">
             <span class="community-preview-placeholder">🤝</span>
-            <img class="aom-avatar-preview" alt="Foto do patrocinador" hidden>
+            <img decoding="async" class="aom-avatar-preview" alt="Foto do patrocinador" hidden>
           </div>
           <div class="community-preview-data">
             <strong class="aom-preview-name">Aguardando perfil</strong>
@@ -258,7 +258,7 @@
     <div class="sponsor-admin-row">
       <div class="sponsor-admin-profile">
         {% if sponsor_avatar_src(s) %}
-          <img class="sponsor-admin-avatar" src="{{ sponsor_avatar_src(s) }}" alt="{{ s.name }}">
+          <img decoding="async" class="sponsor-admin-avatar" src="{{ sponsor_avatar_src(s) }}" alt="{{ s.name }}">
         {% else %}
           <span class="sponsor-admin-avatar sponsor-fallback">🤝</span>
         {% endif %}
@@ -304,7 +304,7 @@
     {% for item in map_requests %}
     <article class="admin-submission-card {% if item.status=='novo' %}is-new{% endif %}">
       <div class="admin-submission-sender">
-        {% if avatar_src(item) %}<img src="{{avatar_src(item)}}" alt="Foto de {{item.nickname}}">{% else %}<span>🗺️</span>{% endif %}
+        {% if avatar_src(item) %}<img decoding="async" src="{{avatar_src(item)}}" alt="Foto de {{item.nickname}}">{% else %}<span>🗺️</span>{% endif %}
         <div><strong>{{item.nickname}}</strong><a href="{{item.aomstats_url}}" target="_blank" rel="noopener">Ver AoMStats ↗</a></div>
         <em>{{item.category}}</em>
       </div>
@@ -327,7 +327,7 @@
     {% for item in feedback_entries %}
     <article class="admin-submission-card {% if item.status=='novo' %}is-new{% endif %}">
       <div class="admin-submission-sender">
-        {% if avatar_src(item) %}<img src="{{avatar_src(item)}}" alt="Foto de {{item.nickname}}">{% else %}<span>💬</span>{% endif %}
+        {% if avatar_src(item) %}<img decoding="async" src="{{avatar_src(item)}}" alt="Foto de {{item.nickname}}">{% else %}<span>💬</span>{% endif %}
         <div><strong>{{item.nickname}}</strong><a href="{{item.aomstats_url}}" target="_blank" rel="noopener">Ver AoMStats ↗</a></div>
         <em>{{'NOVO' if item.status=='novo' else 'LIDO'}}</em>
       </div>

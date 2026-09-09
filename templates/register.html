@@ -10,14 +10,14 @@
     <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
     {% if tournament.team_size == 1 %}
       <div class="quick-tournament-player">
-        {% if social_avatar_src(registration_player) %}<img src="{{social_avatar_src(registration_player)}}" alt="Foto de {{registration_player.nickname}}">{% else %}<span>🔥</span>{% endif %}
+        {% if social_avatar_src(registration_player) %}<img decoding="async" src="{{social_avatar_src(registration_player)}}" alt="Foto de {{registration_player.nickname}}">{% else %}<span>🔥</span>{% endif %}
         <div><small>SEU PERFIL JÁ ESTÁ PRONTO</small><h2{% if player_name_color(registration_player) %} style="color:{{player_name_color(registration_player)}}"{% endif %}>{{registration_player.nickname}}</h2><p>AoMStats #{{registration_player.aomstats_profile_id}} • Elo {{registration_player.elo_1v1 or 'SEM ELO'}}</p></div>
       </div>
       <div class="form-info"><b>Inscrição em um clique</b><span>O site usará o AoMStats, o nome e a foto já vinculados à sua conta Google.</span></div>
     {% else %}
       <div class="two-col"><label><span>Nome da equipe *</span><input name="team_name" required maxlength="100" placeholder="Ex.: Filhos de Odin"></label><label><span>Discord do capitão</span><input name="captain_discord" maxlength="80"></label></div>
       <div class="quick-tournament-player team-captain-player">
-        {% if social_avatar_src(registration_player) %}<img src="{{social_avatar_src(registration_player)}}" alt="Foto de {{registration_player.nickname}}">{% else %}<span>🔥</span>{% endif %}
+        {% if social_avatar_src(registration_player) %}<img decoding="async" src="{{social_avatar_src(registration_player)}}" alt="Foto de {{registration_player.nickname}}">{% else %}<span>🔥</span>{% endif %}
         <div><small>{{'FOOD' if tournament.mode_key=='food_wood_gold' else 'JOGADOR 1'}} • VOCÊ</small><h2{% if player_name_color(registration_player) %} style="color:{{player_name_color(registration_player)}}"{% endif %}>{{registration_player.nickname}}</h2><p>O seu AoMStats foi preenchido automaticamente.</p></div>
       </div>
       {% for i in range(2,tournament.team_size+1) %}

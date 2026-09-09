@@ -42,7 +42,7 @@
     <a class="god-knowledge-card" data-knowledge-card data-pantheon="{{ god.pantheon_key }}" data-search="{{ god.name|lower }} {{ god.pantheon.name|lower }} economia rush água" href="{{ url_for('knowledge_god_page',god_slug=god.slug) }}">
       <div class="god-portrait-wrap">
         <span class="god-symbol">{{ god.pantheon.symbol }}</span>
-        <img src="{{ url_for('static',filename='knowledge/gods/'~god.image_name~'.webp') }}" alt="Retrato de {{ god.name }} em Age of Mythology: Retold" loading="lazy">
+        <img decoding="async" src="{{ url_for('static',filename='knowledge/gods/'~god.image_name~'.webp') }}" alt="Retrato de {{ god.name }} em Age of Mythology: Retold" loading="lazy">
         <div class="god-card-shade"></div>
         <span class="pantheon-pill">{{ god.pantheon.name }}</span>
       </div>

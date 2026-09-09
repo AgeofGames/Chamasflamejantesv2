@@ -27,7 +27,7 @@
       <article class="god-knowledge-card map-knowledge-card" data-map-card data-name="{{m.name|lower}}" data-creator="{{m.creator|lower}}" data-category="{{m.category}}">
         <div class="god-portrait-wrap map-portrait-wrap">
           {% if m.image_name %}
-          <img src="{{url_for('persistent_upload',filename='maps/'~m.image_name)}}" alt="Imagem completa do mapa {{m.name}}" loading="lazy">
+          <img decoding="async" src="{{url_for('persistent_upload',filename='maps/'~m.image_name)}}" alt="Imagem completa do mapa {{m.name}}" loading="lazy">
           {% else %}
           <div class="map-no-image">🗺️<span>SEM IMAGEM</span></div>
           {% endif %}
@@ -66,7 +66,7 @@
     <form method="post" action="{{url_for('map_request_submit')}}" class="community-public-form">
       <input type="hidden" name="_csrf" value="{{csrf_token()}}">
       <label><span>Tipo de mapa</span><select name="category"><option>FFA</option><option>1x1</option><option>2x2</option><option>3x3</option><option>Outro</option></select></label>
-      <label><span>Seu perfil AoMStats *</span><input type="url" name="aomstats_url" required placeholder="https://aomstats.io/profile/1076869557"></label>
+      <label><span>Seu perfil AoMStats *</span><input type="url" name="aomstats_url" required value="{{social_user.aomstats_url if social_user and social_user.aomstats_url else ''}}" placeholder="https://aomstats.io/profile/1076869557"></label>
       <label class="full"><span>Descreva o mapa que você quer *</span><textarea name="message" minlength="5" maxlength="2000" required placeholder="Ex.: Quero um mapa FFA para 8 jogadores, com ilhas centrais, poucos recursos e bastante espaço para batalhas navais..."></textarea></label>
       <button class="btn primary big">ENVIAR PEDIDO DE MAPA</button>
     </form>

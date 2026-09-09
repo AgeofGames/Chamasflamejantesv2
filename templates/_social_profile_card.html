@@ -1,7 +1,7 @@
 <article class="profile-popover-card build-library-card">
   <div class="profile-popover-top">
     <span class="profile-popover-avatar" aria-label="Foto de {{profile.nickname}}">
-      {% if social_avatar_src(profile) %}<img src="{{social_avatar_src(profile)}}" alt="Foto de {{profile.nickname}}">{% else %}<span>🔥</span>{% endif %}
+      {% if social_avatar_src(profile) %}<img decoding="async" src="{{social_avatar_src(profile)}}" alt="Foto de {{profile.nickname}}">{% else %}<span>🔥</span>{% endif %}
     </span>
     <div><small>JOGADOR DA ARENA</small><h2{% if player_name_color(profile) %} style="color:{{player_name_color(profile)}}"{% endif %}>{{profile.nickname}}</h2><span class="profile-online-badge">{% if profile.social_enabled %}● PERFIL ATIVO{% else %}PERFIL DA COMUNIDADE{% endif %}</span></div>
   </div>

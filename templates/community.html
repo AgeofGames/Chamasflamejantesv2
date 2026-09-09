@@ -12,7 +12,7 @@
   <div class="community-highlight-grid">
     <article class="community-highlight best">
       <small>👑 MELHOR DA COMUNIDADE</small>
-      <button class="community-avatar-button profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=best.player_id)}}" aria-label="Abrir perfil de {{best.nickname}}">{% if avatar_src(best) %}<img src="{{ avatar_src(best) }}" class="community-avatar">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}</button>
+      <button class="community-avatar-button profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=best.player_id)}}" aria-label="Abrir perfil de {{best.nickname}}">{% if avatar_src(best) %}<img loading="lazy" decoding="async" src="{{ avatar_src(best) }}" class="community-avatar">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}</button>
       <h2{% if player_name_color(best) %} style="color:{{player_name_color(best)}}"{% endif %}>{{ best.nickname }}</h2>
       {% if best.has_elo %}
         <strong>{{ best.community_elo }} ELO</strong>
@@ -28,7 +28,7 @@
     {% if worst and ranking|length > 1 %}
     <article class="community-highlight worst">
       <small>📉 MENOR ELO</small>
-      <button class="community-avatar-button profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=worst.player_id)}}" aria-label="Abrir perfil de {{worst.nickname}}">{% if avatar_src(worst) %}<img src="{{ avatar_src(worst) }}" class="community-avatar">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}</button>
+      <button class="community-avatar-button profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=worst.player_id)}}" aria-label="Abrir perfil de {{worst.nickname}}">{% if avatar_src(worst) %}<img loading="lazy" decoding="async" src="{{ avatar_src(worst) }}" class="community-avatar">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}</button>
       <h2{% if player_name_color(worst) %} style="color:{{player_name_color(worst)}}"{% endif %}>{{ worst.nickname }}</h2>
       {% if worst.has_elo %}
         <strong>{{ worst.community_elo }} ELO</strong>
@@ -54,15 +54,17 @@
   </div>
 
   <div class="community-table-wrap">
+  <label class="social-player-search"><span aria-hidden="true">⌕</span><input id="community-search" type="search" placeholder="Pesquisar jogador na classificação…" aria-label="Pesquisar jogador no Elo" data-quick-filter="[data-community-row]" data-count-target="community-count" data-empty-target="community-empty"></label>
+  <div class="search-summary"><span id="community-count" aria-live="polite"></span><button type="button" data-clear-search="community-search">Limpar busca</button></div>
   <table class="players-table community-table">
     <thead>
       <tr><th>#</th><th>Jogador</th><th>Frase</th><th>Elo</th><th>Normais</th><th>Nível</th><th>Título</th><th>Perfil</th></tr>
     </thead>
     <tbody>
     {% for c in ranking %}
-    <tr class="{% if loop.first %}community-row-best{% elif loop.last and ranking|length>1 %}community-row-worst{% endif %}">
+    <tr data-community-row data-filter-text="{{c.nickname}}" class="{% if loop.first %}community-row-best{% elif loop.last and ranking|length>1 %}community-row-worst{% endif %}">
       <td class="rank">#{{loop.index}}</td>
-      <td><div class="name-cell"><button class="table-avatar-button profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=c.player_id)}}" aria-label="Abrir perfil de {{c.nickname}}">{% if avatar_src(c) %}<img class="avatar-img small" src="{{avatar_src(c)}}">{% else %}<span class="avatar small avatar-fire">🔥</span>{% endif %}</button><strong{% if player_name_color(c) %} style="color:{{player_name_color(c)}}"{% endif %}>{{c.nickname}}</strong></div></td>
+      <td><div class="name-cell"><button class="table-avatar-button profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=c.player_id)}}" aria-label="Abrir perfil de {{c.nickname}}">{% if avatar_src(c) %}<img loading="lazy" decoding="async" class="avatar-img small" src="{{avatar_src(c)}}">{% else %}<span class="avatar small avatar-fire">🔥</span>{% endif %}</button><strong{% if player_name_color(c) %} style="color:{{player_name_color(c)}}"{% endif %}>{{c.nickname}}</strong></div></td>
       <td class="quote-cell">{% if c.quote %}“{{c.quote}}”{% else %}<span class="muted">—</span>{% endif %}</td>
       <td>{% if c.has_elo %}<strong>{{c.community_elo}}</strong>{% else %}<span class="no-elo-badge">SEM ELO</span>{% endif %}</td>
       <td><span class="record-wins">{{c.normal_wins}}V</span> • <span class="record-losses">{{c.normal_losses}}D</span><small class="table-sub">{% if c.normal_stats_available %}{{'%.1f'|format(c.normal_win_rate)}}%{% else %}dados indisponíveis{% endif %}</small></td>
@@ -73,6 +75,7 @@
     {% endfor %}
     </tbody>
   </table>
+  <div class="empty" id="community-empty" hidden><h3>Nenhum jogador encontrado</h3><p>Tente outro nome.</p></div>
   </div>
 
   <div class="normal-data-note">
@@ -82,6 +85,6 @@
   </div>
 </section>
 {% else %}
-<section class="section"><div class="empty"><h3>Ranking ainda vazio</h3><p>O administrador ainda não cadastrou os participantes da comunidade.</p></div></section>
+<section class="section"><div class="empty"><h3>Ranking ainda vazio</h3><p>Entre com o Google e vincule seu AoMStats para participar.</p><a class="btn primary" href="{{url_for('social_login')}}">ENTRAR NA COMUNIDADE</a></div></section>
 {% endif %}
 {% endblock %}

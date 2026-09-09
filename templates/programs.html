@@ -3,7 +3,7 @@
 {% block content %}
 <section class="knowledge-hero programs-hero">
   <div class="knowledge-hero-copy">
-    <span class="eyebrow">💾 FERRAMENTAS DA COMUNIDADE</span>
+    <span class="eyebrow">FERRAMENTAS DA COMUNIDADE</span>
     <h1>PROGRAMAS<br><em>OFICIAIS</em></h1>
     <p>Baixe ferramentas selecionadas e publicadas oficialmente pelo Chamas Flamejantes para melhorar sua experiência com Age of Mythology: Retold.</p>
     <div class="knowledge-stats">
@@ -25,18 +25,20 @@
   </div>
 
   {% if programs %}
+  <label class="social-player-search"><span aria-hidden="true">⌕</span><input id="program-search" type="search" placeholder="Buscar programa ou ferramenta…" aria-label="Pesquisar programas" data-quick-filter="[data-program-card]" data-count-target="program-count" data-empty-target="program-empty"></label>
+  <div class="search-summary"><span id="program-count" aria-live="polite"></span><button type="button" data-clear-search="program-search">Limpar busca</button></div>
   <div class="build-library-grid programs-grid">
     {% for program in programs %}
-    <article class="build-library-card program-card">
+    <article class="build-library-card program-card" data-program-card data-filter-text="{{program.name}} {{program.description}}">
       <div class="program-card-image">
-        <img src="{{url_for('persistent_upload',filename='programs/'~program.image_name)}}" alt="Imagem do programa {{program.name}}" loading="lazy">
+        <img decoding="async" src="{{url_for('persistent_upload',filename='programs/'~program.image_name)}}" alt="Imagem do programa {{program.name}}" loading="lazy">
         <span class="program-official-seal">🔥 OFICIAL</span>
       </div>
       <div class="program-card-body">
         <div class="build-card-top">
           <span class="build-number">{{'%02d'|format(loop.index)}}</span>
           <div class="build-badges">
-            <span class="build-tag tag-economia">VERIFICADO</span>
+            <span class="build-tag tag-economia">PUBLICADO PELO SITE</span>
             <span class="build-tag tag-agua">{{'ARQUIVO RAR' if program.file_name else 'LINK EXTERNO'}}</span>
           </div>
         </div>
@@ -51,8 +53,9 @@
     </article>
     {% endfor %}
   </div>
+  <div class="empty" id="program-empty" hidden><h3>Nenhum programa encontrado</h3><p>Tente outro nome ou limpe a busca.</p></div>
   {% else %}
-  <div class="knowledge-empty"><span>💾</span><h2>Nenhum programa publicado</h2><p>Os programas oficiais aparecerão aqui assim que forem adicionados pelo administrador.</p></div>
+  <div class="knowledge-empty"><span>↓</span><h2>Nenhum programa publicado</h2><p>Os programas oficiais aparecerão aqui assim que forem adicionados pelo administrador.</p></div>
   {% endif %}
 </section>
 {% endblock %}

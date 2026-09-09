@@ -43,6 +43,7 @@
   let currentPantheon = "Greek";
   let selectedUnit = null;
   let enemyPantheon = "Egyptian";
+  let modalOpener = null;
 
   const normalize = (value) => (value || "")
     .toLocaleLowerCase("pt-BR")
@@ -72,6 +73,7 @@
     img.src = imageUrl(unit);
     img.alt = `Ícone de ${unit.name} em Age of Mythology: Retold`;
     img.loading = "lazy";
+    img.decoding = "async";
     const shade = element("div", "god-card-shade");
     const pill = element("span", "pantheon-pill", unit.categoryLabel);
     wrap.append(img, shade, pill);
@@ -108,6 +110,7 @@
       button.type = "button";
       button.style.setProperty("--counter-pantheon", pantheon.color);
       button.classList.toggle("active", pantheon.id === currentPantheon);
+      button.setAttribute('aria-pressed', String(pantheon.id === currentPantheon));
       button.append(element("span", "counter-pantheon-mark", pantheon.mark));
       button.append(document.createTextNode(pantheon.label));
       button.addEventListener("click", () => {
@@ -157,6 +160,7 @@
       empty.append(element("p", "", "Tente pesquisar outro nome, categoria ou deus."));
       groups.append(empty);
     }
+    document.dispatchEvent(new CustomEvent('chamas:content', {detail:{container:groups}}));
   }
 
   function renderTitanHunters() {
@@ -201,6 +205,7 @@
   }
 
   function openUnit(unit) {
+    modalOpener = document.activeElement;
     selectedUnit = unit;
     enemyPantheon = (pantheons.find((item) => item.id !== unit.pantheon) || pantheons[0]).id;
     renderSelectedUnit();
@@ -215,6 +220,7 @@
     modal.hidden = true;
     selectedUnit = null;
     document.body.classList.remove("counter-modal-open");
+    if (modalOpener?.isConnected) modalOpener.focus();
   }
 
   function renderSelectedUnit() {
@@ -251,6 +257,7 @@
       const button = element("button", "knowledge-filter counter-enemy-tab");
       button.type = "button";
       button.classList.toggle("active", pantheon.id === enemyPantheon);
+      button.setAttribute('aria-pressed', String(pantheon.id === enemyPantheon));
       button.style.setProperty("--counter-pantheon", pantheon.color);
       button.append(element("span", "", pantheon.mark), document.createTextNode(pantheon.label));
       button.addEventListener("click", () => {
@@ -296,10 +303,18 @@
     emptyResult.hidden = targets.length !== 0;
   }
 
-  search.addEventListener("input", renderRoster);
+  let searchTimer;
+  search.addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(renderRoster, 120); });
   document.querySelectorAll("[data-counter-close]").forEach((button) => button.addEventListener("click", closeModal));
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !modal.hidden) closeModal();
+    if (event.key === 'Tab' && !modal.hidden) {
+      const buttons = [...modal.querySelectorAll('button,a[href],input')].filter(node => node.getClientRects().length);
+      if (!buttons.length) return;
+      const first = buttons[0], last = buttons[buttons.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) { event.preventDefault(); first.focus(); }
+    }
   });
 
   fetch(app.dataset.unitsUrl)
