@@ -1,4 +1,30 @@
-# 🔥 CHAMAS FLAMEJANTES V22 — EXPERIÊNCIA ANIMADA
+# 🔥 CHAMAS FLAMEJANTES V22.2 — PARTIDAS CUSTOMS/QUICKPLAY
+
+## Correção da V22.2
+
+- Confirmação de duelos pelo ID exato tanto na página da partida quanto no histórico recente Customs/Quickplay dos dois jogadores.
+- Leitura dos IDs dos perfis e dos marcadores explícitos de vitória e derrota, sem inferir resultado pelo nome. Partidas com participantes extras ou dessincronização não são registradas como X1.
+- Consultas com limite de tempo e tamanho de resposta; nenhum ciclo automático fica buscando a partida indefinidamente.
+- O formulário mostra a resposta sem recarregar a página quando não há resultado. Falhas e tempo esgotado encerram o indicador e liberam os botões.
+- Botão **Corrigir o ID da partida** enquanto o resultado não estiver confirmado.
+- Estado **Resultado não confirmado**, com informação da última consulta. Barra de leitura removida das páginas de duelo.
+- Proteção para não vincular o resultado de um ID a outro caso os dois jogadores alterem a partida ao mesmo tempo.
+
+**Como atualizar:** substitua os arquivos do repositório com este pacote, mantendo o volume e as variáveis do Railway. Depois que `/health` mostrar `22.2-partidas-customs`, abra o duelo já existente e clique em **Verificar novamente**. O ID salvo continua disponível.
+
+**Validação:** 30 testes Python e 3 testes JavaScript passaram. O caso 43115933 (Mirage, 6:08) foi reproduzido com o HTML público observado no AoMStats. Detalhes e limites em `CORRECAO_CUSTOMS_V22_2.md`.
+
+As animações, a capa de compartilhamento e as demais melhorias das versões anteriores estão incluídas.
+
+## Novidade da V22.1
+
+O link principal agora inclui uma capa própria com Zeus, Rá, o nome Chamas Flamejantes e destaque para as 113 build orders. As páginas que usam a prévia padrão também recebem a capa. Perfis e desafios continuam usando seus cards específicos.
+
+A imagem fica em `static/share/chamas-flamejantes-v22-1.jpg`, com acesso público, endereço absoluto e informações de formato, tamanho e descrição. Os metadados são enviados no HTML inicial, seguindo o [protocolo Open Graph](https://ogp.me/), e incluem a prévia grande do Twitter/X.
+
+Para atualizar a capa, inclua também a pasta `static/share`. Preserve o volume e as variáveis existentes do Railway. Envie o link em uma nova mensagem para conferir a prévia; o WhatsApp controla o formato e a atualização das prévias que já armazenou.
+
+Todas as melhorias da V22 abaixo estão incluídas.
 
 ## Melhorias da V22
 
@@ -16,7 +42,7 @@
 - Arquivos estáticos com versão pelo conteúdo, cache e compressão gzip de CSS, JavaScript, JSON e guia HTML. Páginas de conta e tokens não entram em cache compartilhado.
 - Fotos novas redimensionadas para até 512 pixels em WebP; limite de 8 MB. Imagens de listas carregadas sob demanda.
 
-Atualize o conteúdo do repositório com este pacote, mantendo as variáveis do Google, a chave secreta e o volume do Railway. A identificação em `/health` passa a ser `22-experiencia-animada`.
+Atualize o conteúdo do repositório com este pacote, mantendo as variáveis do Google, a chave secreta e o volume do Railway. A identificação em `/health` passa a ser `22.2-partidas-customs`.
 
 Build configurado com Railpack, o construtor atual do Railway.
 

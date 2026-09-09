@@ -18,6 +18,7 @@ from pathlib import Path
 from urllib.parse import quote, urlencode, urljoin, urlparse
 
 import requests
+from aomstats_matches import lookup_match, parse_match_page
 from site_experience import install_experience
 from bs4 import BeautifulSoup
 from flask import (
@@ -1895,7 +1896,7 @@ SOCIAL_DUEL_LABELS = {
     "pending": "Desafio enviado",
     "accepted": "Desafio aceito",
     "refused": "Fugiu da batalha",
-    "match_pending": "Partida em andamento",
+    "match_pending": "Resultado não confirmado",
     "completed": "Partida finalizada",
     "cancelled": "Desafio cancelado",
 }
@@ -3789,60 +3790,11 @@ def x1_challenge():
 
 
 def _parse_aomstats_match(match_id, html):
-    segment_match = re.search(r"matches:\[(.*?)\],details:\[", html, re.S)
-    segment = segment_match.group(1) if segment_match else html
-    pattern = re.compile(
-        rf"match_id:{re.escape(str(match_id))},(?:(?!match_id:).)*?profile_id:(\d+),"
-        rf"(?:(?!match_id:).)*?win:(true|false),",
-        re.S,
-    )
-    players = []
-    for profile_id, won in pattern.findall(segment):
-        if not any(p["profile_id"] == profile_id for p in players):
-            players.append({"profile_id": profile_id, "win": won == "true"})
-    map_match = re.search(rf"match_id:{re.escape(str(match_id))},.*?mapname:\"([^\"]+)\"", segment, re.S)
-    duration_match = re.search(rf"match_id:{re.escape(str(match_id))},.*?duration:(\d+)", segment, re.S)
-    return {
-        "players": players,
-        "map": map_match.group(1) if map_match else "",
-        "duration": int(duration_match.group(1)) if duration_match else 0,
-    }
+    return parse_match_page(match_id, html)
 
 
 def fetch_aomstats_match(match_id, expected_profile_ids):
-    match_url = f"https://aomstats.io/match/{match_id}"
-    try:
-        response = requests.get(
-            match_url,
-            headers={"User-Agent": "Mozilla/5.0 Chrome/126 Safari/537.36", "Accept-Language": "pt-BR,en;q=0.8"},
-            timeout=15,
-        )
-    except requests.RequestException:
-        return {"state": "unavailable", "match_url": match_url, "message": "AoMStats indisponível. Tente verificar novamente."}
-    if response.status_code == 404:
-        return {"state": "pending", "match_url": match_url, "message": "A partida ainda não apareceu no AoMStats."}
-    try:
-        response.raise_for_status()
-    except requests.RequestException:
-        return {"state": "unavailable", "match_url": match_url, "message": "AoMStats indisponível. Tente verificar novamente."}
-
-    parsed = _parse_aomstats_match(match_id, response.text)
-    rows = parsed["players"]
-    if not rows:
-        return {"state": "pending", "match_url": match_url, "message": "A partida ainda está sendo processada pelo AoMStats."}
-    found = {row["profile_id"] for row in rows}
-    expected = {str(value) for value in expected_profile_ids}
-    if len(rows) != 2 or found != expected:
-        raise ValueError("Esse ID não é uma partida X1 entre os dois perfis deste desafio.")
-    winners = [row for row in rows if row["win"]]
-    losers = [row for row in rows if not row["win"]]
-    if len(winners) != 1 or len(losers) != 1:
-        return {"state": "pending", "match_url": match_url, "message": "O resultado ainda não foi finalizado no AoMStats."}
-    return {
-        "state": "completed", "match_url": match_url,
-        "winner_profile_id": winners[0]["profile_id"], "loser_profile_id": losers[0]["profile_id"],
-        "map": parsed["map"], "duration": parsed["duration"],
-    }
+    return lookup_match(match_id, expected_profile_ids)
 
 
 def verify_social_duel_match(duel, fetched_result=None):
@@ -3871,9 +3823,9 @@ def verify_social_duel_match(duel, fetched_result=None):
             create_social_notification(loser_id, winner_id, duel["id"], "result", f"Resultado confirmado: {winner['nickname']} venceu o duelo.")
     else:
         db.execute(
-            """UPDATE social_duels SET status='match_pending',match_url=?,match_error=?,
+            """UPDATE social_duels SET status='match_pending',match_url=?,match_error=?,match_payload=?,
                last_checked_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('accepted','match_pending') AND match_id=?""",
-            (result["match_url"], result["message"], duel["id"], duel['match_id']),
+            (result["match_url"], result["message"], json.dumps(result, ensure_ascii=False), duel["id"], duel['match_id']),
         )
     db.commit()
     return result
@@ -4016,6 +3968,34 @@ def social_duel_cancel(duel_id):
     return redirect(url_for("x1_page"))
 
 
+def _duel_match_reply(duel_id, message, category='error', state=None):
+    """A finite JSON response for the enhanced form, or normal POST/redirect."""
+    row = social_duel_row(duel_id=duel_id)
+    if not row:
+        abort(404)
+    if state == 'completed' and row['status'] != 'completed':
+        state, category = 'conflict', 'error'
+        message = 'O ID foi atualizado pelo outro jogador durante a consulta. Confira o número atual antes de verificar novamente.'
+    if request.accept_mimetypes.best == 'application/json':
+        duel = social_duel_payload(row)
+        completed = row['status'] == 'completed'
+        template = app.jinja_env.get_template
+        response = jsonify(
+            state='completed' if completed else (state or 'pending'),
+            message=message, status=row['status'], label=SOCIAL_DUEL_LABELS.get(row['status'], row['status']),
+            match_id=row['match_id'], match_url=row['match_url'],
+            redirect=url_for('social_duel', duel_id=duel_id) if completed else '',
+            html='' if completed else template('_duel_match_panel.html').render(
+                duel=duel, participant=True, feedback_message=message, feedback_kind=category),
+            chat_html=template('_duel_chat_events.html').render(duel=duel),
+        )
+        response.headers['Cache-Control'] = 'private, no-store'
+        response.vary.add('Cookie')
+        return response
+    flash(message, category)
+    return redirect(url_for('social_duel', duel_id=duel_id))
+
+
 @app.post("/duelo/<int:duel_id>/partida")
 @social_profile_required
 def social_duel_submit_match(duel_id):
@@ -4025,24 +4005,20 @@ def social_duel_submit_match(duel_id):
     if not duel or viewer["player_id"] not in (duel["challenger_id"], duel["challenged_id"]):
         abort(403)
     if duel["status"] not in ("accepted", "match_pending"):
-        flash("O ID só pode ser enviado depois que o desafio for aceito.", "error")
-        return redirect(url_for("social_duel", duel_id=duel_id))
-    match_id = re.sub(r"\D", "", request.form.get("match_id", ""))
+        return _duel_match_reply(duel_id, "O ID só pode ser enviado após o aceite e antes de confirmar o resultado.", state='invalid')
+    match_id = request.form.get("match_id", "").strip().removeprefix('#')
     if not re.fullmatch(r"\d{5,12}", match_id):
-        flash("Informe somente o número do ID da partida exibido no AoMStats.", "error")
-        return redirect(url_for("social_duel", duel_id=duel_id))
+        return _duel_match_reply(duel_id, "Informe somente o número do ID da partida exibido no AoMStats.", state='invalid')
     used = get_db().execute("SELECT id FROM social_duels WHERE match_id=? AND id<>?", (match_id, duel_id)).fetchone()
     if used:
-        flash("Esse ID já foi usado em outro duelo.", "error")
-        return redirect(url_for("social_duel", duel_id=duel_id))
+        return _duel_match_reply(duel_id, "Esse ID já foi usado em outro duelo.", state='invalid')
     try:
         result = fetch_aomstats_match(
             match_id,
             [get_social_player(duel["challenger_id"])["aomstats_profile_id"], get_social_player(duel["challenged_id"])["aomstats_profile_id"]],
         )
     except ValueError as exc:
-        flash(str(exc), "error")
-        return redirect(url_for("social_duel", duel_id=duel_id))
+        return _duel_match_reply(duel_id, str(exc), state='invalid')
     db = get_db()
     try:
         changed = db.execute(
@@ -4053,32 +4029,23 @@ def social_duel_submit_match(duel_id):
         )
     except sqlite3.IntegrityError:
         db.rollback()
-        flash("Esse ID já foi registrado em outro duelo.", "error")
-        return redirect(url_for('social_duel', duel_id=duel_id))
+        return _duel_match_reply(duel_id, "Esse ID já foi registrado em outro duelo.", state='invalid')
     if not changed.rowcount:
         db.rollback()
-        flash("O duelo foi atualizado pelo outro jogador. Confira o estado atual.", "error")
-        return redirect(url_for('social_duel', duel_id=duel_id))
-    if result["state"] != "completed":
+        return _duel_match_reply(duel_id, "O duelo foi atualizado pelo outro jogador. Confira o estado atual.", state='conflict')
+    if result["state"] != "completed" and match_id != (duel['match_id'] or ''):
         other_id = duel["challenged_id"] if viewer["player_id"] == duel["challenger_id"] else duel["challenger_id"]
         create_social_notification(
             other_id, viewer["player_id"], duel_id, "match",
             f"{viewer['nickname']} enviou a partida #{match_id} para verificação.",
         )
     db.commit()
-    stored_duel = social_duel_row(duel_id=duel_id)
-    try:
-        result = verify_social_duel_match(stored_duel, fetched_result=result)
-    except ValueError as exc:
-        db.execute("UPDATE social_duels SET match_id='',match_url='',match_error='' WHERE id=?", (duel_id,))
-        db.commit()
-        flash(str(exc), "error")
-        return redirect(url_for("social_duel", duel_id=duel_id))
+    stored_duel = dict(duel)
+    stored_duel.update(match_id=match_id, match_url=result['match_url'])
+    result = verify_social_duel_match(stored_duel, fetched_result=result)
     if result["state"] == "completed":
-        flash("Partida encontrada. Resultado e vencedor registrados!", "success")
-    else:
-        flash("ID guardado. Partida em andamento: verifique novamente quando ela aparecer no AoMStats.", "success")
-    return redirect(url_for("social_duel", duel_id=duel_id))
+        return _duel_match_reply(duel_id, "Partida encontrada. Resultado e vencedor registrados!", 'success', 'completed')
+    return _duel_match_reply(duel_id, result['message'], 'error' if result['state']=='unavailable' else 'info', result['state'])
 
 
 @app.post("/duelo/<int:duel_id>/verificar")
@@ -4090,14 +4057,18 @@ def social_duel_verify(duel_id):
     if not duel or viewer["player_id"] not in (duel["challenger_id"], duel["challenged_id"]):
         abort(403)
     if duel["status"] != "match_pending" or not duel["match_id"]:
-        flash("Ainda não existe uma partida aguardando verificação.", "error")
-        return redirect(url_for("social_duel", duel_id=duel_id))
+        return _duel_match_reply(duel_id, "Ainda não existe uma partida aguardando verificação.", state='invalid')
     try:
         result = verify_social_duel_match(duel)
-        flash("Resultado encontrado e registrado!" if result["state"] == "completed" else result["message"], "success")
     except ValueError as exc:
-        flash(str(exc), "error")
-    return redirect(url_for("social_duel", duel_id=duel_id))
+        db = get_db()
+        db.execute("""UPDATE social_duels SET match_error=?,last_checked_at=CURRENT_TIMESTAMP
+                      WHERE id=? AND status='match_pending' AND match_id=?""", (str(exc), duel_id, duel['match_id']))
+        db.commit()
+        return _duel_match_reply(duel_id, str(exc), state='invalid')
+    if result['state'] == 'completed':
+        return _duel_match_reply(duel_id, 'Resultado encontrado e registrado!', 'success', 'completed')
+    return _duel_match_reply(duel_id, result['message'], 'error' if result['state']=='unavailable' else 'info', result['state'])
 
 
 @app.route("/notificacoes", methods=["GET", "POST"])
@@ -4938,7 +4909,7 @@ def robots_txt():
 @app.get("/health")
 def health():
     get_db().execute('SELECT 1').fetchone()
-    return {"version":"22-experiencia-animada","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"22.2-partidas-customs","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 @app.errorhandler(400)

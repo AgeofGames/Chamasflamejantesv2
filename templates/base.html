@@ -11,11 +11,28 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   {% block social_meta %}
+  {% set share_base = public_base_url if public_base_url is defined else 'https://chamasflamejantes.com.br' %}
+  {% set share_image = share_base ~ url_for('static', filename='share/chamas-flamejantes-v22-1.jpg') %}
+  {% set share_title = 'Chamas Flamejantes • Age of Mythology: Retold' %}
+  {% set share_description = 'Build orders, torneios, mapas e duelos na Arena X1. Faça parte da comunidade Chamas Flamejantes!' %}
+  {% set share_image_alt = 'Chamas Flamejantes: Zeus e Rá, 113 build orders, torneios e Arena X1 de Age of Mythology: Retold.' %}
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Chamas Flamejantes">
-  <meta property="og:title" content="Chamas Flamejantes • Age of Mythology: Retold">
-  <meta property="og:description" content="Comunidade, torneios, conhecimento e Arena X1.">
-  <meta property="og:url" content="{{ public_base_url if public_base_url is defined else 'https://chamasflamejantes.com.br' }}">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:title" content="{{ share_title }}">
+  <meta property="og:description" content="{{ share_description }}">
+  <meta property="og:url" content="{{ share_base }}{{ request.path }}">
+  <meta property="og:image" content="{{ share_image }}">
+  <meta property="og:image:secure_url" content="{{ share_image }}">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="{{ share_image_alt }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ share_title }}">
+  <meta name="twitter:description" content="{{ share_description }}">
+  <meta name="twitter:image" content="{{ share_image }}">
+  <meta name="twitter:image:alt" content="{{ share_image_alt }}">
   {% endblock %}
   <link rel="stylesheet" href="{{url_for('static',filename='style.css')}}">
   <link rel="stylesheet" href="{{url_for('static',filename='v11.css')}}">
@@ -28,6 +45,7 @@
   {% if request.endpoint in ('knowledge_build_orders_page','knowledge_god_page','knowledge_build_page') %}<script defer src="{{url_for('static',filename='knowledge.js')}}"></script>{% endif %}
   <script defer src="{{url_for('static',filename='social.js')}}"></script>
   <script defer src="{{url_for('static',filename='experience.js')}}"></script>
+  {% if request.endpoint in ('social_duel','social_duel_invite_share','social_duel_result_share') %}<script defer src="{{url_for('static',filename='duel.js')}}"></script>{% endif %}
   <style>:root{--accent:{{site.accent_color if site else '#e95d20'}}}</style>
 </head>
 <body class="bg-{{site.background_preset if site else 'ember'}}" data-page="{{request.endpoint or 'home'}}">

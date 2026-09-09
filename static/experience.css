@@ -236,3 +236,17 @@ body[data-page=hotkeys_guide_page] main#main-content { min-height:0; }
 html[data-motion=reduce] { scroll-behavior:auto; }
 html[data-motion=reduce] *,html[data-motion=reduce] *::before,html[data-motion=reduce] *::after { animation-duration:.001ms!important; animation-iteration-count:1!important; transition-duration:.001ms!important; }
 @media print { .topbar,.site-footer,.back-to-top,.reading-progress,.step-check,.build-progress-tools,.share-panel { display:none!important; } .build-detail-shell { display:block; }.build-guide-sidebar { position:static; }.build-phase { break-inside:avoid; } }
+
+/* A duel uses an explicit, finite lookup indicator instead of the reading bar. */
+body[data-page="social_duel"] .reading-progress,
+body[data-page="social_duel_invite_share"] .reading-progress,
+body[data-page="social_duel_result_share"] .reading-progress { display:none; }
+.match-correct-id { margin:18px 0; border-top:1px solid var(--soft-line); padding-top:14px; }
+.match-correct-id summary { cursor:pointer; color:var(--accent); font-size:14px; }
+.match-correct-id form { margin-top:14px; }
+.match-last-check { color:var(--muted); font-size:12px; margin:10px 0 18px; }
+.match-lookup-feedback { font-size:14px; margin:16px 0; }
+.match-lookup-feedback:empty { display:none; }
+.match-lookup-feedback.error { color:#ffb59d; }
+.match-confirm-panel[aria-busy="true"] { cursor:progress; }
+.match-confirm-panel button:disabled { opacity:.65; cursor:wait; }

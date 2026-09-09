@@ -1,5 +1,9 @@
 # Validação da versão 22
 
+## Atualização V22.1
+
+Os 14 testes abaixo foram executados novamente, junto com o teste da nova capa de compartilhamento: **15 testes passaram**. A verificação adicional cobre cinco páginas, metadados Open Graph/Twitter, acesso anônimo à imagem, GET/HEAD, JPEG 1200 × 630 abaixo de 300 KB e a preservação das prévias específicas de perfis e desafios. Detalhes em `CAPA_COMPARTILHAMENTO.md`.
+
 Os testes foram executados localmente com bancos SQLite temporários. Nenhum cadastro real foi alterado.
 
 ## Fluxos verificados

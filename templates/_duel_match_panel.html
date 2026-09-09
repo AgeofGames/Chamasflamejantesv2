@@ -1,0 +1,29 @@
+{% if participant and duel.status in ('accepted','match_pending') %}
+<article class="match-confirm-panel" id="duel-match-panel" tabindex="-1">
+  <span class="eyebrow">CONFIRMAÇÃO PELO AOMSTATS</span>
+  <h2>{% if duel.match_id %}Resultado não confirmado{% else %}A partida terminou?{% endif %}</h2>
+  <p>Depois que os dois jogadores terminarem o jogo, informe o número exibido em <b>ID:</b> no AoMStats. Aceitamos partidas X1 ranqueadas e <b>Customs/Quickplay</b> entre os dois perfis deste desafio.</p>
+  {% if duel.match_id %}
+    <div class="match-pending-box"><strong>#{{duel.match_id}}</strong><span>{{duel.match_error or 'Este ID ainda não tem resultado confirmado. Clique abaixo para consultar.'}}</span></div>
+    {% if duel.last_checked_at %}<p class="match-last-check">Última consulta: {{duel.last_checked_at}} UTC</p>{% endif %}
+    <form method="post" action="{{url_for('social_duel_verify',duel_id=duel.id)}}" data-match-lookup>
+      <input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn primary" type="submit">VERIFICAR NOVAMENTE</button>
+    </form>
+    <details class="match-correct-id"><summary>Corrigir o ID da partida</summary>
+      <form method="post" action="{{url_for('social_duel_submit_match',duel_id=duel.id)}}" data-match-lookup>
+        <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+        <label><span>ID correto</span><input name="match_id" inputmode="numeric" pattern="[0-9]{5,12}" maxlength="12" required value="{{duel.match_id}}"></label>
+        <button class="btn" type="submit">SALVAR E VERIFICAR ID</button>
+      </form>
+    </details>
+  {% else %}
+    <form method="post" action="{{url_for('social_duel_submit_match',duel_id=duel.id)}}" data-match-lookup>
+      <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+      <label><span>ID da partida</span><input name="match_id" inputmode="numeric" pattern="[0-9]{5,12}" maxlength="12" required placeholder="Ex.: 43115933"></label>
+      <button class="btn primary" type="submit">BUSCAR E REGISTRAR</button>
+    </form>
+  {% endif %}
+  <p class="match-lookup-feedback {{feedback_kind|default('')}}" data-match-feedback role="status" aria-live="polite">{{feedback_message|default('')}}</p>
+  <small>Cada clique faz uma consulta com limite de tempo. A confirmação só acontece quando o AoMStats informa um vencedor e um derrotado; não há busca contínua em segundo plano.</small>
+</article>
+{% endif %}

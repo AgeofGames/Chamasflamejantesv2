@@ -99,6 +99,49 @@ class SiteFlows(unittest.TestCase):
         self.assertEqual(partial.data,plain.data[:10])
         plain.close(); compressed.close(); partial.close()
 
+    def test_default_link_preview_is_public_and_complete(self):
+        from urllib.parse import urlsplit
+        crawler = self.client
+        headers = {'User-Agent': 'WhatsApp/2.26', 'Accept-Encoding': 'gzip'}
+        image_url = None
+        for path in ['/', '/conhecimento', '/programas', '/mapas', '/x1']:
+            with self.subTest(path=path):
+                response = crawler.get(path, headers=headers)
+                self.assertEqual(response.status_code, 200)
+                soup = BeautifulSoup(response.data, 'html.parser')
+                images = soup.select('head meta[property="og:image"]')
+                self.assertEqual(len(images), 1)
+                image_url = images[0]['content']
+                self.assertTrue(image_url.startswith(site.PUBLIC_BASE_URL + '/static/share/'))
+                self.assertIn('v=', image_url)
+                self.assertEqual(soup.select_one('meta[name="twitter:image"]')['content'], image_url)
+                self.assertEqual(soup.select_one('meta[property="og:image:secure_url"]')['content'], image_url)
+                self.assertEqual(soup.select_one('meta[property="og:image:width"]')['content'], '1200')
+                self.assertEqual(soup.select_one('meta[property="og:image:height"]')['content'], '630')
+                self.assertEqual(soup.select_one('meta[property="og:image:type"]')['content'], 'image/jpeg')
+                self.assertEqual(soup.select_one('meta[property="og:url"]')['content'], site.PUBLIC_BASE_URL + path)
+        parsed = urlsplit(image_url)
+        image_path = parsed.path + '?' + parsed.query
+        with crawler.get(image_path, headers=headers) as picture:
+            self.assertEqual(picture.status_code, 200)
+            self.assertEqual(picture.mimetype, 'image/jpeg')
+            self.assertIn('public', picture.headers['Cache-Control'])
+            self.assertNotIn('Set-Cookie', picture.headers)
+            self.assertLess(len(picture.data), 300_000)
+            with Image.open(io.BytesIO(picture.data)) as decoded:
+                self.assertEqual(decoded.size, (1200, 630))
+                self.assertEqual(decoded.format, 'JPEG')
+            with crawler.head(image_path, headers=headers) as head:
+                self.assertEqual(head.status_code, 200)
+                self.assertEqual(head.content_length, len(picture.data))
+        profile = BeautifulSoup(crawler.get(f'/perfil/{self.players[0]}').data, 'html.parser')
+        self.assertNotEqual(profile.select_one('meta[property="og:image"]')['content'], image_url)
+        duel = self.create_challenge()
+        with crawler.session_transaction() as session:
+            session.clear()
+        invite = BeautifulSoup(crawler.get(f"/arena/desafio/{duel['share_token']}").data, 'html.parser')
+        self.assertNotEqual(invite.select_one('meta[property="og:image"]')['content'], image_url)
+
     def test_arena_roster_flags_and_batched_stats(self):
         a,b=self.players[:2]
         with site.app.test_request_context():
@@ -162,6 +205,72 @@ class SiteFlows(unittest.TestCase):
             site.verify_social_duel_match(stale,fetched_result=pending)
         self.assertEqual(self.row('SELECT * FROM social_duels')['status'],'completed')
         self.assertEqual(self.row("SELECT COUNT(*) c FROM social_notifications WHERE kind='result'")['c'],2)
+
+    def test_real_custom_card_registers_winner_via_json(self):
+        import aomstats_matches
+        fixture = (Path(__file__).parent / 'fixtures/aomstats_custom_43115933.html').read_text()
+        with site.app.app_context():
+            for pid, remote in zip(self.players, ['1076869557','1076393730']):
+                site.get_db().execute('UPDATE players SET aomstats_profile_id=? WHERE id=?', (remote,pid))
+            site.get_db().commit()
+        duel = self.create_challenge(); self.login(1)
+        self.post(f"/duelo/{duel['id']}/aceitar")
+        def source(url, deadline): return {'html': fixture if '?leaderboard=0' in url else ''}
+        with patch.object(aomstats_matches, '_fetch_document', side_effect=source):
+            response = self.client.post(f"/duelo/{duel['id']}/partida", data={'_csrf':'csrf-test','match_id':'43115933'}, headers={'Accept':'application/json'})
+        data = response.get_json()
+        self.assertEqual(data['state'], 'completed')
+        self.assertEqual(self.row('SELECT * FROM social_duels')['winner_id'], self.players[0])
+        self.assertIn('private', response.headers['Cache-Control'])
+        self.assertEqual(self.row("SELECT COUNT(*) c FROM social_notifications WHERE kind='result'")['c'], 2)
+
+    def test_json_lookup_unavailable_and_correct_id(self):
+        duel = self.create_challenge(); self.login(1); self.post(f"/duelo/{duel['id']}/aceitar")
+        unavailable = {'state':'unavailable', 'match_url':'https://aomstats.io/match/43115933', 'message':'Consulta encerrada; tente novamente.'}
+        url = f"/duelo/{duel['id']}/partida"
+        with patch.object(site,'fetch_aomstats_match', return_value=unavailable):
+            for _ in range(2):
+                response = self.client.post(url, data={'_csrf':'csrf-test','match_id':'43115933'}, headers={'Accept':'application/json'})
+        data = response.get_json()
+        self.assertEqual(data['state'], 'unavailable')
+        self.assertEqual(data['redirect'], '')
+        self.assertIn('Corrigir o ID', data['html'])
+        self.assertIn('43115933', data['chat_html'])
+        self.assertEqual(self.row("SELECT COUNT(*) c FROM social_notifications WHERE kind='match'")['c'], 1)
+        with patch.object(site,'fetch_aomstats_match', side_effect=ValueError('ID de outros jogadores')):
+            bad = self.client.post(url, data={'_csrf':'csrf-test','match_id':'43115934'}, headers={'Accept':'application/json'}).get_json()
+        self.assertEqual(bad['state'], 'invalid')
+        self.assertEqual(self.row('SELECT * FROM social_duels')['match_id'], '43115933')
+        result = {'state':'completed','match_url':'https://aomstats.io/profile/1001?leaderboard=0','winner_profile_id':'1001','loser_profile_id':'1002','map':'Mirage','duration':368}
+        with patch.object(site,'fetch_aomstats_match', return_value=result):
+            good = self.client.post(url, data={'_csrf':'csrf-test','match_id':'43115934'}, headers={'Accept':'application/json'}).get_json()
+        self.assertEqual(good['state'], 'completed')
+        self.assertEqual(self.row('SELECT * FROM social_duels')['match_id'], '43115934')
+
+    def test_wrong_stored_id_can_be_corrected_after_verify_error(self):
+        duel = self.create_challenge(); self.login(1); self.post(f"/duelo/{duel['id']}/aceitar")
+        with site.app.app_context():
+            site.get_db().execute("UPDATE social_duels SET status='match_pending',match_id='43115933' WHERE id=?",(duel['id'],)); site.get_db().commit()
+        with patch.object(site,'fetch_aomstats_match', side_effect=ValueError('Esse ID não é um X1 entre estes perfis.')):
+            data = self.client.post(f"/duelo/{duel['id']}/verificar", data={'_csrf':'csrf-test'}, headers={'Accept':'application/json'}).get_json()
+        self.assertEqual(data['state'], 'invalid')
+        self.assertIn('não é um X1', self.row('SELECT * FROM social_duels')['match_error'])
+        self.assertIn('Corrigir o ID', data['html'])
+
+    def test_result_does_not_attach_to_a_concurrently_replaced_id(self):
+        duel = self.create_challenge(); self.login(1); self.post(f"/duelo/{duel['id']}/aceitar")
+        result = {'state':'completed','match_url':'https://aomstats.io/match/43115933','winner_profile_id':'1001','loser_profile_id':'1002'}
+        original = site.verify_social_duel_match
+        def replaced(snapshot, fetched_result=None):
+            db = site.get_db()
+            db.execute("UPDATE social_duels SET match_id='43115934',status='match_pending' WHERE id=?",(duel['id'],)); db.commit()
+            return original(snapshot, fetched_result)
+        with patch.object(site,'fetch_aomstats_match', return_value=result), patch.object(site,'verify_social_duel_match', side_effect=replaced):
+            data = self.client.post(f"/duelo/{duel['id']}/partida", data={'_csrf':'csrf-test','match_id':'43115933'}, headers={'Accept':'application/json'}).get_json()
+        stored = self.row('SELECT * FROM social_duels')
+        self.assertEqual(stored['status'], 'match_pending')
+        self.assertIsNone(stored['winner_id'])
+        self.assertEqual(data['state'], 'conflict')
 
     def test_other_players_cannot_respond_or_submit_match(self):
         duel=self.create_challenge(); self.login(2)
