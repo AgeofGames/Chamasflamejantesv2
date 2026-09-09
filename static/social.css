@@ -71,3 +71,27 @@
 @media(max-width:1120px){.arena-community-layout{grid-template-columns:minmax(0,1fr) 310px}.arena-community-layout .social-player-grid{grid-template-columns:1fr}}
 @media(max-width:850px){.arena-community-layout{grid-template-columns:1fr}.arena-ranking-panel{position:relative;top:auto}.arena-community-layout .social-player-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.arena-community-layout .social-player-grid{grid-template-columns:1fr}.notification-popover{right:12px;top:62px}.duel-chat-event{width:92%}.duel-response-login{align-items:stretch;flex-direction:column}}
+
+/* V21.1 — avatares redondos, perfil proporcional e cancelamento do convite. */
+.arena-community-layout .social-player-card{grid-template-columns:96px minmax(0,1fr);min-height:126px}
+.arena-community-layout .social-player-avatar{width:76px;height:76px;min-height:0;align-self:center;justify-self:center;border:2px solid #e95d20;border-radius:50%;overflow:hidden;background:#11161c;box-shadow:0 0 22px #e95d2029}
+.arena-community-layout .social-player-avatar img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.arena-community-layout .social-player-avatar>span{height:100%;border-radius:50%;font-size:29px}
+
+.social-profile-main{width:min(1040px,calc(100% - 40px));grid-template-columns:320px minmax(0,1fr);gap:16px;margin:44px auto 72px}
+.social-profile-main .profile-identity-card{min-height:0;padding:26px}
+.social-profile-main .profile-identity-avatar{width:124px;height:124px;margin-bottom:20px;border-width:3px}
+.social-profile-main .profile-identity-avatar.fallback{font-size:42px}
+.social-profile-main .profile-identity-card h1{margin:9px 0;font-size:clamp(24px,2.35vw,31px);line-height:1.05;overflow-wrap:anywhere}
+.social-profile-main .profile-identity-card blockquote{margin:17px 0;font-size:11px}
+.social-profile-main .profile-account-status{margin:15px 0}
+.social-profile-main .profile-identity-card dl{margin:18px 0}
+.social-profile-main .profile-action-column>article{padding:26px}
+.social-profile-main .profile-battle-stats h2,.social-profile-main .profile-duel-panel h2{font-size:26px;margin-bottom:17px}
+.social-profile-main .profile-battle-stats strong{padding:12px;font-size:20px}
+.duel-cancel-action{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:17px;padding-top:16px;border-top:1px solid #ffffff10}
+.duel-cancel-action p{margin:0;color:#929ba3;font-size:10px;line-height:1.55}.duel-cancel-action form{margin:0;flex:0 0 auto}
+
+@media(max-width:850px){.social-profile-main{grid-template-columns:280px minmax(0,1fr)}}
+@media(max-width:760px){.social-profile-main{grid-template-columns:1fr}.social-profile-main .profile-identity-card{max-width:420px;width:100%;margin:0 auto}.duel-cancel-action{align-items:stretch;flex-direction:column}.duel-cancel-action .btn{width:100%}}
+@media(max-width:420px){.arena-community-layout .social-player-card{grid-template-columns:82px minmax(0,1fr)}.arena-community-layout .social-player-avatar{width:66px;height:66px}.social-profile-main .profile-identity-card,.social-profile-main .profile-action-column>article{padding:21px}.social-profile-main .profile-identity-avatar{width:106px;height:106px}.social-profile-main .profile-identity-card h1{font-size:23px}}

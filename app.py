@@ -3916,6 +3916,24 @@ def social_duel_refuse(duel_id):
     return redirect(url_for("x1_page"))
 
 
+@app.post("/duelo/<int:duel_id>/cancelar")
+@social_profile_required
+def social_duel_cancel(duel_id):
+    require_csrf()
+    viewer = current_social_account()
+    duel = social_duel_row(duel_id=duel_id)
+    if not duel or duel["challenger_id"] != viewer["player_id"]:
+        abort(403)
+    if duel["status"] != "pending":
+        flash("Só é possível cancelar enquanto o desafio aguarda resposta.", "error")
+        return redirect(url_for("social_duel", duel_id=duel_id))
+    db = get_db()
+    db.execute("DELETE FROM social_duels WHERE id=?", (duel_id,))
+    db.commit()
+    flash("Desafio cancelado e removido.", "success")
+    return redirect(url_for("x1_page"))
+
+
 @app.post("/duelo/<int:duel_id>/partida")
 @social_profile_required
 def social_duel_submit_match(duel_id):
@@ -4802,16 +4820,16 @@ def robots_txt():
 
 @app.get("/health")
 def health():
-    return {"version":"21-arena-unificada","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"21.1-perfil-compacto","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 init_db()
 migrate_v6_db()
-print("🔥 CHAMAS FLAMEJANTES V21 — ARENA UNIFICADA\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V21.1 — PERFIL COMPACTO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V21 — ARENA UNIFICADA")
+    print(" 🔥 CHAMAS FLAMEJANTES V21.1 — PERFIL COMPACTO")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

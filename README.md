@@ -1,4 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V21 — ARENA UNIFICADA
+# 🔥 CHAMAS FLAMEJANTES V21.1 — PERFIL COMPACTO
 
 Build configurado com Railpack, o construtor atual do Railway.
 
@@ -65,6 +65,9 @@ Em uma instalação totalmente nova, abra `/setup` uma única vez e crie o prime
 - Mini rede social com login Google, perfil público e frase pessoal.
 - Ao vincular o AoMStats, o jogador entra automaticamente no Elo da Comunidade e na Arena X1; sem AoMStats ele não aparece nessas áreas.
 - Cards compactos de jogadores e ranking da Arena posicionado ao lado da lista.
+- Fotos circulares nos cards compactos da Arena, sem alterar a estrutura horizontal do card.
+- Página pública de perfil redimensionada, com foto e nome proporcionais em desktop e celular.
+- O desafiante pode cancelar um pedido ainda pendente; o duelo e sua notificação são removidos imediatamente.
 - Histórico de duelos em página própria, acessível por botão na Arena e nos perfis.
 - Janela flutuante de notificações em formato de conversa, com aceite e recusa do desafio no próprio painel.
 - Tela pública do perfil limpa, com a edição de AoMStats, frase e foto aberta somente pelo botão “Alterar meus dados”.
