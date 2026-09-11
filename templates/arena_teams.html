@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Arena {{'Duplas' if size==2 else 'Trios'}} • Chamas Flamejantes{% endblock %}
+{% block content %}
+<section class="page-hero compact social-arena-hero">
+ {% include '_arena_tabs.html' %}<span class="eyebrow">JUNTOS NA BATALHA</span><h1>ARENA {{'DUPLAS' if size==2 else 'TRIOS'}}</h1>
+ <p>Forme sua equipe, convide seus parceiros e desafie outro elenco. Cada integrante precisa aceitar o convite. O capitão responde aos desafios.</p>
+ <div class="arena-hero-actions"><a class="btn primary" href="#formar-equipe">Formar equipe</a><a class="btn" href="{{url_for('teams_history')}}">Histórico de duelos</a>{% if social_user %}<button class="btn" data-open-notifications type="button">Meus convites</button>{% endif %}</div>
+</section>
+<section class="section arena-community-layout">
+ <div class="arena-players-panel">
+  {% if mine %}<div class="arena-my-teams"><h2>Minhas equipes e convites</h2>{% for t in mine %}<a href="{{url_for('teams_profile',tid=t.id)}}"><strong>{{t.name}}</strong><small>{{t.size}}×{{t.size}} · {{'Pronta' if t.ready else 'Aguardando integrantes'}} →</small></a>{% endfor %}</div>{% endif %}
+  <div class="section-head"><div><span class="eyebrow">ENCONTRE OUTRO ELENCO</span><h2>{{'Duplas' if size==2 else 'Trios'}} da comunidade</h2></div></div>
+  <div class="arena-team-grid">{% for t in teams %}<a class="arena-team-card" href="{{url_for('teams_profile',tid=t.id)}}"><small>{{'EM DUELO' if t.busy else 'PRONTA PARA DESAFIOS' if t.ready else 'EM FORMAÇÃO'}}</small><h3>{{t.name}}</h3><div class="arena-avatar-stack">{% for m in t.members %}{% if social_avatar_src(m) %}<img src="{{social_avatar_src(m)}}" alt="{{m.nickname}}" loading="lazy" width="42" height="42">{% else %}<span>🔥</span>{% endif %}{% endfor %}</div><p>{{t.accepted}}/{{t.size}} integrantes confirmados</p><b>Ver equipe e desafiar →</b></a>{% else %}<div class="empty"><h3>A primeira equipe pode ser a sua</h3><p>Convide {{'um amigo' if size==2 else 'dois amigos'}} para começar.</p></div>{% endfor %}</div>
+  {% if pages>1 %}<nav class="arena-history-pagination">{% if page>1 %}<a href="{{url_for('teams_arena',modo=queue,pagina=page-1)}}">← Anterior</a>{% endif %}<span>{{page}} / {{pages}}</span>{% if page<pages %}<a href="{{url_for('teams_arena',modo=queue,pagina=page+1)}}">Próxima →</a>{% endif %}</nav>{% endif %}
+  <details class="arena-form-box" id="formar-equipe"><summary>+ Formar {{'uma dupla' if size==2 else 'um trio'}}</summary>
+   {% if social_user and social_user.player_id %}<form action="{{url_for('teams_create')}}" method="post">
+    <input type="hidden" name="_csrf" value="{{csrf_token()}}"><input type="hidden" name="size" value="{{size}}">
+    <label>Nome da equipe<input name="name" maxlength="40" minlength="2" required placeholder="Como sua equipe vai se chamar?"></label>
+    {% for slot in range(size-1) %}<label>Convidar parceiro {{slot+1}}<select name="members" required><option value="">Escolha um jogador</option>{% for p in roster %}<option value="{{p.id}}">{{p.nickname}}</option>{% endfor %}</select></label>{% endfor %}
+    <p class="arena-muted">Você será o capitão. Cada jogador pode integrar uma dupla e um trio. Os convites chegam nas notificações do site.</p><button class="btn primary">Enviar convites</button>
+   </form>{% else %}<p>Entre com o Google e vincule seu AoMStats para formar uma equipe.</p><a class="btn primary" href="{{url_for('social_login',next=request.path)}}">Entrar com Google</a>{% endif %}
+  </details>
+ </div>
+ {% include '_arena_monthly_ranking.html' %}
+</section>
+{% endblock %}

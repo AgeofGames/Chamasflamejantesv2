@@ -3,7 +3,7 @@
 {% block meta_description %}Jogadores da comunidade, desafios públicos e resultados verificados pelo AoMStats na Arena X1.{% endblock %}
 {% block content %}
 <section class="page-hero compact social-arena-hero">
-  <span class="eyebrow">⚔️ MINI REDE SOCIAL DA COMUNIDADE</span>
+  {% include "_arena_tabs.html" %}<span class="eyebrow">DUELOS DA COMUNIDADE</span>
   <h1>ARENA X1</h1>
   <p>Vinculou o AoMStats ao site? Você entra automaticamente no Elo da Comunidade e na Arena. Abra o perfil do oponente para desafiar.</p>
   <div class="arena-hero-actions">
@@ -17,25 +17,25 @@
   </div>
 </section>
 
-<section class="section arena-how">
+<details class="arena-help"><summary>Como funciona a Arena X1</summary><div class="arena-how">
   <div class="arena-step"><b>01</b><span>ABRA O PERFIL</span><p>Escolha quem você quer enfrentar. O desafio começa somente dentro do perfil do jogador.</p></div>
   <div class="arena-step"><b>02</b><span>ACEITAR OU RECUSAR</span><p>O desafiado recebe uma mensagem flutuante e decide. Ao recusar, aparece “Fugiu da batalha”.</p></div>
   <div class="arena-step"><b>03</b><span>CONFIRMAR PARTIDA</span><p>Depois do jogo, um dos dois informa o ID. O resultado só vale quando o AoMStats confirmar.</p></div>
-</section>
+</div></details>
 
-{% if active %}
-<section class="section">
-  <div class="section-head"><div><span class="eyebrow">TODOS PODEM ACOMPANHAR</span><h2>DESAFIOS DA COMUNIDADE</h2><p>Quem desafiou quem e o ID da partida, assim que for informado.</p></div><a class="btn" href="{{url_for('social_duel_history',filtro='ativos')}}">VER TODOS</a></div>
-  <div class="duel-card-grid">
-    {% for d in active %}
-    <a class="duel-status-card status-{{d.status}}" href="{{url_for('social_duel',duel_id=d.id)}}">
-      <div class="duel-mini-player">{% if social_avatar_src(d.challenger) %}<img loading="lazy" decoding="async" src="{{social_avatar_src(d.challenger)}}" alt="">{% else %}<span>🔥</span>{% endif %}<strong{% if player_name_color(d.challenger) %} style="color:{{player_name_color(d.challenger)}}"{% endif %}>{{d.challenger.nickname}}</strong></div><b>VS</b>
-      <div class="duel-mini-player">{% if social_avatar_src(d.challenged) %}<img loading="lazy" decoding="async" src="{{social_avatar_src(d.challenged)}}" alt="">{% else %}<span>🔥</span>{% endif %}<strong{% if player_name_color(d.challenged) %} style="color:{{player_name_color(d.challenged)}}"{% endif %}>{{d.challenged.nickname}}</strong></div><em>{{social_duel_label(d.status)}}{% if d.match_id %} · PARTIDA #{{d.match_id}}{% endif %}</em>
-    </a>
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
+<details class="community-float" id="community-challenges">
+  <summary>⚔ Desafios da comunidade <b>{{active|length}}{{'+' if active|length==12 else ''}}</b></summary>
+  <aside class="community-float-panel" aria-label="Desafios públicos">
+    <header><div><small>AO VIVO NA COMUNIDADE</small><h2>Quem desafia quem</h2></div><button type="button" data-community-close aria-label="Fechar desafios">×</button></header>
+    <div class="community-float-list">
+    {% for d in active %}<a href="{{url_for('social_duel',duel_id=d.id)}}" class="community-challenge-mini">
+      <span>{% if social_avatar_src(d.challenger) %}<img loading="lazy" src="{{social_avatar_src(d.challenger)}}" alt="">{% endif %}<strong{% if player_name_color(d.challenger) %} style="color:{{player_name_color(d.challenger)}}"{% endif %}>{{d.challenger.nickname}}</strong></span>
+      <b>×</b><span>{% if social_avatar_src(d.challenged) %}<img loading="lazy" src="{{social_avatar_src(d.challenged)}}" alt="">{% endif %}<strong{% if player_name_color(d.challenged) %} style="color:{{player_name_color(d.challenged)}}"{% endif %}>{{d.challenged.nickname}}</strong></span>
+      <small>{{social_duel_label(d.status)}}{% if d.match_id %} · #{{d.match_id}}{% endif %}</small>
+    </a>{% else %}<p class="arena-muted">Nenhum desafio ativo. Abra um perfil para começar.</p>{% endfor %}
+    </div><footer><a href="{{url_for('social_duel_history',filtro='ativos')}}">Ver todos os desafios X1 →</a><a href="{{url_for('teams_history')}}">Duplas e trios →</a></footer>
+  </aside>
+</details>
 
 <section class="section arena-community-layout">
   <div class="arena-players-panel">
@@ -56,12 +56,6 @@
     </div>
   </div>
 
-  <aside class="arena-ranking-panel">
-    <div class="section-head"><div><span class="eyebrow">RESULTADOS CONFIRMADOS</span><h2>RANK DA ARENA</h2></div></div>
-    <div class="x1-ranking compact-ranking">
-      {% for p in ranking %}<article class="x1-row {% if loop.first and p.stats.wins %}x1-master{% endif %}"><b>#{{loop.index}}</b><button class="community-player profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=p.id)}}">{% if social_avatar_src(p) %}<img loading="lazy" decoding="async" src="{{social_avatar_src(p)}}" alt="">{% else %}<span>🔥</span>{% endif %}<strong{% if player_name_color(p) %} style="color:{{player_name_color(p)}}"{% endif %}>{{p.nickname}}</strong></button><span><b>{{p.stats.wins}}</b> V</span><span><b>{{p.stats.losses}}</b> D</span></article>{% else %}<div class="empty"><p>Aguardando jogadores.</p></div>{% endfor %}
-    </div>
-    <a class="btn arena-history-button" href="{{url_for('social_duel_history')}}">VER HISTÓRICO DE DUELOS</a>
-  </aside>
+  {% include '_arena_monthly_ranking.html' %}
 </section>
 {% endblock %}

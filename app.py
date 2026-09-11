@@ -19,6 +19,7 @@ from urllib.parse import quote, urlencode, urljoin, urlparse
 
 import requests
 from aomstats_matches import lookup_match, parse_match_page
+import arena_seasons
 from site_experience import install_experience
 from share_cards import render_arena_card, render_tournament_card
 from bs4 import BeautifulSoup
@@ -1743,6 +1744,8 @@ def migrate_v6_db():
     db.execute("PRAGMA optimize")
     db.execute("INSERT OR REPLACE INTO site_meta(key,value) VALUES ('v6_migrated','1')")
     db.commit()
+    arena_seasons.init_arena(db)
+    db.commit()
     db.close()
 
 
@@ -2213,10 +2216,18 @@ def public_duel_history(player_id=None, per_page=12):
 def social_notification_items(account_id, limit=12):
     rows = get_db().execute(
         """SELECT n.*,p.nickname actor_name,p.nickname_color actor_name_color,
-                  p.avatar_url,p.avatar_file,d.status duel_status,d.challenged_id
+                  p.avatar_url,p.avatar_file,d.status duel_status,d.challenged_id,
+                  tm.state team_invite_state,t.archived team_archived,
+                  td.status team_duel_status,td.captain_b team_captain_b
            FROM social_notifications n
            LEFT JOIN players p ON p.id=n.actor_player_id
            LEFT JOIN social_duels d ON d.id=n.duel_id
+           LEFT JOIN social_accounts recipient ON recipient.id=n.account_id
+           LEFT JOIN arena_teams t ON n.arena_url LIKE '/arena/equipe/%'
+             AND t.id=CAST(SUBSTR(n.arena_url,LENGTH('/arena/equipe/')+1) AS INTEGER)
+           LEFT JOIN arena_team_members tm ON tm.team_id=t.id AND tm.player_id=recipient.player_id
+           LEFT JOIN arena_team_duels td ON n.arena_url LIKE '/arena/equipes/duelo/%'
+             AND td.id=CAST(SUBSTR(n.arena_url,LENGTH('/arena/equipes/duelo/')+1) AS INTEGER)
            WHERE n.account_id=? ORDER BY n.id DESC LIMIT ?""",
         (account_id, int(limit)),
     ).fetchall()
@@ -3463,6 +3474,8 @@ def admin_community_remove(member_id):
     if not member:
         abort(404)
     player_id = member["player_id"]
+    from arena_teams import remove_player
+    remove_player(db, player_id)
     # Preserva inscrições e resultados antigos, mas remove integralmente o acesso
     # social. Se a pessoa voltar a entrar com Google, poderá criar a conta de novo.
     db.execute(
@@ -3489,11 +3502,13 @@ def admin_backup():
 # ============================================================
 # V11 — ARENA X1, MAPAS E GRUPOS OFICIAIS
 # ============================================================
-def duel_ranking():
-    """Ranking da rede social, calculado somente com resultados confirmados pelo AoMStats."""
-    return sorted(social_roster(), key=lambda p: (
-        -p["stats"]["wins"], p["stats"]["losses"], -p["stats"]["streak"], p["nickname"].lower()
-    ))
+def duel_ranking(queue='x1'):
+    monthly = arena_seasons.standings(get_db(), queue)
+    result = []
+    for player in social_roster():
+        rank = monthly.get(player['id'], dict(points=0,wins=0,losses=0,badge=arena_seasons.badge(0)))
+        result.append(dict(player, rank=rank))
+    return sorted(result,key=lambda p:(-p['rank']['points'],-p['rank']['wins'],p['rank']['losses'],p['id']))
 
 
 def _google_profile_from_code(code):
@@ -3870,6 +3885,8 @@ def verify_social_duel_match(duel, fetched_result=None):
             (winner_id, loser_id, result["match_url"], json.dumps(result, ensure_ascii=False), duel["id"], duel['match_id']),
         )
         if changed.rowcount:
+            confirmed_at = db.execute('SELECT finished_at FROM social_duels WHERE id=?',(duel['id'],)).fetchone()[0]
+            arena_seasons.record_result(db, 'x1', duel['id'], [winner_id], [loser_id], confirmed_at)
             winner = get_social_player(winner_id)
             create_social_notification(winner_id, loser_id, duel["id"], "result", "Vitória confirmada pelo AoMStats! 🔥")
             create_social_notification(loser_id, winner_id, duel["id"], "result", f"Resultado confirmado: {winner['nickname']} venceu o duelo.")
@@ -3889,7 +3906,8 @@ def x1_page():
     players = social_roster()
     ranking = duel_ranking()
     active = social_duels_query("status IN ('pending','accepted','match_pending')", (), 12)
-    return render_template('x1.html', players=players, ranking=ranking, active=active)
+    return render_template('x1.html', players=players, ranking=ranking, active=active,
+                           season=arena_seasons.period(), queue='x1')
 
 
 @app.get('/x1/historico')
@@ -4056,7 +4074,7 @@ def social_duel_submit_match(duel_id):
     if not re.fullmatch(r"\d{5,12}", match_id):
         return _duel_match_reply(duel_id, "Informe somente o número do ID da partida exibido no AoMStats.", state='invalid')
     used = get_db().execute("SELECT id FROM social_duels WHERE match_id=? AND id<>?", (match_id, duel_id)).fetchone()
-    if used:
+    if used or get_db().execute("SELECT 1 FROM arena_match_claims WHERE match_id=? AND queue<>'x1'", (match_id,)).fetchone():
         return _duel_match_reply(duel_id, "Esse ID já foi usado em outro duelo.", state='invalid')
     try:
         result = fetch_aomstats_match(
@@ -4880,6 +4898,9 @@ def sitemap_xml():
         "community_page",
         "x1_page",
         "social_duel_history",
+        "teams_arena",
+        "teams_history",
+        "arena_seasons_page",
         "maps_page",
         "programs_page",
         "knowledge_page",
@@ -4990,7 +5011,7 @@ def site_share_image():
 @app.get("/health")
 def health():
     get_db().execute('SELECT 1').fetchone()
-    return {"version":"23-arena-publica-cards","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"24-equipes-temporadas","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 @app.errorhandler(400)
@@ -5011,13 +5032,16 @@ def friendly_error(error):
     return render_template('error.html', error_code=code, error_title=title, error_message=message), code
 
 
+from arena_teams import install_teams
+install_teams(app, globals())
+
 init_db()
 migrate_v6_db()
-print("🔥 CHAMAS FLAMEJANTES V23 — ARENA PÚBLICA E CARDS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V24 — EQUIPES E TEMPORADAS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V23 — ARENA PÚBLICA E CARDS")
+    print(" 🔥 CHAMAS FLAMEJANTES V24 — EQUIPES E TEMPORADAS")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

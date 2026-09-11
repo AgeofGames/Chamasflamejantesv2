@@ -1,0 +1,6 @@
+<nav class="arena-mode-tabs" aria-label="Modalidades da Arena">
+ <a href="{{url_for('x1_page')}}"{% if queue=='x1' %} aria-current="page"{% endif %}>X1</a>
+ <a href="{{url_for('teams_arena',modo='2v2')}}"{% if queue=='2v2' %} aria-current="page"{% endif %}>Duplas · 2×2</a>
+ <a href="{{url_for('teams_arena',modo='3v3')}}"{% if queue=='3v3' %} aria-current="page"{% endif %}>Trios · 3×3</a>
+ <a href="{{url_for('arena_seasons_page')}}">Temporadas e emblemas</a>
+</nav>

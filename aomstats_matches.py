@@ -167,14 +167,21 @@ def _fetch_document(url, deadline):
         return {'error': True}
 
 
-def lookup_match(match_id, expected_profile_ids):
+def lookup_match(match_id, expected_profile_ids, expected_teams=None):
     match_id = str(match_id).strip()
     expected = {str(value) for value in expected_profile_ids}
     if not re.fullmatch(r'\d{5,12}', match_id): raise ValueError('Informe um ID de partida válido.')
-    if len(expected) != 2 or any(not value.isdigit() for value in expected):
+    teams = [{str(pid) for pid in team} for team in expected_teams] if expected_teams else None
+    if teams and (len(teams)!=2 or len(teams[0]) not in (2,3) or len(teams[0])!=len(teams[1])
+                  or teams[0]&teams[1] or teams[0]|teams[1]!=expected):
+        raise ValueError('Os elencos precisam formar duas duplas ou dois trios completos e diferentes.')
+    if (not teams and len(expected) != 2) or any(not value.isdigit() for value in expected):
         raise ValueError('Os dois jogadores precisam vincular seus perfis AoMStats.')
     match_url = f'https://aomstats.io/match/{match_id}'
-    sources = [match_url] + [f'https://aomstats.io/profile/{pid}?leaderboard=0' for pid in sorted(expected)]
+    # Each profile card includes the entire match. One member of each team is
+    # enough for independent history sources; never fan out to six accounts.
+    history_profiles = [min(team) for team in teams] if teams else sorted(expected)
+    sources = [match_url] + [f'https://aomstats.io/profile/{pid}?leaderboard=0' for pid in history_profiles]
     deadline = time.monotonic() + LOOKUP_TIMEOUT
     jobs, had_error, found_pending = {}, False, None
     try:
@@ -205,11 +212,20 @@ def lookup_match(match_id, expected_profile_ids):
                 rows = parsed['players']
                 if parsed['out_of_sync']:
                     raise ValueError('O AoMStats não confirma um resultado válido para esta partida (dessincronização ou dados conflitantes). Informe o ID de outra partida concluída.')
-                if parsed['participant_count'] != 2 or len(rows) != 2 or {p['profile_id'] for p in rows} != expected:
-                    raise ValueError('Esse ID não é uma partida X1 entre os dois perfis deste desafio.')
+                if parsed['participant_count'] != len(expected) or len(rows) != len(expected) or {p['profile_id'] for p in rows} != expected:
+                    raise ValueError('Esse ID não contém exatamente os jogadores dos dois elencos deste desafio.' if teams
+                                     else 'Esse ID não é uma partida X1 entre os dois perfis deste desafio.')
                 winners = [p for p in rows if p['win'] is True]
                 losers = [p for p in rows if p['win'] is False]
-                if len(winners) == 1 and len(losers) == 1:
+                if teams and len(winners)+len(losers)==len(expected):
+                    winning_ids = {p['profile_id'] for p in winners}
+                    losing_ids = {p['profile_id'] for p in losers}
+                    if winning_ids not in teams or losing_ids not in teams or winning_ids==losing_ids:
+                        raise ValueError('Os vencedores e derrotados não correspondem às equipes deste desafio.')
+                    return {'state':'completed', 'match_url':jobs[job], 'match_id':match_id,
+                            'winner_profile_ids':sorted(winning_ids), 'loser_profile_ids':sorted(losing_ids),
+                            'map':parsed['map'], 'duration':parsed['duration']}
+                if not teams and len(winners) == 1 and len(losers) == 1:
                     return {
                         'state': 'completed', 'match_url': jobs[job], 'match_id': match_id,
                         'source': 'customs_quickplay' if '?leaderboard=0' in jobs[job] else 'match',

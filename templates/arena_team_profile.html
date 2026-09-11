@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{team.name}} • Arena {{team.size}}×{{team.size}}{% endblock %}
+{% block content %}
+<section class="arena-team-shell">
+ <a class="mini-link" href="{{url_for('teams_arena',modo=team.size~'v'~team.size)}}">← Equipes da Arena</a>
+ <header class="arena-team-heading"><span class="eyebrow">EQUIPE {{team.size}}×{{team.size}}</span><h1>{{team.name}}</h1><p>{{'Equipe encerrada. O histórico permanece disponível.' if team.archived else 'Em duelo' if team.busy else 'Equipe completa. Pronta para a batalha.' if team.ready else 'Aguardando os convites serem aceitos.'}}</p></header>
+ <div class="arena-team-members">{% for m in team.members %}<article><button class="profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=m.player_id)}}">{% if social_avatar_src(m) %}<img src="{{social_avatar_src(m)}}" alt="" width="58" height="58">{% else %}<span>🔥</span>{% endif %}<span><strong{% if m.nickname_color %} style="color:{{m.nickname_color}}"{% endif %}>{{m.nickname}}</strong><small>{{'Capitão' if team.captain_id==m.player_id else 'Integrante'}} · {{'Confirmado' if m.state=='accepted' else 'Convite pendente'}}</small></span></button>
+  {% if social_user and social_user.player_id==m.player_id and m.state=='invited' and not team.archived %}<form action="{{url_for('teams_join',tid=team.id)}}" method="post"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn primary" name="answer" value="accept">Aceitar convite</button><button class="btn" name="answer" value="decline">Recusar</button></form>{% endif %}
+ </article>{% endfor %}</div>
+ {% if social_user and not team.archived %}
+  {% if social_user.player_id in team.members|map(attribute='player_id')|list %}<form method="post" action="{{url_for('teams_leave',tid=team.id)}}" class="arena-team-leave"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn" {% if team.busy %}disabled{% endif %}>{{'Encerrar equipe' if social_user.player_id==team.captain_id else 'Sair da equipe'}}</button></form>{% endif %}
+  {% if team.captain_id==social_user.player_id and team.members|length<team.size and not team.busy %}<form class="arena-form-box" method="post" action="{{url_for('teams_invite',tid=team.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><label>Preencher vaga<select name="player_id" required><option value="">Escolha um integrante</option>{% for p in roster %}<option value="{{p.id}}">{{p.nickname}}</option>{% endfor %}</select></label><button class="btn primary">Convidar</button></form>{% endif %}
+  {% if team.ready and not team.busy and social_user.player_id!=team.captain_id %}{% set options=mine|selectattr('ready')|rejectattr('busy')|rejectattr('id','equalto',team.id)|list %}
+   {% if options %}<form class="arena-form-box" action="{{url_for('teams_challenge',tid=team.id)}}" method="post"><h2>Desafiar {{team.name}}</h2><input type="hidden" name="_csrf" value="{{csrf_token()}}"><label>Sua equipe<select name="team_id" required>{% for t in options %}<option value="{{t.id}}">{{t.name}}</option>{% endfor %}</select></label><label>Mensagem<textarea name="message" maxlength="280">Preparem-se para a batalha!</textarea></label><button class="btn primary">Enviar desafio</button></form>
+   {% else %}<p class="arena-muted">Para desafiar esta equipe, forme uma equipe completa da mesma modalidade e entre como capitão.</p>{% endif %}
+  {% endif %}
+ {% elif not social_user %}<a class="btn primary" href="{{url_for('social_login',next=request.path)}}">Entrar para aceitar um convite ou desafiar</a>{% endif %}
+ <section class="arena-team-history"><h2>Histórico da equipe</h2>{% for d in team_history %}<a class="arena-team-history-row" href="{{url_for('teams_duel',did=d.id)}}"><strong>{{d.name_a}} × {{d.name_b}}</strong><span>{{social_duel_label(d.status)}}{% if d.match_id %} · #{{d.match_id}}{% endif %}</span></a>{% else %}<p class="arena-muted">Nenhum duelo registrado ainda.</p>{% endfor %}<a class="btn" href="{{url_for('teams_history',equipe=team.id)}}">Ver histórico completo</a></section>
+</section>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% set progress=arena_profile_progress(profile.id) %}
+<div class="arena-profile-progress">
+ <header><small>TEMPORADA {{progress.season[5:]}}/{{progress.season[:4]}}</small><a href="{{url_for('arena_seasons_page')}}">Regras e emblemas →</a></header>
+ <div class="profile-season-badges">
+ {% for rank in progress.current %}<a href="{{url_for('arena_seasons_page',modo=rank.queue)}}"><img src="{{url_for('static',filename=rank.badge.image)}}" alt="" width="40" height="48"><span><b>{{rank.badge.name}} · {{rank.label}}</b><small>{{rank.points}} pontos · {{rank.wins}} V / {{rank.losses}} D</small><small>Derrotas: {{rank.loss_streak}}/3 seguidas · {{rank.loss_bank}}/4 acumuladas</small></span></a>{% else %}<p class="arena-muted">A primeira partida confirmada inicia sua classificação mensal.</p>{% endfor %}
+ </div>
+ <a class="arena-team-history-link" href="{{url_for('teams_history',jogador=profile.id)}}">Histórico em duplas e trios · {{progress.team_games}} partidas · {{progress.team_wins}} vitórias · {{progress.team_games-progress.team_wins}} derrotas →</a>
+ {% if progress.awards %}<details class="arena-award-collection"><summary>Emblemas das temporadas anteriores ({{progress.awards|length}})</summary><div class="profile-season-badges">{% for award in progress.awards %}<a href="{{url_for('arena_seasons_page',mes=award.season,modo=award.queue)}}"><img src="{{url_for('static',filename=award.badge.image)}}" alt="" width="40" height="48"><span><b>{{award.badge.name}} · {{award.label}}</b><small>{{award.season}} · #{{award.position}} · {{award.points}} pts</small></span></a>{% endfor %}</div></details>{% endif %}
+</div>

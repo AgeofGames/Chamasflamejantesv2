@@ -1,0 +1,12 @@
+<aside class="arena-ranking-panel monthly-ranking">
+ <div class="section-head"><div><span class="eyebrow">TEMPORADA {{season[5:]}}/{{season[:4]}}</span><h2>Ranking {{queue|upper}}</h2><p>+30 por vitória · −15 por derrota</p></div></div>
+ <div class="monthly-ranking-list">
+ {% for p in ranking[:10] %}<article class="monthly-ranking-row">
+  <span class="rank-position">{{loop.index}}</span><img class="rank-emblem" src="{{url_for('static',filename=p.rank.badge.image)}}" width="36" height="42" alt="{{p.rank.badge.name}}" title="{{p.rank.badge.name}} · nível {{p.rank.badge.level}}">
+  <button class="profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=p.id)}}"><strong{% if player_name_color(p) %} style="color:{{player_name_color(p)}}"{% endif %}>{{p.nickname}}</strong><small>{{p.rank.wins}} V · {{p.rank.losses}} D</small></button>
+  <b class="rank-points">{{p.rank.points}}<small>PTS</small></b>
+ </article>{% else %}<p class="arena-muted">As primeiras batalhas vão definir este ranking.</p>{% endfor %}
+ </div>
+ <p class="arena-muted">A classificação recomeça todo mês. Seus resultados e emblemas conquistados ficam no perfil.</p>
+ <a class="btn arena-history-button" href="{{url_for('arena_seasons_page',modo=queue)}}">Ver ranking completo e regras →</a>
+</aside>

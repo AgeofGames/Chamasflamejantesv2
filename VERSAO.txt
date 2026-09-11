@@ -1,4 +1,11 @@
-CHAMAS FLAMEJANTES V23 — ARENA PÚBLICA E CARDS
+CHAMAS FLAMEJANTES V24 — EQUIPES E TEMPORADAS
+Desafios da comunidade em uma janela suspensa compacta; jogadores e ranking lado a lado.
+Arena 2×2 e 3×3 com convites, aceite dos integrantes, desafios entre capitães e elencos preservados.
+Ranking mensal por modalidade: +30 por vitória, −15 por derrota e 10 emblemas de Brasa a Imortal.
+Queda de nível após 3 derrotas seguidas ou 4 acumuladas; penalidades não se somam na mesma partida.
+Temporadas de Brasília, pontos zerados a cada mês e emblemas finais guardados sem apagar o histórico.
+Verificação de duplas/trios no AoMStats, IDs não reutilizáveis, pontos não duplicados e cards para redes sociais.
+66 testes Python e 14 JavaScript passaram. Atualização: ARENA_TEMPORADAS_V24.md. Health: 24-equipes-temporadas.
 Histórico com adversários, partidas, vitórias, derrotas e fugas no perfil e na janela flutuante.
 Desafios e IDs públicos; ações reservadas aos jogadores envolvidos.
 Cards de vitória e das sete modalidades de torneio, com prévia nos links e download da imagem.

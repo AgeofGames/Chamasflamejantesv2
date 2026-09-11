@@ -1,4 +1,5 @@
 <section class="profile-public-history" id="historico-perfil" aria-label="Histórico de {{profile.nickname}}">
+  {% include '_arena_profile_progress.html' %}
   <header><div><span class="eyebrow">CONFRONTOS DA ARENA X1</span><h3>Com quem jogou</h3></div><span>{{profile.stats.completed}} partidas disputadas</span></header>
   <nav class="arena-history-filters" aria-label="Filtrar histórico do jogador">
   {% for key,label,count in [('todos','Todos',none),('partidas','Partidas',profile.stats.completed),('vitorias','Vitórias',profile.stats.wins),('derrotas','Derrotas',profile.stats.losses),('fugas','Fugas',profile.stats.refusals),('ativos','Ativos',none)] %}

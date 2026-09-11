@@ -1,4 +1,20 @@
-# 🔥 CHAMAS FLAMEJANTES V23 — ARENA PÚBLICA E CARDS
+# 🔥 CHAMAS FLAMEJANTES V24 — EQUIPES E TEMPORADAS
+
+## Novidades da V24
+
+- Desafios da comunidade em uma janela flutuante compacta, fechada ao abrir a Arena. Jogadores e ranking ficam em destaque, lado a lado no computador.
+- Arena com abas X1, Duplas (2×2), Trios (3×3) e Temporadas. Formação de equipe com convites, aceite individual e desafios entre capitães.
+- Verificação dos quatro ou seis perfis do elenco no AoMStats, incluindo Customs/Quickplay. Uma consulta termina dentro do limite e pode ser refeita manualmente.
+- Rankings mensais separados por modalidade: +30 por vitória e −15 por derrota. Dez emblemas de Brasa a Imortal, com rebaixamento após três derrotas seguidas ou quatro acumuladas, sem dupla punição na mesma partida.
+- Pontos zeram na virada do mês de Brasília. Histórico, posição final e emblemas conquistados permanecem guardados, sem necessidade de cron.
+- Perfis mostram os emblemas e o histórico em equipe. Cards de duplas e trios com todos os avatares, coroas para vencedores, efeitos nos derrotados e opções de compartilhar/baixar.
+- Registro de pontos idempotente e bloqueio do mesmo ID entre duelos X1 e em equipes. Elencos congelados durante o confronto; somente capitães respondem e somente integrantes informam o resultado.
+
+**Como atualizar:** envie o conteúdo completo deste ZIP ao GitHub, incluindo `arena_teams.py`, `arena_seasons.py`, `arena_schema.sql`, templates, CSS, JavaScript e os dez SVGs em `static/arena`. Preserve o banco, o volume, os uploads e as variáveis existentes. O Railway aplica as tabelas novas automaticamente. Após a implantação ativa, `/health` deve indicar `24-equipes-temporadas`.
+
+**Validação:** 66 testes Python e 14 JavaScript. Os detalhes das regras e das verificações estão em `ARENA_TEMPORADAS_V24.md`. Consultas externas foram simuladas; não houve implantação nem envio real de mensagens pelo assistente. Este pacote inclui todas as versões anteriores.
+
+---
 
 ## Novidades da V23
 

@@ -1,0 +1,84 @@
+/* V24: compact Arena surfaces. All rules stay inside Arena components. */
+.arena-mode-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 26px}
+.arena-mode-tabs a{padding:9px 15px;border:1px solid #ffffff19;border-radius:7px;color:#b8bdc4;font-family:inherit;font-size:12px;font-weight:600;line-height:1.4;text-decoration:none;background:#0c1014b3}
+.arena-mode-tabs a:hover,.arena-mode-tabs a[aria-current]{color:#fff;border-color:#e96a27;background:#dc591a20}
+.arena-help{max-width:1240px;width:calc(100% - 44px);margin:0 auto 22px;border-bottom:1px solid #ffffff1a;padding-bottom:14px;color:#b8bdc4}
+.arena-help summary{cursor:pointer;font-size:13px}.arena-help .arena-how{margin-top:14px}
+.community-float{position:fixed;right:22px;bottom:22px;z-index:180;width:auto;max-width:calc(100vw - 28px);font-family:inherit}
+.community-float>summary{list-style:none;cursor:pointer;border:1px solid #db712e80;background:#101419;color:#eee5d9;border-radius:12px;box-shadow:0 10px 38px #0009;padding:13px 17px;font-size:12px;display:flex;align-items:center;gap:12px}
+.community-float>summary::-webkit-details-marker{display:none}
+.community-float>summary b{background:#e96023;color:#100c09;padding:3px 7px;border-radius:20px;font-size:11px}
+.community-float-panel{position:absolute;bottom:60px;right:0;width:390px;max-width:calc(100vw - 28px);border:1px solid #494036;border-radius:14px;background:#0e1218;box-shadow:0 22px 70px #000b;overflow:hidden}
+.community-float-panel header{display:flex;justify-content:space-between;align-items:center;padding:17px 18px;border-bottom:1px solid #ffffff12}
+.community-float-panel header small{color:#e58b51;font-size:9px;letter-spacing:.12em}.community-float-panel h2{font-size:18px;margin:4px 0 0}
+.community-float-panel header button{background:#ffffff0b;border:0;color:#c8c8ca;border-radius:7px;font-size:23px;width:32px;height:32px;cursor:pointer}
+.community-float-list{max-height:min(340px,calc(100dvh - 240px));overflow:auto;overscroll-behavior:contain;padding:6px 10px}
+.community-challenge-mini{display:grid;grid-template-columns:minmax(0,1fr) 18px minmax(0,1fr);gap:6px;padding:12px 4px;text-decoration:none;color:#eee;border-bottom:1px solid #ffffff0e;align-items:center}
+.community-challenge-mini>span{display:flex;gap:5px;align-items:center;min-width:0}
+.community-challenge-mini img{width:25px;height:25px;object-fit:cover;border-radius:50%;flex:none}
+.community-challenge-mini strong{font-size:11px;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
+.community-challenge-mini>b{font-size:14px;color:#ed9353;text-align:center}
+.community-challenge-mini>small{grid-column:1/-1;color:#a0a8b2;font-size:10px;text-align:center}
+.community-challenge-mini:hover{background:#ffffff07}.community-float-panel footer{display:flex;flex-wrap:wrap;gap:10px;padding:13px 16px;border-top:1px solid #ffffff12}
+.community-float-panel footer a{color:#f0b082;font-size:11px}
+.monthly-ranking{min-width:0}.monthly-ranking .section-head h2{font-size:21px}.monthly-ranking .section-head p{font-size:11px;margin-top:8px}
+.monthly-ranking-list{display:grid;gap:2px}.monthly-ranking-row{display:grid;grid-template-columns:20px 34px minmax(0,1fr) 39px;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid #ffffff0b}
+.monthly-ranking-row:first-child{background:linear-gradient(90deg,#e8ab5b12,transparent)}.rank-position{font-size:12px;color:#a1a5ad}
+.rank-emblem{width:32px;height:40px;object-fit:contain}
+.monthly-ranking-row button{padding:0;text-align:left;min-width:0;border:0;background:transparent;cursor:pointer;color:#edece9;font-family:inherit}
+.monthly-ranking-row button strong{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.monthly-ranking-row small{display:block;color:#9fa7b3;font-size:9px;margin-top:3px}
+.rank-points{text-align:right;font-size:14px;color:#ebc287}
+.arena-muted{color:#9ba4af;font-size:12px;line-height:1.7}.monthly-ranking>.arena-muted{margin-top:16px}
+.arena-team-shell{width:min(1120px,calc(100% - 44px));margin:38px auto 72px}
+.arena-team-heading{margin:30px 0 26px}.arena-team-heading h1{font-size:clamp(27px,4vw,44px);overflow-wrap:anywhere;margin:12px 0}
+.arena-team-heading p{color:#a7afb8;font-size:14px;line-height:1.7}
+.arena-my-teams{margin:0 0 30px}.arena-my-teams h2{font-size:19px;margin:0 0 13px}
+.arena-my-teams>a{display:flex;gap:10px;justify-content:space-between;padding:12px 14px;margin:6px 0;background:#111820;border:1px solid #5d4932;border-radius:9px;text-decoration:none;font-size:13px;color:#eee}
+.arena-my-teams small{color:#c59769;font-size:11px}
+.arena-team-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.arena-team-card{min-width:0;padding:20px;background:linear-gradient(140deg,#152029,#0b0e12);border:1px solid #44413d;border-radius:10px;text-decoration:none;box-shadow:0 8px 22px #0003;transition:transform .18s,border-color .18s}
+.arena-team-card:hover{transform:translateY(-2px);border-color:#e89958}.arena-team-card>small{color:#d1a176;font-size:9px;letter-spacing:.1em}
+.arena-team-card h3{font-size:20px;color:#eeece4;margin:12px 0;overflow-wrap:anywhere}.arena-team-card p{color:#a2aab4;font-size:11px}.arena-team-card>b{font-size:11px;color:#e3ad80}
+.arena-avatar-stack{display:flex;padding:6px 0}.arena-avatar-stack img,.arena-avatar-stack span{width:42px;height:42px;object-fit:cover;border-radius:50%;border:2px solid #293540;background:#182028;margin-right:-7px;display:grid;place-items:center}
+.arena-form-box{padding:22px;background:#0f151ce8;border:1px solid #3c4146;border-radius:12px;margin:28px 0}
+.arena-form-box>summary{cursor:pointer;color:#e8be96;font-size:16px;font-weight:600}.arena-form-box form{margin-top:20px}
+.arena-form-box h2{font-size:23px}.arena-form-box p{font-size:13px;line-height:1.7;color:#afb6bf}
+.arena-form-box label,.season-filter label{display:grid;gap:8px;margin:14px 0;font-size:12px;color:#c2c6cc}
+.arena-form-box input,.arena-form-box select,.arena-form-box textarea,.season-filter select{box-sizing:border-box;max-width:100%;width:100%;border:1px solid #444b55;background:#0b1017;color:#f0f1f2;border-radius:6px;padding:12px;font:inherit;min-height:44px}
+.arena-form-box input:focus-visible,.arena-form-box select:focus-visible,.arena-form-box textarea:focus-visible{outline:2px solid #e9a862;outline-offset:2px}
+.arena-form-box select option,.season-filter option{background:#111922}.arena-form-box textarea{min-height:90px}
+.arena-team-members{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(230px,100%),1fr));gap:12px}
+.arena-team-members>article{padding:14px;background:#10171ee6;border:1px solid #ffffff1a;border-radius:10px}
+.arena-team-members button.profile-popup-trigger{padding:5px;display:flex;gap:12px;align-items:center;width:100%;text-align:left;font:inherit;background:transparent;border:0;color:#ecebe7;cursor:pointer;min-width:0}
+.arena-team-members button strong{font-size:14px;overflow-wrap:anywhere}.arena-team-members button small{display:block;color:#a6aeb9;font-size:11px;margin-top:6px}
+.arena-team-members img{border-radius:50%;object-fit:cover;flex:none}
+.arena-team-members form{margin-top:15px;display:flex;gap:7px;flex-wrap:wrap}.arena-team-members .btn{font-size:11px;padding:8px}
+.arena-team-leave{margin:20px 0}.arena-team-history{margin-top:35px}.arena-team-history h2{font-size:23px}
+.arena-team-history-row{display:grid;gap:9px;padding:18px;border:1px solid #ffffff16;background:#10151bcc;margin:10px 0;border-radius:8px;text-decoration:none;color:#e9e7e1}
+.arena-team-history-row strong{font-size:15px;overflow-wrap:anywhere}.arena-team-history-row small,.arena-team-history-row span{font-size:12px;color:#a9b0b9}.arena-team-history-row>b{font-size:11px;color:#dcac74}
+.arena-versus-teams{display:grid;grid-template-columns:1fr 1fr;gap:18px}.arena-versus-teams>article{background:#0c141bd9;border:1px solid #444850;border-radius:12px;padding:22px}
+.arena-versus-teams>article>small{color:#b6a280;font-size:10px;letter-spacing:.12em}.arena-versus-teams h2{font-size:24px;overflow-wrap:anywhere}
+.arena-versus-teams .arena-team-members{display:flex;flex-direction:column;gap:12px}.arena-versus-teams>article.team-winner{border-color:#e2b66e;box-shadow:inset 0 3px #e2b66e}.arena-versus-teams .team-winner>small{color:#f3ce8b}
+.arena-team-chat{background:#0d161ce8;border:1px solid #333d47;border-radius:12px;margin:24px 0;padding:20px}
+.arena-team-chat>header{font-size:11px;color:#d0aa7f;letter-spacing:.13em;margin-bottom:18px}
+.arena-chat-bubble{padding:13px 17px;background:#1a2730;border-radius:3px 14px 14px;max-width:80%;width:fit-content;margin-bottom:12px;overflow-wrap:anywhere}
+.arena-chat-bubble p{font-size:14px;color:#e4e6e6;margin:6px 0}.arena-chat-bubble small{font-size:10px;color:#a7b2ba}
+.arena-chat-bubble.answer{margin-left:auto;background:#193829;border-radius:14px 3px 14px 14px}.arena-chat-bubble.system{max-width:100%;background:#121d22;margin-inline:auto}
+.arena-team-chat>form{display:flex;gap:10px}.arena-public-match-id{padding:18px;background:#192127;color:#cfb994;font-size:14px;border-left:2px solid #dfa869;border-radius:4px}.arena-public-match-id a{color:#eacda4}
+.arena-result-summary{padding:22px;border:1px solid #b28c44;background:#a6802310;border-radius:10px;margin:25px 0}.arena-result-summary h2{color:#f4d796;font-size:26px}.arena-result-summary p{color:#bdbcb5;font-size:14px}
+.arena-request-status{min-height:20px}.arena-form-box[aria-busy=true]{opacity:.85}.arena-form-box[aria-busy=true] button{cursor:wait}
+.arena-profile-progress{margin-bottom:22px;padding:15px;background:#0e161ddd;border:1px solid #ffffff16;border-radius:10px}
+.arena-profile-progress>header{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center}.arena-profile-progress>header small{font-size:10px;color:#d2ac76}.arena-profile-progress a{color:#d6ba91;text-decoration:none;font-size:11px}
+.profile-season-badges{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.profile-season-badges>a{display:flex;gap:9px;align-items:center;background:#ffffff05;border:1px solid #ffffff0d;border-radius:8px;padding:8px 10px}.profile-season-badges b{display:block;color:#e1dfd7;font-size:11px}.profile-season-badges small{display:block;margin-top:5px;font-size:10px;color:#a8acb5}.profile-season-badges img{object-fit:contain}
+.arena-team-history-link{display:block;line-height:1.6}.arena-award-collection{margin-top:14px}.arena-award-collection summary{font-size:11px;cursor:pointer;color:#c9b18e}
+.season-filter{display:flex;flex-wrap:wrap;align-items:end;gap:12px}.season-filter label{flex:1;min-width:140px;margin:0}.season-filter .btn{min-height:44px}
+.season-emblems{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:30px 0}.season-emblems article{display:flex;align-items:center;flex-direction:column;gap:6px;padding:18px 10px;border:1px solid #ffffff16;border-radius:10px;background:#10161dbd}
+.season-emblems b{font-size:13px}.season-emblems small{font-size:10px;color:#98a2b2}
+.arena-season-rules{background:#111820df;border:1px solid #434548;padding:22px;border-radius:10px}.arena-season-rules h2{font-size:23px}.arena-season-rules ul{padding-left:20px}.arena-season-rules li{font-size:13px;line-height:1.8;color:#b3b9c2;margin-bottom:10px}.arena-season-rules strong{color:#ece5d9}
+.season-table{margin:35px 0;background:#0d141bdd;border:1px solid #ffffff1a;border-radius:12px;padding:20px}.season-table>header{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center}.season-table h2{font-size:24px}.season-table>header>span{font-size:10px;color:#efbb79}
+.season-table-row{display:grid;grid-template-columns:38px 42px minmax(0,1fr) 78px 85px;gap:12px;align-items:center;padding:12px 0;border-top:1px solid #ffffff0c}
+.season-table-row>b{font-size:12px;color:#c2b49d}.season-table-row a{color:#e2e1db;text-decoration:none;overflow-wrap:anywhere;font-size:14px}.season-table-row strong{text-align:right;color:#edc994;font-size:15px}.season-table-row small{text-align:right;font-size:11px;color:#a8aab3}
+@media(max-width:700px){.community-float{bottom:14px;right:14px}.arena-team-shell{width:calc(100% - 28px)}.arena-help{width:calc(100% - 28px)}.arena-team-grid{grid-template-columns:1fr}.arena-my-teams>a{flex-direction:column}.arena-versus-teams{gap:10px}.arena-versus-teams>article{padding:14px}.arena-versus-teams h2{font-size:19px}.arena-versus-teams .arena-team-members button{flex-direction:column;text-align:center;font-size:12px}.arena-versus-teams .arena-team-members strong{font-size:12px}.arena-chat-bubble{max-width:90%}.season-emblems{grid-template-columns:repeat(2,1fr)}.season-table{padding:12px}.season-table-row{grid-template-columns:27px 32px minmax(0,1fr) 51px;gap:7px}.season-table-row>small{grid-column:3/5;text-align:left}.season-table-row a{font-size:12px}.season-table-row img{width:30px}.arena-mode-tabs a{font-size:11px;padding:8px 10px}}
+@media(prefers-reduced-motion:reduce){.arena-team-card{transition:none}.arena-team-card:hover{transform:none}}

@@ -272,6 +272,7 @@ CREATE TABLE IF NOT EXISTS social_notifications (
     duel_id INTEGER,
     kind TEXT NOT NULL,
     message TEXT NOT NULL,
+    arena_url TEXT NOT NULL DEFAULT '',
     is_read INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(account_id) REFERENCES social_accounts(id) ON DELETE CASCADE,

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{duel.title}}{% endblock %}
+{% block social_meta %}{% if duel.status!='completed' %}<meta name="robots" content="noindex,follow">{% endif %}{% with meta_title=duel.title,meta_description=duel.label,meta_url=duel.url,meta_image=duel.image %}{% include '_share_meta.html' %}{% endwith %}{% endblock %}
+{% block content %}
+<section class="arena-team-shell">
+ <a class="mini-link" href="{{url_for('teams_arena',modo=duel.size~'v'~duel.size)}}">← Arena {{duel.size}}×{{duel.size}}</a>
+ <header class="arena-team-heading"><span class="eyebrow">DUELO DE EQUIPES #{{duel.id}}</span><h1>{{duel.label}}</h1><p>Todos podem acompanhar. O elenco foi definido no envio do desafio.</p></header>
+ <div class="arena-versus-teams">{% for side,name in [('a',duel.name_a),('b',duel.name_b)] %}<article class="{{'team-winner' if duel.winner_side==side else ''}}"><small>{{'VENCEDORES' if duel.winner_side==side else 'DESAFIANTES' if side=='a' else 'DESAFIADOS'}}</small><h2>{{name}}</h2><div class="arena-team-members">{% for m in duel[side] %}<button class="profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=m.player_id)}}">{% if social_avatar_src(m.profile) %}<img src="{{social_avatar_src(m.profile)}}" alt="" width="44" height="44">{% else %}<span>🔥</span>{% endif %}<strong{% if player_name_color(m.profile) %} style="color:{{player_name_color(m.profile)}}"{% endif %}>{{m.profile.nickname}}</strong></button>{% endfor %}</div></article>{% endfor %}</div>
+ <article class="arena-team-chat"><header>CONVERSA DO DESAFIO</header><div class="arena-chat-bubble"><small>{{duel.name_a}} · {{duel.requested_at}} UTC</small><p>{{duel.message or 'Preparem-se para a batalha!'}}</p></div>
+  {% if duel.status!='pending' %}<div class="arena-chat-bubble answer"><small>{{duel.name_b}} · {{duel.responded_at}} UTC</small><p>{{'Desafio recusado. Fugiu da batalha.' if duel.status=='refused' else 'Desafio aceito. Vamos para a batalha!'}}</p></div>{% endif %}
+  {% if duel.match_id %}<div class="arena-chat-bubble system"><p>Partida #{{duel.match_id}} informada.{% if duel.status=='completed' %} Vitória de {{duel.name_a if duel.winner_side=='a' else duel.name_b}} confirmada pelo AoMStats.{% endif %}</p></div>{% endif %}
+  {% if social_user and duel.status=='pending' %}
+   {% if social_user.player_id==duel.captain_b %}<form method="post" action="{{url_for('teams_respond',did=duel.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn primary" name="answer" value="accept">Aceitar desafio</button><button class="btn danger" name="answer" value="decline">Recusar</button></form>
+   {% elif social_user.player_id==duel.captain_a %}<form method="post" action="{{url_for('teams_respond',did=duel.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn" name="answer" value="cancel">Cancelar desafio</button></form>{% else %}<p class="arena-muted">O capitão da equipe desafiada decide pelo elenco.</p>{% endif %}
+  {% elif not social_user and duel.status=='pending' %}<a class="btn primary" href="{{url_for('social_login',next=request.path)}}">Entrar para responder</a>{% endif %}
+ </article>
+ {% if duel.match_id %}<p class="arena-public-match-id">PARTIDA <strong>#{{duel.match_id}}</strong> · <a href="{{duel.match_url}}" target="_blank" rel="noopener">Ver no AoMStats ↗</a></p>{% endif %}
+ {% if participant and duel.status in ('accepted','match_pending') %}<form class="arena-form-box" method="post" action="{{url_for('teams_match',did=duel.id)}}" data-team-match>
+  <h2>{{'Verificar resultado ou corrigir ID' if duel.match_id else 'Confirmar a partida'}}</h2><p>Depois que todos terminarem o jogo, um integrante informa o ID. Só vale o resultado com os {{duel.size*2}} perfis deste duelo e os vencedores da mesma equipe.</p>
+  <input type="hidden" name="_csrf" value="{{csrf_token()}}"><label>ID da partida<input name="match_id" inputmode="numeric" pattern="[0-9]{5,12}" minlength="5" maxlength="12" required value="{{duel.match_id}}" placeholder="Ex.: 43115933"></label>
+  <button class="btn primary">Verificar no AoMStats</button><p class="arena-request-status" role="status" aria-live="polite"></p>
+  {% if duel.match_error %}<p class="arena-muted">{{duel.match_error}}</p>{% endif %}
+ </form>{% elif duel.status=='completed' %}<div class="arena-result-summary"><h2>{{duel.name_a if duel.winner_side=='a' else duel.name_b}} venceu!</h2><p>+30 pontos para cada vencedor. A pontuação e o histórico de todos os integrantes foram atualizados.</p><a class="btn" href="{{url_for('arena_seasons_page',modo=duel.size~'v'~duel.size)}}">Ver ranking da temporada</a></div>{% elif duel.status in ('accepted','match_pending') %}<p class="arena-muted">{{duel.match_error or 'Os integrantes informarão o ID depois que a partida terminar.'}}</p>{% endif %}
+ {% with card_title=('Compartilhar vitória em equipe' if duel.status=='completed' else 'Compartilhar desafio'),card_image_url=duel.image,card_alt=duel.title,card_download_url=duel.download %}{% include '_share_card_panel.html' %}{% endwith %}
+</section>
+{% endblock %}

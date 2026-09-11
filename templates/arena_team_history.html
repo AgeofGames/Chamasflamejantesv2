@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Histórico de duplas e trios • Chamas Flamejantes{% endblock %}
+{% block content %}
+<section class="arena-team-shell"><a href="{{url_for('teams_arena')}}" class="mini-link">← Arena de equipes</a><header class="arena-team-heading"><span class="eyebrow">HISTÓRICO PÚBLICO</span><h1>Duplas e trios</h1><p>Desafios, elencos, IDs e resultados ficam disponíveis para toda a comunidade.</p></header>
+ {% for d in duels %}<a class="arena-team-history-row" href="{{url_for('teams_duel',did=d.id)}}"><small>{{d.size}}×{{d.size}} · {{d.requested_at}} UTC</small><strong>{{d.name_a}} × {{d.name_b}}</strong><span>{{social_duel_label(d.status)}}{% if d.status=='completed' %} · {{d.name_a if d.winner_side=='a' else d.name_b}} venceu{% endif %}{% if d.match_id %} · #{{d.match_id}}{% endif %}</span><b>Ver os jogadores e o duelo →</b></a>{% else %}<div class="empty"><p>Nenhum desafio registrado ainda.</p></div>{% endfor %}
+ <nav class="arena-history-pagination">{% if page>1 %}<a href="{{url_for('teams_history',pagina=page-1,jogador=player_id,equipe=team_id)}}">← Anterior</a>{% endif %}<span>{{page}} / {{pages}}</span>{% if page<pages %}<a href="{{url_for('teams_history',pagina=page+1,jogador=player_id,equipe=team_id)}}">Próxima →</a>{% endif %}</nav>
+</section>
+{% endblock %}

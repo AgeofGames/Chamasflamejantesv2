@@ -215,7 +215,8 @@ class SiteFlows(unittest.TestCase):
             self.assertEqual(player['stats']['streak'],2)
             self.assertEqual(player['stats']['refusals'],1)
             self.assertEqual(player['social_enabled'],1)
-            self.assertEqual(len(sql),2)
+            # Two batched player/stat reads plus two monthly season reads.
+            self.assertEqual(len(sql),4)
 
     def test_challenge_repeated_submission_and_csrf(self):
         duel=self.create_challenge()

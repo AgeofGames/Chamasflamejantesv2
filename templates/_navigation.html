@@ -1,8 +1,8 @@
 {% set ep=request.endpoint or '' %}
-{% set items=[('home','Início'),('open_tournaments_page','Torneios'),('tournament_history','Histórico'),('community_page','Elo da Comunidade'),('x1_page','Arena X1'),('maps_page','Mapas'),('programs_page','Programas'),('knowledge_page','Conhecimento'),('feedback_page','Feedback')] %}
+{% set items=[('home','Início'),('open_tournaments_page','Torneios'),('tournament_history','Histórico'),('community_page','Elo da Comunidade'),('x1_page','Arena'),('maps_page','Mapas'),('programs_page','Programas'),('knowledge_page','Conhecimento'),('feedback_page','Feedback')] %}
 <nav class="topbar-nav" id="main-navigation" aria-label="Navegação principal">
   {% for endpoint,label in items %}
-  {% set current=ep==endpoint or (endpoint=='knowledge_page' and (ep.startswith('knowledge_') or ep in ('hotkeys_guide_page','counter_guide_page'))) or (endpoint=='x1_page' and ep.startswith('social_duel')) or (endpoint=='open_tournaments_page' and ep in ('tournament_page','tournament_register','tournament_participants','tournament_matches','tournament_result')) %}
+  {% set current=ep==endpoint or (endpoint=='knowledge_page' and (ep.startswith('knowledge_') or ep in ('hotkeys_guide_page','counter_guide_page'))) or (endpoint=='x1_page' and (ep.startswith('social_duel') or ep.startswith('teams_') or ep=='arena_seasons_page')) or (endpoint=='open_tournaments_page' and ep in ('tournament_page','tournament_register','tournament_participants','tournament_matches','tournament_result')) %}
   <a href="{{url_for(endpoint)}}"{% if current %} aria-current="page"{% endif %}>{{label}}</a>
   {% endfor %}
   <details class="nav-drop">

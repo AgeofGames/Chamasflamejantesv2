@@ -176,6 +176,39 @@ def render_arena_card(duel, avatar_loader, output_format='JPEG'):
     return encoded(canvas,output_format)
 
 
+def render_team_card(duel, avatar_loader):
+    completed = duel['status']=='completed'
+    canvas = backdrop(GOLD if completed else '#65cabb','poseidon' if duel['size']==2 else 'zeus').copy()
+    draw=ImageDraw.Draw(canvas)
+    centered(draw,600,114,('VITÓRIA EM EQUIPE' if completed else f"ARENA {duel['size']} × {duel['size']}"),1080,52,GOLD,True)
+    left=duel['winner_side'] if completed else 'a'
+    right='b' if left=='a' else 'a'
+    for index,side in enumerate((left,right)):
+        cx=302 if index==0 else 898
+        color=GOLD if completed and index==0 else '#829197' if completed else '#65cabb'
+        draw.rounded_rectangle((cx-244,202,cx+244,538),12,fill='#0e141c',outline=color,width=2)
+        centered(draw,cx,220,duel['name_'+side],460,32,WHITE)
+        members=duel[side]; count=len(members)
+        for i,m in enumerate(members):
+            x=round(cx+(i-(count-1)/2)*148); y=345
+            source,mask=avatar_loader(m['profile'],112)
+            if completed and index==1:
+                source=ImageEnhance.Color(source.convert('RGB')).enhance(.22)
+                crack=ImageDraw.Draw(source)
+                crack.line([(67,0),(53,28),(72,50),(49,78),(56,112)],fill='#10141b',width=5)
+            canvas.paste(source,(x-56,y-56),mask)
+            draw=ImageDraw.Draw(canvas)
+            draw.ellipse((x-61,y-61,x+61,y+61),outline=color,width=3)
+            if completed and index==0:
+                draw.polygon([(x-18,y-67),(x-25,y-89),(x-8,y-80),(x,y-98),(x+8,y-80),(x+25,y-89),(x+18,y-67)],fill=GOLD)
+            centered(draw,x,424,m['profile']['nickname'],140,19,WHITE)
+        centered(draw,cx,494,('VENCEDORES' if index==0 else 'DERROTADOS') if completed else ('DESAFIANTES' if index==0 else 'DESAFIADOS'),460,17,color)
+    centered(draw,600,341,'VENCEU' if completed else 'VS',90,23,GOLD,True)
+    detail=f"{duel['size']}×{duel['size']}" + (f" · PARTIDA #{duel['match_id']}" if duel['match_id'] else ' · DESAFIO DA COMUNIDADE')
+    draw.text((1147,575),detail,font=font(16),fill=GOLD,anchor='rt')
+    return encoded(canvas,'JPEG')
+
+
 def tournament_style(tournament):
     return MODE_STYLES.get(tournament['mode_key'], (
         f"{tournament['team_size']} × {tournament['team_size']}",
