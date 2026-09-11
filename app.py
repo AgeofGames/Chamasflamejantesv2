@@ -5011,7 +5011,7 @@ def site_share_image():
 @app.get("/health")
 def health():
     get_db().execute('SELECT 1').fetchone()
-    return {"version":"24-equipes-temporadas","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"24.1-fotos-ranking","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 @app.errorhandler(400)
@@ -5037,11 +5037,11 @@ install_teams(app, globals())
 
 init_db()
 migrate_v6_db()
-print("🔥 CHAMAS FLAMEJANTES V24 — EQUIPES E TEMPORADAS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V24.1 — FOTOS NO RANKING\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V24 — EQUIPES E TEMPORADAS")
+    print(" 🔥 CHAMAS FLAMEJANTES V24.1 — FOTOS NO RANKING")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

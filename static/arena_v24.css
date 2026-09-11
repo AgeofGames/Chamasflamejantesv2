@@ -24,7 +24,12 @@
 .monthly-ranking{min-width:0}.monthly-ranking .section-head h2{font-size:21px}.monthly-ranking .section-head p{font-size:11px;margin-top:8px}
 .monthly-ranking-list{display:grid;gap:2px}.monthly-ranking-row{display:grid;grid-template-columns:20px 34px minmax(0,1fr) 39px;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid #ffffff0b}
 .monthly-ranking-row:first-child{background:linear-gradient(90deg,#e8ab5b12,transparent)}.rank-position{font-size:12px;color:#a1a5ad}
-.rank-emblem{width:32px;height:40px;object-fit:contain}
+.rank-name-badge{display:flex;align-items:center;gap:6px;min-width:0;max-width:100%}
+.rank-name-badge>strong,.rank-name-badge>.rank-player-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rank-name-badge>.rank-emblem{width:18px;height:22px;object-fit:contain;flex:0 0 18px}
+.monthly-ranking-row .rank-avatar-link{display:block;width:34px;height:34px}
+.monthly-ranking-row .rank-avatar,.season-table-row .rank-avatar{display:block;width:34px;height:34px;box-sizing:border-box;object-fit:cover;border:1px solid #d0975a80;border-radius:50%;background:#17212b}
+.monthly-ranking-row .rank-avatar-fallback,.season-table-row .rank-avatar-fallback{display:grid;place-items:center;color:#e8c99e;font-size:14px;font-weight:600}
 .monthly-ranking-row button{padding:0;text-align:left;min-width:0;border:0;background:transparent;cursor:pointer;color:#edece9;font-family:inherit}
 .monthly-ranking-row button strong{display:block;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .monthly-ranking-row small{display:block;color:#9fa7b3;font-size:9px;margin-top:3px}

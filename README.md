@@ -1,4 +1,12 @@
-# 🔥 CHAMAS FLAMEJANTES V24 — EQUIPES E TEMPORADAS
+# 🔥 CHAMAS FLAMEJANTES V24.1 — FOTOS NO RANKING
+
+## Correção visual da V24.1
+
+As fotos redondas dos jogadores voltaram aos rankings X1, duplas, trios e à classificação completa das temporadas. O emblema fica pequeno, imediatamente depois do nome. Tanto a foto quanto o nome abrem o perfil do jogador.
+
+Envie o conteúdo completo deste pacote ao repositório conectado ao Railway, preservando o banco, uploads e variáveis. Após a implantação, o campo version de /health deve indicar 24.1-fotos-ranking. Esta revisão mantém as regras de pontos e os resultados da V24.
+
+---
 
 ## Novidades da V24
 

@@ -2,8 +2,9 @@
  <div class="section-head"><div><span class="eyebrow">TEMPORADA {{season[5:]}}/{{season[:4]}}</span><h2>Ranking {{queue|upper}}</h2><p>+30 por vitória · −15 por derrota</p></div></div>
  <div class="monthly-ranking-list">
  {% for p in ranking[:10] %}<article class="monthly-ranking-row">
-  <span class="rank-position">{{loop.index}}</span><img class="rank-emblem" src="{{url_for('static',filename=p.rank.badge.image)}}" width="36" height="42" alt="{{p.rank.badge.name}}" title="{{p.rank.badge.name}} · nível {{p.rank.badge.level}}">
-  <button class="profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=p.id)}}"><strong{% if player_name_color(p) %} style="color:{{player_name_color(p)}}"{% endif %}>{{p.nickname}}</strong><small>{{p.rank.wins}} V · {{p.rank.losses}} D</small></button>
+  <span class="rank-position">{{loop.index}}</span>
+  <button type="button" class="rank-avatar-link profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=p.id)}}" aria-label="Ver perfil de {{p.nickname}}">{% if social_avatar_src(p) %}<img class="rank-avatar" src="{{social_avatar_src(p)}}" width="34" height="34" loading="lazy" decoding="async" alt="">{% else %}<span class="rank-avatar rank-avatar-fallback" aria-hidden="true">{{p.nickname[:1]|upper}}</span>{% endif %}</button>
+  <button type="button" class="rank-player-info profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=p.id)}}"><span class="rank-name-badge"><strong{% if player_name_color(p) %} style="color:{{player_name_color(p)}}"{% endif %}>{{p.nickname}}</strong><img class="rank-emblem" src="{{url_for('static',filename=p.rank.badge.image)}}" width="18" height="22" alt="{{p.rank.badge.name}}" title="{{p.rank.badge.name}} · nível {{p.rank.badge.level}}"></span><small>{{p.rank.wins}} V · {{p.rank.losses}} D</small></button>
   <b class="rank-points">{{p.rank.points}}<small>PTS</small></b>
  </article>{% else %}<p class="arena-muted">As primeiras batalhas vão definir este ranking.</p>{% endfor %}
  </div>
