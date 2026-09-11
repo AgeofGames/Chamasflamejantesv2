@@ -1,7 +1,11 @@
-CHAMAS FLAMEJANTES V24.1 — FOTOS NO RANKING
-Fotos redondas restauradas nos rankings X1, duplas, trios e temporadas.
-Emblema pequeno imediatamente após o nome; foto e nome abrem o perfil.
-Health atual: 24.1-fotos-ranking.
+CHAMAS FLAMEJANTES V24.2 — EMBLEMAS DA ARENA
+Dez artes enviadas identificadas pelo nome: Brasa, Chama, Forja, Guardião, Guerreiro, Conquistador, Herói, Lenda, Titã e Imortal.
+Emblemas de 34 × 34 px após o nome nos rankings X1, duplas, trios e temporadas, do mesmo tamanho das fotos redondas.
+Fotos preservadas; foto e nome continuam abrindo o perfil do jogador.
+Perfil e janela flutuante com emblemas em destaque, cor do nível, pontos e barra de progresso.
+Catálogo e conquistas anteriores com as mesmas artes. Brasa inicial visível antes da primeira partida.
+WebP transparente otimizado: vinte arquivos em static/arena/emblemas, total de 353304 bytes.
+Health atual: 24.2-emblemas. Regras de pontos, emblemas e dados preservados.
 Desafios da comunidade em uma janela suspensa compacta; jogadores e ranking lado a lado.
 Arena 2×2 e 3×3 com convites, aceite dos integrantes, desafios entre capitães e elencos preservados.
 Ranking mensal por modalidade: +30 por vitória, −15 por derrota e 10 emblemas de Brasa a Imortal.

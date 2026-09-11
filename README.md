@@ -1,4 +1,19 @@
-# 🔥 CHAMAS FLAMEJANTES V24.1 — FOTOS NO RANKING
+# 🔥 CHAMAS FLAMEJANTES V24.2 — EMBLEMAS DA ARENA
+
+## Artes dos emblemas da V24.2
+
+As dez imagens enviadas foram identificadas pelos nomes escritos nas artes e associadas aos respectivos níveis: **Brasa, Chama, Forja, Guardião, Guerreiro, Conquistador, Herói, Lenda, Titã e Imortal**.
+
+- No ranking X1, duplas, trios e temporadas, o emblema aparece **imediatamente depois do nome**, com **34 × 34 px**, do mesmo tamanho da foto redonda. Foto e nome continuam abrindo o perfil.
+- No perfil completo e na janela flutuante, os emblemas têm arte maior, iluminação discreta na cor do nível, pontos e barra de progresso. As conquistas anteriores usam as mesmas artes. O nível inicial Brasa aparece também antes da primeira partida, identificado como aguardando confirmação.
+- A página de temporadas apresenta os dez emblemas com seus nomes e faixas de pontos. As imagens conservam o fundo transparente e não recebem corte circular.
+- Arquivos WebP de 96 px para o ranking e 320 px para os perfis e catálogo, em `static/arena/emblemas`. As vinte versões somam aproximadamente 345 KiB, com carregamento sob demanda e cache versionado.
+
+**Atualização:** envie o conteúdo completo deste pacote ao repositório conectado ao Railway, incluindo a pasta `static/arena/emblemas`. Preserve banco, uploads e variáveis. Após a implantação, `/health` deve indicar `24.2-emblemas`. Nenhuma migração nova ou recálculo do ranking é necessário.
+
+**Verificação desta revisão:** 26 testes da Arena passaram. Também foram conferidos o HTML de seis rankings e quatro perfis, os vinte arquivos de imagem, dimensões, transparência, cache e a preservação dos pontos e emblemas anteriores em banco de teste isolado.
+
+---
 
 ## Correção visual da V24.1
 

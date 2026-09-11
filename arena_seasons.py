@@ -6,10 +6,13 @@ import json
 
 ZONE = ZoneInfo('America/Sao_Paulo')
 TIERS = (
- ('Brasa','#b38a72'), ('Chama','#ed874d'), ('Forja','#b5c5d6'),
- ('Guardião','#5ecab1'), ('Guerreiro','#67b5ec'), ('Conquistador','#a391ee'),
- ('Herói','#e295da'), ('Lenda','#f0bf67'), ('Titã','#f78660'), ('Imortal','#ffe4a0'),
+ ('Brasa','#c79a72'), ('Chama','#f2a455'), ('Forja','#ef884b'),
+ ('Guardião','#d3b278'), ('Guerreiro','#83cfff'), ('Conquistador','#74cd9d'),
+ ('Herói','#8ebaff'), ('Lenda','#b59af5'), ('Titã','#fb8a52'), ('Imortal','#b4e2ff'),
 )
+# Artwork matched to the names printed on the ten supplied badges.
+BADGE_SLUGS = ('brasa', 'chama', 'forja', 'guardiao', 'guerreiro',
+               'conquistador', 'heroi', 'lenda', 'tita', 'imortal')
 QUEUES = {'x1':'X1', '2v2':'Duplas', '3v3':'Trios'}
 
 def utc_now():
@@ -26,7 +29,9 @@ def period(value=None):
 def badge(points):
     level = min(9, max(0, int(points)) // 100)
     return dict(level=level+1, name=TIERS[level][0], color=TIERS[level][1],
-                image=f'arena/badge-{level+1}.svg', progress=min(100, int(points)%100) if level<9 else 100)
+                image=f'arena/emblemas/{BADGE_SLUGS[level]}.webp',
+                thumbnail=f'arena/emblemas/{BADGE_SLUGS[level]}-96.webp',
+                progress=min(100, int(points)%100) if level<9 else 100)
 
 def close_seasons(db, current=None):
     current = current or period()

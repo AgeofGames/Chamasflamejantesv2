@@ -1,9 +1,34 @@
 {% set progress=arena_profile_progress(profile.id) %}
-<div class="arena-profile-progress">
- <header><small>TEMPORADA {{progress.season[5:]}}/{{progress.season[:4]}}</small><a href="{{url_for('arena_seasons_page')}}">Regras e emblemas →</a></header>
+{% macro current_badge(rank) %}
+<a class="profile-rank-card" href="{{url_for('arena_seasons_page',modo=rank.queue)}}" style="--emblem-color:{{rank.badge.color}}">
+ <span class="profile-emblem-art"><img src="{{url_for('static',filename=rank.badge.image)}}" alt="Emblema {{rank.badge.name}}" width="96" height="96" loading="lazy" decoding="async"></span>
+ <span class="profile-emblem-info">
+  <small class="profile-emblem-mode">{{rank.label}} · NÍVEL {{rank.badge.level}}/10</small>
+  <b>{{rank.badge.name}}</b>
+  <span class="profile-emblem-points">{{rank.points}} <small>pontos</small></span>
+  <span class="profile-rank-meter" role="progressbar" aria-label="Progresso no nível {{rank.badge.name}}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{rank.badge.progress}}"><span style="width:{{rank.badge.progress}}%"></span></span>
+  <small>{{'Nível máximo conquistado' if rank.badge.level==10 else (100-rank.badge.progress)~' pts para o próximo nível'}}</small>
+  <small>{{rank.wins}} vitórias · {{rank.losses}} derrotas</small>
+ </span>
+ <small class="profile-emblem-record">{% if rank.wins+rank.losses %}Derrotas: {{rank.loss_streak}}/3 seguidas · {{rank.loss_bank}}/4 acumuladas{% else %}Aguardando a primeira partida confirmada{% endif %}</small>
+</a>
+{% endmacro %}
+<section class="arena-profile-progress" aria-label="Emblemas do jogador">
+ <header><div><small>TEMPORADA {{progress.season[5:]}}/{{progress.season[:4]}}</small><h4>Emblemas da Arena</h4></div><a href="{{url_for('arena_seasons_page')}}">Ver os 10 emblemas →</a></header>
  <div class="profile-season-badges">
- {% for rank in progress.current %}<a href="{{url_for('arena_seasons_page',modo=rank.queue)}}"><img src="{{url_for('static',filename=rank.badge.image)}}" alt="" width="40" height="48"><span><b>{{rank.badge.name}} · {{rank.label}}</b><small>{{rank.points}} pontos · {{rank.wins}} V / {{rank.losses}} D</small><small>Derrotas: {{rank.loss_streak}}/3 seguidas · {{rank.loss_bank}}/4 acumuladas</small></span></a>{% else %}<p class="arena-muted">A primeira partida confirmada inicia sua classificação mensal.</p>{% endfor %}
+ {% for rank in progress.current %}{{current_badge(rank)}}{% else %}{{current_badge(dict(queue='x1',label='X1',badge=arena_badge(0),points=0,wins=0,losses=0,loss_streak=0,loss_bank=0))}}{% endfor %}
  </div>
  <a class="arena-team-history-link" href="{{url_for('teams_history',jogador=profile.id)}}">Histórico em duplas e trios · {{progress.team_games}} partidas · {{progress.team_wins}} vitórias · {{progress.team_games-progress.team_wins}} derrotas →</a>
- {% if progress.awards %}<details class="arena-award-collection"><summary>Emblemas das temporadas anteriores ({{progress.awards|length}})</summary><div class="profile-season-badges">{% for award in progress.awards %}<a href="{{url_for('arena_seasons_page',mes=award.season,modo=award.queue)}}"><img src="{{url_for('static',filename=award.badge.image)}}" alt="" width="40" height="48"><span><b>{{award.badge.name}} · {{award.label}}</b><small>{{award.season}} · #{{award.position}} · {{award.points}} pts</small></span></a>{% endfor %}</div></details>{% endif %}
-</div>
+ {% if progress.awards %}
+ <details class="arena-award-collection"><summary>Emblemas das temporadas anteriores ({{progress.awards|length}})</summary>
+  <div class="profile-season-badges profile-award-badges">
+  {% for award in progress.awards %}
+   <a href="{{url_for('arena_seasons_page',mes=award.season,modo=award.queue)}}" style="--emblem-color:{{award.badge.color}}">
+    <span class="profile-emblem-art"><img src="{{url_for('static',filename=award.badge.image)}}" alt="Emblema {{award.badge.name}}" width="80" height="80" loading="lazy" decoding="async"></span>
+    <span class="profile-emblem-info"><small class="profile-emblem-mode">{{award.label}} · {{award.season[5:]}}/{{award.season[:4]}}</small><b>{{award.badge.name}}</b><small>#{{award.position}} · {{award.points}} pontos</small><small>Emblema conquistado</small></span>
+   </a>
+  {% endfor %}
+  </div>
+ </details>
+ {% endif %}
+</section>
