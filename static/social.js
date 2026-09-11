@@ -4,7 +4,7 @@
   const content = document.getElementById('profile-modal-content');
   const notifications = document.getElementById('notification-popover');
   const toggle = document.querySelector('[data-notification-toggle]');
-  let opener, controller, requestNumber = 0, previousOverflow = '';
+  let opener, retryTrigger, controller, requestNumber = 0, previousOverflow = '';
   let feedCursor = '', feedBusy = false, feedEnabled = !!notifications, lastFeed = 0;
   const focusable = container => [...container.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),textarea:not([disabled]),select:not([disabled]),[tabindex="0"]')]
     .filter(node => !node.closest('[hidden]') && node.getClientRects().length);
@@ -52,8 +52,8 @@
   };
   const showProfile = async trigger => {
     if (!modal || !content) return;
-    opener = trigger;
-    if (modal.hidden) previousOverflow = document.body.style.overflow;
+    if (modal.hidden) { opener = trigger; previousOverflow = document.body.style.overflow; }
+    retryTrigger = trigger;
     controller?.abort(); controller = new AbortController();
     const thisRequest = ++requestNumber;
     const activeController = controller;
@@ -84,7 +84,7 @@
     if (notifications && !notifications.hidden && !target.closest('#notification-popover')) setNotificationsOpen(false);
     const trigger = target.closest('.profile-popup-trigger[data-profile-card-url]');
     if (trigger) { event.preventDefault(); showProfile(trigger); return; }
-    if (target.closest('[data-retry-profile]') && opener) { showProfile(opener); return; }
+    if (target.closest('[data-retry-profile]') && retryTrigger) { showProfile(retryTrigger); return; }
     if (target.closest('[data-close-profile]')) closeModal();
 
     const copy = target.closest('[data-copy-link]');

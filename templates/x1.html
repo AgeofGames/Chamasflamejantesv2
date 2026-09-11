@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Arena X1 • Chamas Flamejantes{% endblock %}
-{% block meta_description %}Jogadores da comunidade, desafios privados e resultados verificados pelo AoMStats na Arena X1.{% endblock %}
+{% block meta_description %}Jogadores da comunidade, desafios públicos e resultados verificados pelo AoMStats na Arena X1.{% endblock %}
 {% block content %}
 <section class="page-hero compact social-arena-hero">
   <span class="eyebrow">⚔️ MINI REDE SOCIAL DA COMUNIDADE</span>
@@ -25,12 +25,12 @@
 
 {% if active %}
 <section class="section">
-  <div class="section-head"><div><span class="eyebrow">SUA JORNADA</span><h2>DUELOS ATIVOS</h2></div></div>
+  <div class="section-head"><div><span class="eyebrow">TODOS PODEM ACOMPANHAR</span><h2>DESAFIOS DA COMUNIDADE</h2><p>Quem desafiou quem e o ID da partida, assim que for informado.</p></div><a class="btn" href="{{url_for('social_duel_history',filtro='ativos')}}">VER TODOS</a></div>
   <div class="duel-card-grid">
     {% for d in active %}
     <a class="duel-status-card status-{{d.status}}" href="{{url_for('social_duel',duel_id=d.id)}}">
       <div class="duel-mini-player">{% if social_avatar_src(d.challenger) %}<img loading="lazy" decoding="async" src="{{social_avatar_src(d.challenger)}}" alt="">{% else %}<span>🔥</span>{% endif %}<strong{% if player_name_color(d.challenger) %} style="color:{{player_name_color(d.challenger)}}"{% endif %}>{{d.challenger.nickname}}</strong></div><b>VS</b>
-      <div class="duel-mini-player">{% if social_avatar_src(d.challenged) %}<img loading="lazy" decoding="async" src="{{social_avatar_src(d.challenged)}}" alt="">{% else %}<span>🔥</span>{% endif %}<strong{% if player_name_color(d.challenged) %} style="color:{{player_name_color(d.challenged)}}"{% endif %}>{{d.challenged.nickname}}</strong></div><em>{{social_duel_label(d.status)}}</em>
+      <div class="duel-mini-player">{% if social_avatar_src(d.challenged) %}<img loading="lazy" decoding="async" src="{{social_avatar_src(d.challenged)}}" alt="">{% else %}<span>🔥</span>{% endif %}<strong{% if player_name_color(d.challenged) %} style="color:{{player_name_color(d.challenged)}}"{% endif %}>{{d.challenged.nickname}}</strong></div><em>{{social_duel_label(d.status)}}{% if d.match_id %} · PARTIDA #{{d.match_id}}{% endif %}</em>
     </a>
     {% endfor %}
   </div>

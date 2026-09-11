@@ -1,0 +1,9 @@
+<article class="share-card-panel" id="{{card_anchor|default('compartilhar-card')}}">
+  <div class="share-card-preview"><img src="{{card_image_url}}" alt="{{card_alt}}" width="1200" height="630" loading="lazy" decoding="async"></div>
+  <div class="share-card-copy"><span class="eyebrow">LEVE A ARENA PARA SUAS REDES</span><h2>{{card_title}}</h2><p>{{card_alt}}</p>
+    <div class="share-buttons"><a class="share-whatsapp" href="{{share.whatsapp}}" target="_blank" rel="noopener">Compartilhar no WhatsApp</a><a href="{{share.facebook}}" target="_blank" rel="noopener">Facebook</a><a href="{{share.x}}" target="_blank" rel="noopener">X</a><a href="{{share.telegram}}" target="_blank" rel="noopener">Telegram</a><button type="button" data-native-share data-share-url="{{share.url}}" data-share-title="{{share.title}}">Outras redes</button><button type="button" data-copy-link="{{share.url}}">Copiar link</button></div>
+    <div class="share-card-file-actions"><button class="btn primary" type="button" data-card-share data-card-image="{{card_image_url}}" data-card-download="{{card_download_url}}" data-card-title="{{share.title}}" data-card-link="{{share.url}}">Enviar imagem</button><a class="btn" href="{{card_download_url}}" download>Baixar card</a></div>
+    <small>Compartilhe o link com a prévia ou envie a imagem. No computador, você também pode baixar o card e anexá-lo.</small>
+    <p class="share-card-feedback" role="status" aria-live="polite"></p>
+  </div>
+</article>

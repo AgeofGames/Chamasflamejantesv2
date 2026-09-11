@@ -1,0 +1,14 @@
+<section class="profile-public-history" id="historico-perfil" aria-label="Histórico de {{profile.nickname}}">
+  <header><div><span class="eyebrow">CONFRONTOS DA ARENA X1</span><h3>Com quem jogou</h3></div><span>{{profile.stats.completed}} partidas disputadas</span></header>
+  <nav class="arena-history-filters" aria-label="Filtrar histórico do jogador">
+  {% for key,label,count in [('todos','Todos',none),('partidas','Partidas',profile.stats.completed),('vitorias','Vitórias',profile.stats.wins),('derrotas','Derrotas',profile.stats.losses),('fugas','Fugas',profile.stats.refusals),('ativos','Ativos',none)] %}
+    <a href="{{url_for('social_profile',player_id=profile.id,filtro=key,_anchor='historico-perfil')}}" {% if compact %}class="profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=profile.id,filtro=key)}}"{% endif %} {% if history.category==key %}aria-current="true"{% endif %}>{{label}}{% if count is not none %}<b>{{count}}</b>{% endif %}</a>
+  {% endfor %}
+  </nav>
+  {% include '_arena_history_rows.html' %}
+  <footer class="arena-history-pagination">
+    <span>{{history.total}} registro{{'' if history.total==1 else 's'}} · página {{history.page}} de {{history.pages}}</span>
+    {% for num,label in [(history.page-1,'← Anterior'),(history.page+1,'Próxima →')] %}{% if num>=1 and num<=history.pages %}<a href="{{url_for('social_profile',player_id=profile.id,filtro=history.category,pagina=num,_anchor='historico-perfil')}}" {% if compact %}class="profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=profile.id,filtro=history.category,pagina=num)}}"{% endif %}>{{label}}</a>{% endif %}{% endfor %}
+  </footer>
+  <p class="arena-history-note">Fugas são desafios recusados por este jogador. Partidas disputadas contam apenas resultados confirmados na Arena.</p>
+</section>

@@ -50,6 +50,13 @@
         const chat = document.querySelector('.duel-chat-thread');
         if (chat) chat.innerHTML = data.chat_html;
       }
+      if (data.share_html) {
+        const card = document.querySelector('.share-card-panel');
+        if (card) {
+          card.outerHTML = data.share_html;
+          document.dispatchEvent(new CustomEvent('chamas:content', {detail:{container:document.querySelector('.share-card-panel')}}));
+        }
+      }
       document.querySelectorAll('[data-duel-state-label]').forEach(label => { label.textContent = data.label; });
       const description = document.querySelector('[data-duel-state-description]');
       if (description && data.status === 'match_pending') description.textContent = 'ID guardado. A consulta terminou sem confirmar o resultado; você pode verificar novamente ou corrigir o ID abaixo.';

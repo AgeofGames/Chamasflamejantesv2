@@ -1,9 +1,14 @@
 {% extends "base.html" %}
 {% block title %}{{history_title}} • Arena X1{% endblock %}
 {% block content %}
-<section class="page-hero compact"><span class="eyebrow">⚔️ MEMÓRIA DA ARENA</span><h1>{{history_title}}</h1><p>Vitórias confirmadas pelo AoMStats e desafios recusados ficam registrados aqui.</p><div class="arena-hero-actions"><a class="btn primary" href="{{url_for('x1_page')}}">VOLTAR À ARENA</a>{% if viewer and viewer.player_id %}<a class="btn" href="{{url_for('social_duel_history',jogador=viewer.player_id)}}">MEUS DUELOS</a>{% endif %}</div></section>
-<section class="section"><div class="duel-history-list">
-  {% for d in duels %}<article class="duel-history-row status-{{d.status}}"><div><button type="button" class="duel-history-profile profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=d.challenger.id)}}" aria-label="Abrir perfil de {{d.challenger.nickname}}">{% if social_avatar_src(d.challenger) %}<img loading="lazy" decoding="async" src="{{social_avatar_src(d.challenger)}}" alt="Foto de {{d.challenger.nickname}}">{% else %}<span>🔥</span>{% endif %}</button><strong{% if player_name_color(d.challenger) %} style="color:{{player_name_color(d.challenger)}}"{% endif %}>{{d.challenger.nickname}}</strong></div><a class="duel-history-summary" href="{{d.public_url}}"><b>{{social_duel_label(d.status)}}</b>{% if d.winner %}<small>Vencedor: {{d.winner.nickname}}</small>{% elif d.status=='refused' %}<small>{{d.challenged.nickname}} fugiu da batalha</small>{% endif %}</a><div><button type="button" class="duel-history-profile profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=d.challenged.id)}}" aria-label="Abrir perfil de {{d.challenged.nickname}}">{% if social_avatar_src(d.challenged) %}<img loading="lazy" decoding="async" src="{{social_avatar_src(d.challenged)}}" alt="Foto de {{d.challenged.nickname}}">{% else %}<span>🔥</span>{% endif %}</button><strong{% if player_name_color(d.challenged) %} style="color:{{player_name_color(d.challenged)}}"{% endif %}>{{d.challenged.nickname}}</strong></div></article>
-  {% else %}<div class="empty"><h3>Nenhum duelo registrado.</h3><p>Os resultados aparecerão depois que o AoMStats confirmar as partidas.</p></div>{% endfor %}
-</div></section>
+<section class="page-hero compact"><span class="eyebrow">MEMÓRIA PÚBLICA DA ARENA</span><h1>{{history_title}}</h1><p>Veja quem desafiou quem, os IDs informados, os resultados e as recusas.</p><div class="arena-hero-actions"><a class="btn primary" href="{{url_for('x1_page')}}">VOLTAR À ARENA</a>{% if viewer and viewer.player_id %}<a class="btn" href="{{url_for('social_duel_history',jogador=viewer.player_id)}}">MEUS DUELOS</a>{% endif %}{% if profile %}<a class="btn" href="{{url_for('social_profile',player_id=profile.id)}}">VER PERFIL</a>{% endif %}</div></section>
+<section class="section">
+  <nav class="arena-history-filters" aria-label="Filtrar duelos">
+    {% set options = [('todos','Todos'),('partidas','Partidas'),('ativos','Ativos'),('fugas','Fugas')] %}
+    {% if profile %}{% set options = options + [('vitorias','Vitórias'),('derrotas','Derrotas')] %}{% endif %}
+    {% for key,label in options %}<a href="{{url_for('social_duel_history',jogador=profile.id if profile else none,filtro=key)}}"{% if history.category==key %} aria-current="true"{% endif %}>{{label}}</a>{% endfor %}
+  </nav>
+  {% include '_arena_history_rows.html' %}
+  <nav class="arena-history-pagination" aria-label="Páginas do histórico"><span>{{history.total}} registros · página {{history.page}} de {{history.pages}}</span>{% for num,label in [(history.page-1,'← Anterior'),(history.page+1,'Próxima →')] %}{% if num>=1 and num<=history.pages %}<a href="{{url_for('social_duel_history',jogador=profile.id if profile else none,filtro=history.category,pagina=num)}}">{{label}}</a>{% endif %}{% endfor %}</nav>
+</section>
 {% endblock %}

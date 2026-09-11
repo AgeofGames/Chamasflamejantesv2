@@ -1,4 +1,21 @@
-# 🔥 CHAMAS FLAMEJANTES V22.3 — WHATSAPP E FAVICON
+# 🔥 CHAMAS FLAMEJANTES V23 — ARENA PÚBLICA E CARDS
+
+## Novidades da V23
+
+- Ao abrir um perfil, a janela flutuante já mostra partidas disputadas, vitórias, derrotas, fugas e os adversários. A página completa também exibe o histórico.
+- Filtros **Todos**, **Partidas**, **Vitórias**, **Derrotas**, **Fugas** e **Ativos**, com paginação para consultar os registros antigos.
+- Fugas contam apenas os desafios que a própria pessoa recusou. O histórico informa de quem ela fugiu. Desafios cancelados ficam ocultos e não contam como fuga.
+- A Arena mostra os desafios ativos da comunidade para todos. Visitantes podem abrir o confronto e ver o ID informado, mesmo antes da confirmação do resultado. Somente os participantes autorizados podem responder ou informar a partida.
+- Card de vitória com avatar colorido do vencedor, coroa e moldura dourada; o derrotado aparece com moldura e efeito de rachaduras. Nomes, resultado, mapa, duração e ID vêm do registro do duelo.
+- Botões para compartilhar o link no WhatsApp, Facebook, X, Telegram e no menu nativo do aparelho. Também é possível enviar a imagem nos aparelhos compatíveis ou **Baixar card** e anexar em qualquer rede.
+- Torneios públicos abertos ou em andamento ganham **Compartilhar torneio** na listagem e na página do evento. Existem artes específicas para FFA, Food/Wood/Gold, 1×1 todos contra todos, 2×2 eliminação e MD3 1×1, 2×2 e 3×3.
+- Imagens JPEG públicas em 1200 × 630, metadados completos no HTML inicial, nomes de fonte incluídos no pacote e cache limitado em memória. Os links de imagem mudam de versão quando o conteúdo muda.
+
+**Como atualizar:** envie os arquivos deste pacote ao GitHub, incluindo `share_cards.py`, `static/fonts`, os novos templates, CSS e JavaScript. Preserve o banco, os uploads, o volume e as variáveis existentes do Railway. Após a implantação ativa, `/health` deve informar `23-arena-publica-cards`.
+
+**Validação:** 40 testes Python e 9 testes JavaScript passaram. Foram conferidos permissões, visibilidade pública, filtros e paginação, contagem de fugas, cancelamento, metadados, imagens nas sete modalidades, download e recuperação de falhas no compartilhamento. As imagens renderizadas também foram inspecionadas visualmente. Detalhes em `ARENA_PUBLICA_V23.md`.
+
+O WhatsApp controla a geração e o cache de suas prévias. Compartilhe pelos novos botões em uma mensagem nova; o envio do arquivo de imagem também está disponível. Este pacote inclui todas as correções anteriores de AoMStats, perfis, navegação, favicon e capa do site.
 
 ## Atualização da V22.3
 
@@ -60,7 +77,7 @@ Todas as melhorias da V22 abaixo estão incluídas.
 - Arquivos estáticos com versão pelo conteúdo, cache e compressão gzip de CSS, JavaScript, JSON e guia HTML. Páginas de conta e tokens não entram em cache compartilhado.
 - Fotos novas redimensionadas para até 512 pixels em WebP; limite de 8 MB. Imagens de listas carregadas sob demanda.
 
-Atualize o conteúdo do repositório com este pacote, mantendo as variáveis do Google, a chave secreta e o volume do Railway. A identificação atual em `/health` é `22.3-whatsapp-favicon`.
+Atualize o conteúdo do repositório com este pacote, mantendo as variáveis do Google, a chave secreta e o volume do Railway. A identificação atual em `/health` é `23-arena-publica-cards`.
 
 Build configurado com Railpack, o construtor atual do Railway.
 

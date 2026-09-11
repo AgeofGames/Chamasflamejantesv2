@@ -6,8 +6,10 @@
     <div><small>JOGADOR DA ARENA</small><h2{% if player_name_color(profile) %} style="color:{{player_name_color(profile)}}"{% endif %}>{{profile.nickname}}</h2><span class="profile-online-badge">{% if profile.social_enabled %}● PERFIL ATIVO{% else %}PERFIL DA COMUNIDADE{% endif %}</span></div>
   </div>
   {% if profile.quote %}<blockquote>“{{profile.quote}}”</blockquote>{% else %}<blockquote class="muted">Este jogador ainda não adicionou uma frase.</blockquote>{% endif %}
-  <dl class="profile-stats-grid"><div><dt>Vitórias</dt><dd>{{profile.stats.wins}}</dd></div><div><dt>Derrotas</dt><dd>{{profile.stats.losses}}</dd></div><div><dt>Taxa</dt><dd>{{profile.stats.rate}}%</dd></div><div><dt>Elo 1x1</dt><dd>{{profile.elo_1v1 or 'SEM ELO'}}</dd></div></dl>
+  <dl class="profile-stats-grid"><div><dt>Partidas</dt><dd>{{profile.stats.completed}}</dd></div><div><dt>Vitórias</dt><dd>{{profile.stats.wins}}</dd></div><div><dt>Derrotas</dt><dd>{{profile.stats.losses}}</dd></div><div><dt>Fugas</dt><dd>{{profile.stats.refusals}}</dd></div></dl>
+  <p class="arena-history-note">Elo 1x1: <strong>{{profile.elo_1v1 or 'SEM ELO'}}</strong> · {{profile.stats.rate}}% de aproveitamento</p>
   <div class="profile-popover-links"><a class="btn" href="{{url_for('social_profile',player_id=profile.id)}}">VER PERFIL COMPLETO</a>{% if profile.aomstats_url %}<a class="mini-link" href="{{profile.aomstats_url}}" target="_blank" rel="noopener">AoMStats ↗</a>{% endif %}</div>
+  {% include '_profile_history.html' %}
   {% if can_challenge %}
   <form class="profile-challenge-form" method="post" action="{{url_for('social_challenge_player',player_id=profile.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><label><span>Mensagem do desafio</span><textarea name="message" maxlength="280" placeholder="Prepare-se para a batalha!">Prepare-se para a batalha!</textarea></label><button class="btn primary">⚔️ DESAFIAR {{profile.nickname}}</button></form>
   {% elif not social_user %}<a class="btn primary full-button" href="{{url_for('social_login',next=url_for('social_profile',player_id=profile.id))}}">ENTRAR PARA DESAFIAR</a>{% elif not profile.social_enabled %}<p class="profile-unavailable">Esse jogador ainda não ativou uma conta social.</p>{% endif %}

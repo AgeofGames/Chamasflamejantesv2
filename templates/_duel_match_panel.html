@@ -26,4 +26,6 @@
   <p class="match-lookup-feedback {{feedback_kind|default('')}}" data-match-feedback role="status" aria-live="polite">{{feedback_message|default('')}}</p>
   <small>Cada clique faz uma consulta com limite de tempo. A confirmação só acontece quando o AoMStats informa um vencedor e um derrotado; não há busca contínua em segundo plano.</small>
 </article>
+{% elif not participant and duel.status in ('accepted','match_pending') %}
+<article class="match-confirm-panel spectator-match-panel"><span class="eyebrow">ACOMPANHE A PARTIDA</span><h2>{% if duel.match_id %}Partida #{{duel.match_id}}{% else %}Aguardando o ID da partida{% endif %}</h2><p>{% if duel.match_id %}ID informado. O resultado ainda não foi confirmado pelo AoMStats.{% else %}O desafio foi aceito. Depois do jogo, um dos jogadores informará o ID e ele ficará visível aqui.{% endif %}</p>{% if duel.match_id and duel.match_url %}<a class="btn" href="{{duel.match_url}}" target="_blank" rel="noopener">ABRIR NO AOMSTATS ↗</a>{% endif %}</article>
 {% endif %}

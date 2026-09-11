@@ -1,0 +1,64 @@
+/* Public history and social artwork follow the existing library-card palette. */
+.profile-public-history { min-width:0; margin:24px 0; padding:26px; background:linear-gradient(145deg,#111820,#0a0e13); border:1px solid #ffffff18; border-top:2px solid #dd793b; border-radius:12px; scroll-margin-top:130px; }
+.social-profile-page>.profile-public-history { width:min(1060px,calc(100% - 44px)); margin:24px auto 70px; box-sizing:border-box; }
+.social-profile-page .social-profile-main { margin-bottom:24px; }
+.profile-public-history>header { display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:20px; }
+.profile-public-history h3 { margin:6px 0 0; font-size:24px; }
+.profile-public-history>header>span { color:#aab1bb; font-size:13px; }
+.arena-history-filters { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:18px; }
+.arena-history-filters a { display:inline-flex; align-items:center; gap:8px; min-height:40px; padding:9px 13px; background:#ffffff05; border:1px solid #ffffff20; border-radius:6px; color:#c0c6ce; font:600 13px Inter,sans-serif; text-decoration:none; }
+.arena-history-filters a b { padding:2px 6px; background:#ffffff09; border-radius:4px; color:inherit; font-size:11px; }
+.arena-history-filters a:hover,.arena-history-filters a[aria-current=true] { color:#ffbd8e; border-color:#d57a48; background:#b9471a25; }
+.arena-history-list { display:grid; gap:9px; }
+.arena-history-record { display:grid; grid-template-columns:minmax(230px,1fr) minmax(220px,1.2fr) auto; gap:18px; align-items:center; padding:17px 19px; border:1px solid #ffffff13; border-left:3px solid #ca763f; border-radius:8px; background:#070c11b3; }
+.arena-history-record.outcome-win,.arena-history-record.status-completed { border-left-color:#ddb66a; }
+.arena-history-record.outcome-loss,.arena-history-record.status-refused { border-left-color:#bf766f; }
+.arena-history-people { display:flex; align-items:center; gap:10px; flex-wrap:wrap; min-width:0; }
+.arena-history-player { display:inline-flex; align-items:center; gap:10px; color:#eff0f3; font-size:13px; font-weight:700; min-width:0; max-width:100%; text-decoration:none; }
+.arena-history-player>img,.arena-history-avatar { width:40px; height:40px; border-radius:50%; object-fit:cover; flex:0 0 40px; background:#1d232a; border:1px solid #bb773d; }
+.arena-history-avatar { display:grid; place-items:center; }
+.arena-history-player>span:last-child { overflow-wrap:anywhere; }
+.arena-history-player:hover { text-decoration:underline; text-underline-offset:3px; }
+.arena-history-vs { color:#ab804e; font-size:11px; }
+.arena-history-result { display:grid; gap:6px; min-width:0; text-decoration:none; color:#e9edf1; }
+.arena-history-result strong { font-size:14px; line-height:1.55; overflow-wrap:anywhere; }
+.outcome-win .arena-history-result strong { color:#f0cf8c; }
+.outcome-loss .arena-history-result strong,.outcome-refusal .arena-history-result strong { color:#eaa69b; }
+.arena-history-result small { color:#9da7b3; font-size:12px; }
+.arena-match-id { color:#f2bb8e; font-size:12px; font-weight:700; letter-spacing:.02em; }
+.arena-history-meta { display:grid; gap:10px; text-align:right; font-size:11px; color:#8895a3; }
+.arena-history-meta>a { color:#dba46e; text-decoration:none; font-size:11px; font-weight:700; }
+.arena-history-pagination { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:12px; margin-top:19px; font-size:12px; color:#9ca6b1; }
+.arena-history-pagination>span { margin-right:auto; }
+.arena-history-pagination>a { padding:9px 12px; border:1px solid #ffffff25; border-radius:5px; color:#e3bd93; }
+.arena-history-empty { padding:25px; border:1px dashed #ffffff20; border-radius:8px; color:#bbc4cd; }
+.arena-history-empty p,.arena-history-note { color:#8e9aa6; font-size:12px; line-height:1.7; margin:10px 0 0; }
+.profile-popover-card .profile-public-history { margin:20px 0 0; padding:17px 0 0; background:none; border:0; border-top:1px solid #ffffff25; border-radius:0; }
+.profile-popover-card .profile-public-history h3 { font-size:19px; }
+.profile-popover-card .profile-public-history>header { margin-bottom:13px; }
+.profile-popover-card .arena-history-filters { gap:5px; }
+.profile-popover-card .arena-history-filters a { padding:7px 9px; font-size:12px; min-height:36px; }
+.profile-popover-card .arena-history-record { grid-template-columns:minmax(130px,.8fr) minmax(0,1fr); padding:12px; gap:9px; }
+.profile-popover-card .arena-history-meta { grid-column:1/-1; display:flex; justify-content:space-between; text-align:left; }
+.profile-popover-card .arena-history-player { font-size:12px; }
+.profile-popover-card .arena-history-player img,.profile-popover-card .arena-history-avatar { width:34px; height:34px; flex-basis:34px; }
+.profile-popover-card .arena-history-result strong { font-size:12px; }
+.profile-modal-dialog { width:min(760px,100%); }
+.profile-stats-grid dt { font-size:11px!important; }.profile-stats-grid dd { font-size:20px!important; margin:4px 0 0; }
+.profile-popover-top>div { min-width:0; }.profile-popover-top h2 { overflow-wrap:anywhere; }
+.share-card-panel { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(250px,1fr); align-items:center; gap:28px; padding:24px; margin:28px 0; background:linear-gradient(145deg,#141a21,#090d12); border:1px solid #b1844f55; border-radius:12px; scroll-margin-top:130px; }
+.share-card-preview { min-width:0; border:1px solid #c79b605c; background:#080c12; border-radius:7px; overflow:hidden; box-shadow:0 14px 35px #0007; }
+.share-card-preview img { display:block; width:100%; height:auto; aspect-ratio:1200/630; }
+.share-card-copy { min-width:0; }.share-card-copy h2 { font-size:clamp(22px,2.3vw,32px); line-height:1.25; margin:9px 0 15px; }
+.share-card-copy>p { font-size:14px; line-height:1.7; color:#bdc5ce; overflow-wrap:anywhere; }
+.share-card-copy>small { display:block; color:#92a0ad; line-height:1.65; font-size:12px; margin-top:14px; }
+.share-card-panel .share-buttons { gap:8px; }.share-card-panel .share-buttons a,.share-card-panel .share-buttons button,.tournament-share-options .share-buttons>* { padding:11px 12px; min-height:40px; font-size:12px; border-radius:5px; }
+.share-buttons .share-whatsapp { color:#b1efc4; background:#16492b88; border-color:#4da57066; }
+.share-card-file-actions { display:flex; gap:8px; flex-wrap:wrap; padding-top:16px; margin-top:16px; border-top:1px solid #ffffff15; }
+.share-card-feedback:empty { display:none; }.share-card-feedback { font-size:13px!important; color:#efc191!important; }
+.share-card-file-actions button:disabled { opacity:.65; cursor:wait; }
+.tournament-share-options { width:100%; }.tournament-share-options summary { list-style:none; cursor:pointer; text-align:center; }.tournament-share-options summary::-webkit-details-marker { display:none; }
+.tournament-share-options .share-buttons { display:flex; flex-wrap:wrap; gap:7px; padding-top:12px; }
+.spectator-match-panel { border-left:3px solid #b38555; }
+@media(max-width:900px) { .arena-history-record { grid-template-columns:1fr 1fr; }.arena-history-meta { grid-column:1/-1; display:flex; justify-content:space-between; text-align:left; }.share-card-panel { grid-template-columns:1fr; gap:22px; }.share-card-preview { max-width:760px; width:100%; margin:auto; } }
+@media(max-width:560px) { .profile-public-history { padding:18px 14px; }.profile-public-history>header { align-items:flex-start; flex-direction:column; gap:9px; }.arena-history-record,.profile-popover-card .arena-history-record { grid-template-columns:1fr; }.arena-history-people { flex-wrap:nowrap; }.arena-history-result { padding-left:0; }.arena-history-meta { font-size:10px; }.profile-popover-card { padding:21px 16px; }.arena-history-filters a { flex:1 0 auto; justify-content:center; }.share-card-panel { padding:15px; }.share-card-file-actions .btn { flex:1; }.share-card-panel .share-buttons .share-whatsapp { flex-basis:100%; text-align:center; } }

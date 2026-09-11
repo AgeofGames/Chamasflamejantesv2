@@ -1,0 +1,28 @@
+{% macro history_player(p) %}
+  {% if p.is_active %}<a class="arena-history-player profile-popup-trigger" href="{{url_for('social_profile',player_id=p.id)}}" data-profile-card-url="{{url_for('social_profile_card',player_id=p.id)}}">{% else %}<span class="arena-history-player">{% endif %}
+  {% if social_avatar_src(p) %}<img loading="lazy" decoding="async" src="{{social_avatar_src(p)}}" alt="Foto de {{p.nickname}}" width="40" height="40">{% else %}<span class="arena-history-avatar" aria-hidden="true">🔥</span>{% endif %}
+  <span{% if player_name_color(p) %} style="color:{{player_name_color(p)}}"{% endif %}>{{p.nickname}}</span>
+  {% if p.is_active %}</a>{% else %}</span>{% endif %}
+{% endmacro %}
+<div class="arena-history-list">
+{% for d in history['items'] %}
+  <article class="arena-history-record status-{{d.status}} {% if d.opponent is defined %}personal-record outcome-{{d.outcome}}{% endif %}">
+    <div class="arena-history-people">{% if d.opponent is defined %}{{history_player(d.opponent)}}{% else %}{{history_player(d.challenger)}}<span class="arena-history-vs">VS</span>{{history_player(d.challenged)}}{% endif %}</div>
+    <a class="arena-history-result" href="{{d.public_url}}">
+      {% if d.opponent is defined %}
+        {% if d.outcome=='win' %}<strong>Vitória sobre {{d.opponent.nickname}}</strong>
+        {% elif d.outcome=='loss' %}<strong>Perdeu para {{d.opponent.nickname}}</strong>
+        {% elif d.outcome=='refusal' %}<strong>Fugiu de {{d.opponent.nickname}}</strong>
+        {% elif d.outcome=='opponent-refusal' %}<strong>{{d.opponent.nickname}} fugiu da batalha</strong>
+        {% else %}<strong>{{social_duel_label(d.status)}}</strong>{% endif %}
+      {% elif d.winner %}<strong>{{d.winner.nickname}} venceu {{d.loser.nickname}}</strong>
+      {% elif d.status=='refused' %}<strong>{{d.challenged.nickname}} fugiu de {{d.challenger.nickname}}</strong>
+      {% else %}<strong>{{d.challenger.nickname}} desafiou {{d.challenged.nickname}}</strong><small>{{social_duel_label(d.status)}}</small>{% endif %}
+      {% if d.match_id %}<span class="arena-match-id">PARTIDA #{{d.match_id}}</span>{% elif d.status=='accepted' %}<small>Desafio aceito · aguardando ID</small>{% endif %}
+      {% if d.match_map %}<small>{{d.match_map}}{% if d.match_duration %} · {{d.match_duration}}{% endif %}</small>{% endif %}
+    </a>
+    {% set stamp = d.finished_at or d.responded_at or d.requested_at %}
+    <div class="arena-history-meta"><time datetime="{{stamp.replace(' ','T')}}Z">{{stamp[8:10]}}/{{stamp[5:7]}}/{{stamp[:4]}} · {{stamp[11:16]}} UTC</time><a href="{{d.public_url}}">VER DUELO ↗</a></div>
+  </article>
+{% else %}<div class="arena-history-empty"><strong>Nenhum registro nesta opção.</strong><p>Os desafios e resultados registrados na Arena aparecerão aqui.</p></div>{% endfor %}
+</div>

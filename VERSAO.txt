@@ -1,4 +1,7 @@
-CHAMAS FLAMEJANTES V22.3 — PRÉVIA NO WHATSAPP E FAVICON
+CHAMAS FLAMEJANTES V23 — ARENA PÚBLICA E CARDS
+Histórico com adversários, partidas, vitórias, derrotas e fugas no perfil e na janela flutuante.
+Desafios e IDs públicos; ações reservadas aos jogadores envolvidos.
+Cards de vitória e das sete modalidades de torneio, com prévia nos links e download da imagem.
 Logo da chama em ICO/PNG, endereço público da capa e novo link /compartilhar.
 Correção da confirmação de duelos pelo histórico do AoMStats, consulta com limite de tempo e opção de corrigir o ID.
 Capa para WhatsApp e outras redes, metadados Open Graph completos e imagem pública otimizada.

@@ -45,10 +45,12 @@
   <link rel="stylesheet" href="{{url_for('static',filename='social.css')}}">
   {% if request.endpoint in ('knowledge_page','counter_guide_page') %}<link rel="stylesheet" href="{{url_for('static',filename='counters.css')}}">{% endif %}
   <link rel="stylesheet" href="{{url_for('static',filename='experience.css')}}">
+  <link rel="stylesheet" href="{{url_for('static',filename='arena_public.css')}}">
   <script defer src="{{url_for('static',filename='app.js')}}"></script>
   {% if request.endpoint in ('knowledge_build_orders_page','knowledge_god_page','knowledge_build_page') %}<script defer src="{{url_for('static',filename='knowledge.js')}}"></script>{% endif %}
   <script defer src="{{url_for('static',filename='social.js')}}"></script>
   <script defer src="{{url_for('static',filename='experience.js')}}"></script>
+  {% if request.endpoint in ('tournament_page','social_duel','social_duel_invite_share','social_duel_result_share') %}<script defer src="{{url_for('static',filename='share_cards.js')}}"></script>{% endif %}
   {% if request.endpoint in ('social_duel','social_duel_invite_share','social_duel_result_share') %}<script defer src="{{url_for('static',filename='duel.js')}}"></script>{% endif %}
   <style>:root{--accent:{{site.accent_color if site else '#e95d20'}}}</style>
 </head>

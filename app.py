@@ -20,6 +20,7 @@ from urllib.parse import quote, urlencode, urljoin, urlparse
 import requests
 from aomstats_matches import lookup_match, parse_match_page
 from site_experience import install_experience
+from share_cards import render_arena_card, render_tournament_card
 from bs4 import BeautifulSoup
 from flask import (
     Flask, abort, flash, g, jsonify, redirect, render_template,
@@ -2145,6 +2146,21 @@ def social_duel_payload(row):
         else url_for("social_duel_invite_share", share_token=row["share_token"])
     )
     data["public_url"] = absolute_site_url(endpoint_url)
+    if row['status'] == 'completed':
+        data['share_title'] = f"{data['winner']['nickname']} venceu {data['loser']['nickname']} • Arena X1"
+    elif row['status'] == 'refused':
+        data['share_title'] = f"{data['challenged']['nickname']} fugiu de {data['challenger']['nickname']} • Arena X1"
+    else:
+        data['share_title'] = f"{data['challenger']['nickname']} desafiou {data['challenged']['nickname']} • Arena X1"
+    signature = '|'.join(str(value or '') for value in (
+        'v23', row['status'], row['match_id'], row['finished_at'],
+        *[p.get(key) for p in (data['challenger'], data['challenged'])
+          for key in ('nickname', 'avatar_file', 'avatar_url', 'updated_at')],
+    ))
+    data['card_version'] = hashlib.sha256(signature.encode()).hexdigest()[:12]
+    data['share_image_url'] = absolute_site_url(url_for('arena_share_image', share_token=row['share_token'], v=data['card_version']))
+    data['share_url'] = data['public_url'] + '?card=' + data['card_version']
+    data['download_url'] = url_for('arena_share_image', share_token=row['share_token'], download='1', v=data['card_version'])
     return data
 
 
@@ -2156,6 +2172,42 @@ def social_duels_query(where="", params=(), limit=100):
     rows = get_db().execute(sql, (*params, int(limit))).fetchall()
     prime_social_players({row[key] for row in rows for key in ('challenger_id','challenged_id','winner_id','loser_id') if row[key]})
     return [social_duel_payload(row) for row in rows]
+
+
+def public_duel_history(player_id=None, per_page=12):
+    """Public, paginated history. Refusals are counted only for the declining player."""
+    category = request.args.get('filtro', 'todos')
+    filters = {
+        'todos': ("status IN ('pending','accepted','match_pending','completed','refused')", ()),
+        'partidas': ("status='completed'", ()),
+        'ativos': ("status IN ('pending','accepted','match_pending')", ()),
+        'fugas': ("status='refused'" + (' AND challenged_id=?' if player_id else ''), (player_id,) if player_id else ()),
+    }
+    if player_id:
+        filters.update(vitorias=("status='completed' AND winner_id=?", (player_id,)),
+                       derrotas=("status='completed' AND loser_id=?", (player_id,)))
+    if category not in filters:
+        category = 'todos'
+    clause, params = filters[category]
+    if player_id:
+        clause = f'({clause}) AND (challenger_id=? OR challenged_id=?)'
+        params += (player_id, player_id)
+    total = get_db().execute('SELECT COUNT(*) FROM social_duels WHERE ' + clause, params).fetchone()[0]
+    pages = max(1, math.ceil(total / per_page))
+    page = min(max(request.args.get('pagina', 1, type=int) or 1, 1), pages)
+    rows = get_db().execute('SELECT * FROM social_duels WHERE ' + clause + """
+        ORDER BY COALESCE(NULLIF(finished_at,''),NULLIF(responded_at,''),requested_at) DESC,id DESC
+        LIMIT ? OFFSET ?""", (*params, per_page, (page - 1) * per_page)).fetchall()
+    prime_social_players({row[key] for row in rows for key in ('challenger_id','challenged_id','winner_id','loser_id') if row[key]})
+    items = []
+    for row in rows:
+        duel = social_duel_payload(row)
+        if player_id:
+            duel['opponent'] = duel['challenged'] if row['challenger_id'] == player_id else duel['challenger']
+            duel['outcome'] = ('win' if row['winner_id'] == player_id else 'loss') if row['status'] == 'completed' else (
+                ('refusal' if row['challenged_id'] == player_id else 'opponent-refusal') if row['status'] == 'refused' else 'active')
+        items.append(duel)
+    return dict(items=items, total=total, page=page, pages=pages, category=category)
 
 
 def social_notification_items(account_id, limit=12):
@@ -2247,7 +2299,8 @@ def tournament_page(slug):
         and player_in_tournament(social_account["player_id"], t["id"])
     )
     return render_template("tournament.html", tournament=t, entries=active, winners=winners, standings=standings, match_count=match_count,
-                           filled=len(active), spots_left=max(int(t["max_entries"]) - len(active), 0), viewer_registered=viewer_registered)
+                           filled=len(active), spots_left=max(int(t["max_entries"]) - len(active), 0), viewer_registered=viewer_registered,
+                           promotion=tournament_share_info(t, filled=len(active)))
 
 
 @app.route("/torneio/<slug>/inscricao", methods=["GET", "POST"])
@@ -3716,11 +3769,7 @@ def social_profile(player_id):
     profile = social_player_payload(player)
     viewer = current_social_account()
     is_owner = bool(viewer and viewer["player_id"] == player_id)
-    history = social_duels_query(
-        "challenger_id=? OR challenged_id=?" if is_owner else
-        "(challenger_id=? OR challenged_id=?) AND status IN ('completed','refused')",
-        (player_id, player_id), 80,
-    )
+    history = public_duel_history(player_id)
     can_challenge = bool(
         viewer and viewer["player_id"] and viewer["player_id"] != player_id and profile["social_enabled"]
     )
@@ -3740,7 +3789,7 @@ def social_profile_card(player_id):
     profile = social_player_payload(player)
     viewer = current_social_account()
     return render_template(
-        "_social_profile_card.html", profile=profile,
+        "_social_profile_card.html", profile=profile, history=public_duel_history(player_id, per_page=5),
         can_challenge=bool(viewer and viewer["player_id"] and viewer["player_id"] != player_id and profile["social_enabled"]),
         compact=True,
     )
@@ -3839,12 +3888,7 @@ def x1_page():
     viewer = current_social_account()
     players = social_roster()
     ranking = duel_ranking()
-    active = []
-    if viewer and viewer["player_id"]:
-        active = social_duels_query(
-            "(challenger_id=? OR challenged_id=?) AND status IN ('pending','accepted','match_pending')",
-            (viewer["player_id"], viewer["player_id"]), 30,
-        )
+    active = social_duels_query("status IN ('pending','accepted','match_pending')", (), 12)
     return render_template('x1.html', players=players, ranking=ranking, active=active)
 
 
@@ -3856,28 +3900,22 @@ def social_duel_history():
         player = get_social_player(player_id)
         if not player:
             abort(404)
-        duels = social_duels_query(
-            "(challenger_id=? OR challenged_id=?) AND status IN ('completed','refused')",
-            (player_id, player_id), 150,
-        )
         title = f"Histórico de {player['nickname']}"
     else:
-        duels = social_duels_query("status IN ('completed','refused')", (), 150)
+        player = None
         title = "Histórico de duelos"
-    return render_template("social_duel_history.html", duels=duels, history_title=title, viewer=viewer)
+    history = public_duel_history(player_id, per_page=20)
+    return render_template("social_duel_history.html", history=history, history_title=title, viewer=viewer,
+                           profile=social_player_payload(player) if player else None)
 
 
 @app.get("/duelo/<int:duel_id>")
 def social_duel(duel_id):
     row = social_duel_row(duel_id=duel_id)
-    if not row:
+    if not row or row['status'] == 'cancelled':
         abort(404)
     viewer = current_social_account()
     participant = bool(viewer and viewer["player_id"] in (row["challenger_id"], row["challenged_id"]))
-    if row["status"] != "completed" and not participant:
-        if not viewer:
-            return redirect(url_for("social_login", next=request.path))
-        abort(403)
     if viewer:
         get_db().execute(
             "UPDATE social_notifications SET is_read=1 WHERE account_id=? AND duel_id=?",
@@ -3885,7 +3923,7 @@ def social_duel(duel_id):
         )
         get_db().commit()
     duel = social_duel_payload(row)
-    share = build_share_links(duel["public_url"], f"{duel['challenger']['nickname']} x {duel['challenged']['nickname']} — Arena X1")
+    share = build_share_links(duel['share_url'], duel['share_title'])
     return render_template("social_duel.html", duel=duel, participant=participant, share=share)
 
 
@@ -3991,6 +4029,11 @@ def _duel_match_reply(duel_id, message, category='error', state=None):
             html='' if completed else template('_duel_match_panel.html').render(
                 duel=duel, participant=True, feedback_message=message, feedback_kind=category),
             chat_html=template('_duel_chat_events.html').render(duel=duel),
+            share_html=template('_share_card_panel.html').render(
+                share=build_share_links(duel['share_url'],duel['share_title']),
+                card_title='Compartilhar vitória' if completed else 'Compartilhar desafio',
+                card_image_url=duel['share_image_url'],card_alt=duel['share_title'],
+                card_download_url=duel['download_url']),
         )
         response.headers['Cache-Control'] = 'private, no-store'
         response.vary.add('Cookie')
@@ -4123,9 +4166,73 @@ def build_share_links(url, title):
 app.jinja_env.globals["build_share_links"] = build_share_links
 
 
+def tournament_share_info(tournament, filled=None):
+    info = dict(tournament)
+    info['filled'] = tournament_entry_count(info['id']) if filled is None and 'filled' not in info else (info.get('filled') if filled is None else filled)
+    info['share_prize'] = prize_label(tournament)
+    info['share_status'] = ('TORNEIO FINALIZADO' if info['status']=='finalizado' else
+                            'TORNEIO EM ANDAMENTO' if info['status']=='andamento' else
+                            'INSCRIÇÕES ABERTAS' if info['registration_open'] and info['filled'] < info['max_entries'] else 'INSCRIÇÕES ENCERRADAS')
+    mode = tournament_template(info['mode_key'])['short']
+    info['share_title'] = f"{info['name']} • {mode} • Chamas Flamejantes"
+    info['share_description'] = f"{mode} · {info['share_status'].capitalize()} · {info['share_prize']} em premiação. Confira data, regras e participantes."
+    version_fields = {key:info.get(key) for key in ('name','description','mode_key','status','team_size','best_of','registration_open','max_entries','filled','share_prize','event_date','event_time','updated_at')}
+    info['card_version'] = hashlib.sha256(('v23'+json.dumps(version_fields,sort_keys=True)).encode()).hexdigest()[:12]
+    info['url'] = absolute_site_url(url_for('tournament_page',slug=info['slug']))
+    info['share_url'] = info['url'] + '?card=' + info['card_version']
+    info['share_image_url'] = absolute_site_url(url_for('tournament_share_image',slug=info['slug'],v=info['card_version']))
+    info['download_url'] = url_for('tournament_share_image',slug=info['slug'],v=info['card_version'],download='1')
+    info['links'] = build_share_links(info['share_url'],info['share_title'])
+    return info
+
+
+app.jinja_env.globals['tournament_share_info'] = tournament_share_info
+
+
+def _public_card_response(content, filename, mimetype='image/jpeg'):
+    response = send_file(io.BytesIO(content), mimetype=mimetype, download_name=filename,
+                         as_attachment=request.args.get('download')=='1',
+                         etag=hashlib.sha256(content).hexdigest(), conditional=True, max_age=300)
+    response.headers['Cache-Control'] = 'public, max-age=300'
+    return response
+
+
+@lru_cache(maxsize=32)
+def _arena_art_cached(snapshot, upload_root, refresh_window):
+    return render_arena_card(json.loads(snapshot), _load_social_avatar).getvalue()
+
+
+@lru_cache(maxsize=32)
+def _tournament_art_cached(snapshot):
+    return render_tournament_card(json.loads(snapshot)).getvalue()
+
+
+@app.get('/midia/arena/<share_token>.jpg')
+def arena_share_image(share_token):
+    row = social_duel_row(share_token=share_token)
+    if not row or row['status'] not in ('pending','accepted','match_pending','refused','completed'):
+        abort(404)
+    duel = social_duel_payload(row)
+    snapshot = json.dumps(duel,sort_keys=True,ensure_ascii=False)
+    content = _arena_art_cached(snapshot,str(UPLOAD_DIR),int(datetime.now(timezone.utc).timestamp()//300))
+    return _public_card_response(content,f"{'vitoria' if row['status']=='completed' else 'desafio'}-arena-{row['id']}.jpg")
+
+
+@app.get('/midia/torneio/<slug>.jpg')
+def tournament_share_image(slug):
+    tournament = get_tournament(slug)
+    # A publicly cached image never includes an unpublished tournament, even for an admin.
+    if not tournament or not tournament['is_public']:
+        abort(404)
+    info = tournament_share_info(tournament)
+    content = _tournament_art_cached(json.dumps(info,sort_keys=True,ensure_ascii=False))
+    return _public_card_response(content,f"torneio-{tournament['slug']}.jpg")
+
+
 def _social_share_font(size, bold=False):
     from PIL import ImageFont
     candidates = [
+        str(BASE_DIR / 'static' / 'fonts' / ('DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf')),
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf" if bold else "/usr/share/fonts/truetype/liberation2/LiberationSans-Regular.ttf",
     ]
@@ -4153,17 +4260,21 @@ def _load_social_avatar(player, size):
         try:
             remote = social_avatar_src(player)
             parsed = urlparse(remote)
-            host = parsed.netloc.lower().split(":")[0]
+            host = (parsed.hostname or '').lower()
             allowed = (
-                host.endswith("steamstatic.com") or host.endswith("akamaihd.net")
+                host == 'steamstatic.com' or host.endswith(".steamstatic.com")
+                or host == 'akamaihd.net' or host.endswith(".akamaihd.net")
                 or host == "lh3.googleusercontent.com"
             )
             if remote and parsed.scheme in ("http", "https") and allowed:
-                response = requests.get(remote, timeout=6, stream=True)
-                response.raise_for_status()
-                data = response.raw.read(4 * 1024 * 1024 + 1)
-                if len(data) <= 4 * 1024 * 1024:
-                    image = Image.open(io.BytesIO(data)).convert("RGB")
+                with requests.get(remote, timeout=(1,2), stream=True, allow_redirects=False) as response:
+                    response.raise_for_status()
+                    if response.status_code == 200:
+                        data = response.raw.read(2 * 1024 * 1024 + 1)
+                        if len(data) <= 2 * 1024 * 1024:
+                            with Image.open(io.BytesIO(data)) as source:
+                                if source.width * source.height <= 16_000_000:
+                                    image = source.convert("RGB")
         except Exception:
             image = None
     if image is None:
@@ -4256,66 +4367,11 @@ def _render_profile_share_card(profile):
 
 
 def _render_duel_share_card(duel):
-    from PIL import Image, ImageDraw
-    canvas = Image.new("RGB", (1200, 630), "#07090d")
-    draw = ImageDraw.Draw(canvas)
-    draw.rounded_rectangle((45, 42, 1155, 588), radius=30, fill="#0d1118", outline="#e95d20", width=3)
-    draw.text((75, 70), "CHAMAS FLAMEJANTES", font=_social_share_font(28, True), fill="#f47a45")
-    _draw_centered(draw, (600, 122), "RESULTADO OFICIAL • ARENA X1", _social_share_font(23, True), "#a3abb2")
-    winner, loser = duel["winner"], duel["loser"]
-    winner_avatar, winner_mask = _load_social_avatar(winner, 225)
-    loser_avatar, loser_mask = _load_social_avatar(loser, 190)
-    canvas.paste(winner_avatar, (172, 195), winner_mask)
-    canvas.paste(loser_avatar, (825, 212), loser_mask)
-    draw.ellipse((166, 189, 403, 426), outline="#f3a067", width=8)
-    draw.ellipse((819, 206, 1021, 408), outline="#6b737c", width=5)
-    _draw_centered(draw, (285, 450), winner["nickname"], _social_share_font(33, True), player_name_color(winner) or "#ffffff", 360)
-    _draw_centered(draw, (920, 435), loser["nickname"], _social_share_font(28, True), player_name_color(loser) or "#aeb5bb", 300)
-    _draw_centered(draw, (285, 500), "VENCEDOR", _social_share_font(24, True), "#f47a45")
-    _draw_centered(draw, (920, 480), "DERROTADO", _social_share_font(20, True), "#777f88")
-    _draw_centered(draw, (600, 280), "VS", _social_share_font(55, True), "#f47a45")
-    _draw_centered(draw, (600, 355), f"PARTIDA #{duel['match_id']}", _social_share_font(22, True), "#ffffff")
-    if duel.get("match_map") or duel.get("match_duration"):
-        match_summary = " • ".join(value for value in (duel.get("match_map"), duel.get("match_duration")) if value)
-        _draw_centered(draw, (600, 395), match_summary, _social_share_font(17, True), "#929ba4", 330)
-    draw.text((75, 548), "Resultado verificado pelo AoMStats", font=_social_share_font(18), fill="#7f8993")
-    output = io.BytesIO()
-    canvas.save(output, "PNG", optimize=True)
-    output.seek(0)
-    return output
+    return render_arena_card(duel, _load_social_avatar, output_format='PNG')
 
 
 def _render_challenge_share_card(duel):
-    from PIL import Image, ImageDraw
-    canvas = Image.new("RGB", (1200, 630), "#07090d")
-    draw = ImageDraw.Draw(canvas)
-    draw.rounded_rectangle((45, 42, 1155, 588), radius=30, fill="#0d1118", outline="#e95d20", width=3)
-    draw.rectangle((45, 42, 63, 588), fill="#e95d20")
-    draw.text((92, 72), "CHAMAS FLAMEJANTES", font=_social_share_font(28, True), fill="#f47a45")
-    _draw_centered(draw, (600, 120), "DESAFIO NA ARENA X1", _social_share_font(30, True), "#ffffff")
-
-    challenger, challenged = duel["challenger"], duel["challenged"]
-    first_avatar, first_mask = _load_social_avatar(challenger, 210)
-    second_avatar, second_mask = _load_social_avatar(challenged, 210)
-    canvas.paste(first_avatar, (180, 205), first_mask)
-    canvas.paste(second_avatar, (810, 205), second_mask)
-    draw.ellipse((174, 199, 396, 421), outline="#f47a45", width=7)
-    draw.ellipse((804, 199, 1026, 421), outline="#f47a45", width=7)
-
-    first_color = player_name_color(challenger) or "#ffffff"
-    second_color = player_name_color(challenged) or "#ffffff"
-    first_font = _fit_social_font(draw, challenger["nickname"], 32, 20, 360, True)
-    second_font = _fit_social_font(draw, challenged["nickname"], 32, 20, 360, True)
-    _draw_centered(draw, (285, 445), challenger["nickname"], first_font, first_color, 360)
-    _draw_centered(draw, (915, 445), challenged["nickname"], second_font, second_color, 360)
-    _draw_centered(draw, (600, 275), "VS", _social_share_font(64, True), "#f47a45")
-    _draw_centered(draw, (600, 355), "VOCÊ FOI DESAFIADO", _social_share_font(23, True), "#c5cbd0")
-    _draw_centered(draw, (600, 505), "ABRA O LINK PARA ACEITAR OU RECUSAR", _social_share_font(20, True), "#f3a067")
-    draw.text((92, 548), "chamasflamejantes.com.br", font=_social_share_font(18, True), fill="#7f8993")
-    output = io.BytesIO()
-    canvas.save(output, "PNG", optimize=True)
-    output.seek(0)
-    return output
+    return render_arena_card(duel, _load_social_avatar, output_format='PNG')
 
 
 @app.get("/midia/perfil/<int:player_id>.png")
@@ -4341,7 +4397,7 @@ def social_duel_share_image(share_token):
 @app.get("/midia/desafio/<share_token>.png")
 def social_duel_invite_share_image(share_token):
     row = social_duel_row(share_token=share_token)
-    if not row or row["status"] == "completed":
+    if not row or row["status"] in ("completed", "cancelled"):
         abort(404)
     response = send_file(
         _render_challenge_share_card(social_duel_payload(row)),
@@ -4354,7 +4410,7 @@ def social_duel_invite_share_image(share_token):
 @app.get("/arena/desafio/<share_token>")
 def social_duel_invite_share(share_token):
     row = social_duel_row(share_token=share_token)
-    if not row:
+    if not row or row['status'] == 'cancelled':
         abort(404)
     if row["status"] == "completed":
         return redirect(url_for("social_duel_result_share", share_token=share_token))
@@ -4367,7 +4423,7 @@ def social_duel_invite_share(share_token):
         )
         get_db().commit()
     duel = social_duel_payload(row)
-    share = build_share_links(duel["public_url"], f"{duel['challenger']['nickname']} x {duel['challenged']['nickname']} — Arena X1")
+    share = build_share_links(duel['share_url'], duel['share_title'])
     return render_template(
         "social_duel.html", duel=duel, participant=participant, share=share, public_invite=True,
     )
@@ -4379,8 +4435,7 @@ def social_duel_result_share(share_token):
     if not row or row["status"] != "completed":
         abort(404)
     duel = social_duel_payload(row)
-    result_url = absolute_site_url(url_for("social_duel_result_share", share_token=share_token))
-    share = build_share_links(result_url, f"{duel['winner']['nickname']} venceu na Arena X1")
+    share = build_share_links(duel['share_url'], duel['share_title'])
     return render_template("social_duel.html", duel=duel, participant=False, share=share, public_result=True)
 
 
@@ -4900,8 +4955,6 @@ def robots_txt():
         "Disallow: /auth/",
         "Disallow: /meu-perfil",
         "Disallow: /notificacoes",
-        "Disallow: /duelo/",
-        "Disallow: /arena/desafio/",
         "Disallow: /setup",
         f"Sitemap: {SEO_BASE_URL}/sitemap.xml",
         "",
@@ -4937,7 +4990,7 @@ def site_share_image():
 @app.get("/health")
 def health():
     get_db().execute('SELECT 1').fetchone()
-    return {"version":"22.3-whatsapp-favicon","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"23-arena-publica-cards","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 @app.errorhandler(400)
@@ -4960,11 +5013,11 @@ def friendly_error(error):
 
 init_db()
 migrate_v6_db()
-print("🔥 CHAMAS FLAMEJANTES V22.3 — WHATSAPP E FAVICON\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V23 — ARENA PÚBLICA E CARDS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V22.3 — WHATSAPP E FAVICON")
+    print(" 🔥 CHAMAS FLAMEJANTES V23 — ARENA PÚBLICA E CARDS")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

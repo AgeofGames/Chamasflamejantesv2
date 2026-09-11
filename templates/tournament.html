@@ -1,5 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ tournament.name }} • {{ site.title }}{% endblock %}
+{% block meta_description %}{{promotion.share_description}}{% endblock %}
+{% block social_meta %}
+{% if tournament.is_public %}<link rel="canonical" href="{{promotion.url}}">{% endif %}
+{% if tournament.is_public %}{% with meta_title=promotion.share_title,meta_description=promotion.share_description,meta_url=promotion.share_url,meta_image=promotion.share_image_url %}{% include '_share_meta.html' %}{% endwith %}{% else %}<meta name="robots" content="noindex,nofollow">{% endif %}
+{% endblock %}
 {% block content %}
 <section class="tournament-hero">
   <div class="tournament-hero-inner">
@@ -16,6 +21,7 @@
       <a class="btn secondary big" href="{{ url_for('tournament_participants', slug=tournament.slug) }}">PARTICIPANTES</a>
       {% if tournament.format_type != 'ffa' %}<a class="btn secondary big" href="{{ url_for('tournament_matches', slug=tournament.slug) }}">CONFRONTOS</a>{% endif %}
       <a class="btn secondary big" href="{{ url_for('tournament_result', slug=tournament.slug) }}">RESULTADO</a>
+      {% if tournament.is_public and tournament.status in ('inscricoes','andamento') %}<a class="btn primary big" href="#compartilhar-torneio">COMPARTILHAR TORNEIO</a>{% endif %}
     </div>
   </div>
 </section>
@@ -30,6 +36,9 @@
   </div>
   {% if tournament.notes %}<div class="note">{{ tournament.notes }}</div>{% endif %}
 </section>
+{% if tournament.is_public and tournament.status in ('inscricoes','andamento') %}
+<section class="section">{% with share=promotion.links,card_anchor='compartilhar-torneio',card_title='Compartilhar torneio',card_image_url=promotion.share_image_url,card_alt=promotion.share_title,card_download_url=promotion.download_url %}{% include '_share_card_panel.html' %}{% endwith %}</section>
+{% endif %}
 {% if winners %}
 <section class="section champion-strip"><div class="champion-banner winner-neon"><span>🏆</span><div><small>CAMPEÃO{% if winners|length>1 %}ES{% endif %}</small><h3>{% for w in winners %}{% if w.entry.aomstats_url %}<a class="winner-name-neon" target="_blank" href="{{w.entry.aomstats_url}}">{{w.entry.display_name}}</a>{% else %}<span class="winner-name-neon">{{w.entry.display_name}}</span>{% endif %}{% if not loop.last %} • {% endif %}{% endfor %}</h3><b>{{ prize_label(tournament) }}</b></div><a class="btn primary" href="{{url_for('tournament_result',slug=tournament.slug)}}">VER RESULTADO</a></div></section>
 {% endif %}

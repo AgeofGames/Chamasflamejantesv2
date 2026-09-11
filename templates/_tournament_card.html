@@ -25,5 +25,9 @@
     <a class="btn secondary" href="{{ url_for('tournament_page', slug=t.slug) }}">VER TORNEIO</a>
     {% if t.status == 'inscricoes' and t.registration_open and t.left > 0 %}<a class="btn primary" href="{{ url_for('tournament_register', slug=t.slug) }}">INSCREVER-SE</a>{% endif %}
     {% if t.matches %}<a class="btn ghost" href="{{ url_for('tournament_matches', slug=t.slug) }}">CONFRONTOS</a>{% endif %}
+    {% if t.is_public and t.status in ('inscricoes','andamento') %}
+    {% set promotion = tournament_share_info(t) %}
+    <details class="tournament-share-options"><summary class="btn secondary">COMPARTILHAR TORNEIO</summary><div class="share-buttons"><a class="share-whatsapp" href="{{promotion.links.whatsapp}}" target="_blank" rel="noopener">WhatsApp</a><button type="button" data-native-share data-share-url="{{promotion.share_url}}" data-share-title="{{promotion.share_title}}">Outras redes</button><a href="{{promotion.url}}#compartilhar-torneio">Ver e baixar card</a></div></details>
+    {% endif %}
   </div>
 </article>
