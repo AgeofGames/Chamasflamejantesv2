@@ -1,0 +1,25 @@
+/* A steady, bright light: no layout shift and no continuous animation work. */
+.aom-presence-avatar{position:relative;isolation:isolate;overflow:visible!important}
+.aom-presence-avatar[data-aom-state]::after{content:"";position:absolute;z-index:2;right:2%;bottom:2%;width:var(--presence-size,10px);height:var(--presence-size,10px);box-sizing:content-box;border:2px solid #09130e;border-radius:50%;background:#58ff91;box-shadow:0 0 5px #79ffa8,0 0 12px #30ef8199;pointer-events:none}
+.aom-presence-shell{display:inline-flex;flex:0 0 auto;width:max-content;border-radius:50%;vertical-align:middle}
+.aom-presence-shell>img{display:block}
+.social-nav-profile>.aom-presence-shell{border:0;background:transparent}
+.aom-profile-avatar-shell{display:block;width:max-content;margin-bottom:16px;--presence-size:15px}
+.social-profile-main .aom-profile-avatar-shell .profile-identity-avatar{margin-bottom:0}
+.aom-presence-avatar.profile-popover-avatar{--presence-size:13px}
+.aom-presence-avatar.profile-popover-avatar>img,.aom-presence-avatar.profile-popover-avatar>span{border-radius:50%}
+.arena-community-layout .aom-presence-avatar.social-player-avatar{--presence-size:12px}
+.aom-presence-status{color:#929fa7;font:500 11px/1.5 Inter,sans-serif;margin:9px 0 14px;position:relative}
+.aom-presence-status[data-aom-state="lobby"],.aom-presence-status[data-aom-state="match"]{color:#86ffb0}
+.profile-popover-top .aom-presence-status{font-size:10px;margin:5px 0 0}
+.aom-presence-legend{display:flex;align-items:center;gap:8px;flex-wrap:wrap;color:#a5b1b9;font-size:11px;line-height:1.6;margin:8px 0 16px}
+.aom-presence-legend i{width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:#58ff91;box-shadow:0 0 8px #30ef8199}
+.aom-presence-legend a{color:#a6dbb8;text-underline-offset:3px}
+.arena-avatar-stack>.aom-presence-shell{display:inline-flex;border:0;background:none;margin-right:-7px}
+.arena-avatar-stack>.aom-presence-shell>img,.arena-avatar-stack>.aom-presence-shell>span{margin-right:0}
+.arena-team-members .aom-presence-shell{flex:0 0 auto}
+.arena-team-members .aom-presence-shell>span{display:grid;place-items:center;width:58px;height:58px;border-radius:50%;background:#17212b;border:1px solid #d0975a80}
+.arena-versus-teams .arena-team-members .aom-presence-shell>span{width:44px;height:44px}
+.profile-duo-members .aom-presence-shell{flex:0 0 36px}
+.profile-account-status,.profile-online-badge{color:#a4b1bc;border-color:#a4b1bc40}
+@media(forced-colors:active){.aom-presence-avatar[data-aom-state]::after{background:Highlight;border-color:Canvas;forced-color-adjust:none}}

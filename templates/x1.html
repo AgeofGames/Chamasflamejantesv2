@@ -43,10 +43,11 @@
     <div class="section-head"><div><span class="eyebrow">ENCONTRE SEU OPONENTE</span><h2>JOGADORES DA ARENA</h2><p>Todos os perfis ativos com AoMStats aparecem aqui automaticamente.</p></div></div>
     <label class="social-player-search"><span>⌕</span><input type="search" id="arena-player-search" placeholder="Pesquisar jogador pelo nome…" autocomplete="off"></label>
     <div class="search-summary"><span id="arena-player-count" aria-live="polite">{{players|length}} jogadores</span><button type="button" data-clear-search="arena-player-search">Limpar busca</button></div>
+    {% include '_aom_presence_legend.html' %}
     <div class="social-player-grid" id="arena-player-grid">
       {% for p in players %}
       <article class="social-player-card build-library-card" data-player-name="{{p.nickname|lower}}">
-        <button class="social-player-avatar profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=p.id)}}" aria-label="Abrir perfil de {{p.nickname}}">{% if social_avatar_src(p) %}<img loading="lazy" decoding="async" src="{{social_avatar_src(p)}}" alt="Foto de {{p.nickname}}">{% else %}<span>🔥</span>{% endif %}</button>
+        <button data-aom-player="{{p.id}}" class="aom-presence-avatar social-player-avatar profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=p.id)}}" aria-label="Abrir perfil de {{p.nickname}}">{% if social_avatar_src(p) %}<img loading="lazy" decoding="async" src="{{social_avatar_src(p)}}" alt="Foto de {{p.nickname}}">{% else %}<span>🔥</span>{% endif %}</button>
         <div class="social-player-card-body"><small>{% if p.social_enabled %}PERFIL ATIVO{% else %}PERFIL DA COMUNIDADE{% endif %}</small><h3{% if player_name_color(p) %} style="color:{{player_name_color(p)}}"{% endif %}>{{p.nickname}}</h3>
           {{challenged_tag(p.most_challenged_count)}}
           {% if p.quote %}<blockquote>“{{p.quote}}”</blockquote>{% endif %}

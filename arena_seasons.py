@@ -46,6 +46,23 @@ def close_seasons(db, current=None):
           FROM arena_standings WHERE season=? AND wins+losses>0''', (row['season'],))
         db.execute("UPDATE arena_seasons SET closed_at=CURRENT_TIMESTAMP WHERE season=?", (row['season'],))
 
+
+def result_progress(old, won, delta):
+    """One calculation for new results and historical score repairs."""
+    points = max(0, old['points'] + delta)
+    emblem_points = min(999, max(0, old['emblem_points'] + delta))
+    streak = 0 if won else old['loss_streak']+1
+    bank = old['loss_bank'] if won else old['loss_bank']+1
+    if not won and (streak>=3 or bank>=4):
+        # A natural demotion on this loss already satisfies the penalty.
+        emblem_points = min(emblem_points,max(0,(old['emblem_points']//100)*100-1))
+        streak = bank = 0
+    return dict(points=points, score_balance=points, emblem_points=emblem_points,
+                wins=old['wins']+int(won), losses=old['losses']+int(not won),
+                loss_streak=streak, loss_bank=bank,
+                demoted=int(emblem_points//100 < old['emblem_points']//100))
+
+
 def record_result(db, queue, event_id, winners, losers, when=None):
     """Caller owns the transaction: the match and all its points commit together."""
     when = when or utc_now().isoformat()
@@ -67,26 +84,18 @@ def record_result(db, queue, event_id, winners, losers, when=None):
         old = db.execute('SELECT * FROM arena_standings WHERE season=? AND queue=? AND player_id=?',(season,queue,pid)).fetchone()
         won = pid in winners
         delta = win_delta if won else loss_delta
-        # A defeat can spend available points only. No debt carries into a win.
-        balance = points = max(0, old['points'] + delta)
-        emblem_points = min(999, max(0, old['emblem_points'] + delta))
-        streak = 0 if won else old['loss_streak']+1
-        bank = old['loss_bank'] if won else old['loss_bank']+1
-        forced = not won and (streak>=3 or bank>=4)
-        if forced:
-            # A natural points demotion on this loss already satisfies the penalty.
-            emblem_points = min(emblem_points,max(0,(old['emblem_points']//100)*100-1))
-            streak = bank = 0
-        demoted = emblem_points//100 < old['emblem_points']//100
-        db.execute('''UPDATE arena_standings SET points=?,score_balance=?,emblem_points=?,wins=wins+?,losses=losses+?,loss_streak=?,loss_bank=?
-          WHERE season=? AND queue=? AND player_id=?''', (points,balance,emblem_points,int(won),int(not won),streak,bank,season,queue,pid))
+        new = result_progress(old, won, delta)
+        db.execute('''UPDATE arena_standings SET points=?,score_balance=?,emblem_points=?,wins=?,losses=?,loss_streak=?,loss_bank=?
+          WHERE season=? AND queue=? AND player_id=?''',
+          (new['points'],new['score_balance'],new['emblem_points'],new['wins'],new['losses'],
+           new['loss_streak'],new['loss_bank'],season,queue,pid))
         db.execute('''INSERT INTO arena_results
           (queue,event_id,player_id,season,won,points_before,points_after,demoted,recorded_at,
            points_delta,rating_self,rating_opponent,rules_version,balance_before,balance_after,emblem_before,emblem_after)
           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-          (queue,event_id,pid,season,int(won),old['points'],points,int(demoted),str(when),delta,
-           winner_elo if won else loser_elo,loser_elo if won else winner_elo,252,
-           old['points'],balance,old['emblem_points'],emblem_points))
+          (queue,event_id,pid,season,int(won),old['points'],new['points'],new['demoted'],str(when),delta,
+           winner_elo if won else loser_elo,loser_elo if won else winner_elo,253,
+           old['points'],new['score_balance'],old['emblem_points'],new['emblem_points']))
 
 
 def init_v25_structure(db):
@@ -200,6 +209,48 @@ def migrate_v25_2(db):
     db.execute("INSERT INTO site_meta(key,value) VALUES('arena_v25_2_migrated',?)",(utc_now().isoformat(),))
 
 
+def migrate_v25_3(db):
+    """Apply the -30 base loss to the open month, keeping match evidence intact."""
+    if db.execute("SELECT 1 FROM site_meta WHERE key='arena_v25_3_migrated'").fetchone():
+        return
+    current = period()
+    season = db.execute('SELECT closed_at FROM arena_seasons WHERE season=?',(current,)).fetchone()
+    if not season or not season['closed_at']:
+        for table in ('arena_standings','arena_results'):
+            db.execute(f'CREATE TABLE IF NOT EXISTS {table}_before_v25_3 AS SELECT * FROM {table} WHERE season=?',(current,))
+        rows = db.execute('''SELECT * FROM arena_results WHERE season=?
+          ORDER BY julianday(recorded_at),rowid''',(current,)).fetchall()
+        states = {}
+        empty = dict(points=0,emblem_points=0,wins=0,losses=0,loss_streak=0,loss_bank=0)
+        for row in rows:
+            key = (row['queue'],row['player_id'])
+            old = states.get(key,empty)
+            delta = row['points_delta']
+            if delta is None:
+                # Use historical ratings only; today's profile cannot change an old bonus.
+                ratings = (row['rating_self'],row['rating_opponent']) if row['won'] else (
+                    row['rating_opponent'],row['rating_self'])
+                delta = arena_rules.outcome_points(*ratings)[0 if row['won'] else 1]
+            elif not row['won'] and delta in (-15,-20):
+                delta = -30
+            new = result_progress(old, bool(row['won']), delta)
+            db.execute('''UPDATE arena_results SET points_delta=?,points_before=?,points_after=?,
+              balance_before=?,balance_after=?,emblem_before=?,emblem_after=?,demoted=?,rules_version=253
+              WHERE queue=? AND event_id=? AND player_id=?''',
+              (delta,old['points'],new['points'],old['points'],new['score_balance'],
+               old['emblem_points'],new['emblem_points'],new['demoted'],row['queue'],row['event_id'],row['player_id']))
+            states[key] = new
+        for (queue,pid),state in states.items():
+            db.execute('''INSERT INTO arena_standings
+              (season,queue,player_id,points,score_balance,emblem_points,wins,losses,loss_streak,loss_bank)
+              VALUES(?,?,?,?,?,?,?,?,?,?) ON CONFLICT(season,queue,player_id) DO UPDATE SET
+              points=excluded.points,score_balance=excluded.score_balance,emblem_points=excluded.emblem_points,
+              wins=excluded.wins,losses=excluded.losses,loss_streak=excluded.loss_streak,loss_bank=excluded.loss_bank''',
+              (current,queue,pid,state['points'],state['score_balance'],state['emblem_points'],
+               state['wins'],state['losses'],state['loss_streak'],state['loss_bank']))
+    db.execute("INSERT INTO site_meta(key,value) VALUES('arena_v25_3_migrated',?)",(utc_now().isoformat(),))
+
+
 def init_arena(db):
     db.executescript((Path(__file__).parent/'arena_schema.sql').read_text())
     db.execute('BEGIN IMMEDIATE')
@@ -221,6 +272,7 @@ def init_arena(db):
     migrate_v25(db)
     migrate_v25_1(db)
     migrate_v25_2(db)
+    migrate_v25_3(db)
     close_seasons(db)
 
 def standings(db, queue='x1', season=None):

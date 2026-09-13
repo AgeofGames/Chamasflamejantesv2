@@ -1,10 +1,10 @@
 {% from '_arena_social_tags.html' import challenged_tag %}
 <article class="profile-popover-card build-library-card">
   <div class="profile-popover-top">
-    <span class="profile-popover-avatar" aria-label="Foto de {{profile.nickname}}">
+    <span data-aom-player="{{profile.id}}" class="aom-presence-avatar profile-popover-avatar" aria-label="Foto de {{profile.nickname}}">
       {% if social_avatar_src(profile) %}<img decoding="async" src="{{social_avatar_src(profile)}}" alt="Foto de {{profile.nickname}}">{% else %}<span>🔥</span>{% endif %}
     </span>
-    <div><small>JOGADOR DA ARENA</small><h2{% if player_name_color(profile) %} style="color:{{player_name_color(profile)}}"{% endif %}>{{profile.nickname}}</h2><span class="profile-online-badge">{% if profile.social_enabled %}● PERFIL ATIVO{% else %}PERFIL DA COMUNIDADE{% endif %}</span></div>
+    <div><small>JOGADOR DA ARENA</small><h2{% if player_name_color(profile) %} style="color:{{player_name_color(profile)}}"{% endif %}>{{profile.nickname}}</h2><span class="profile-online-badge">{% if profile.social_enabled %}PERFIL ATIVO{% else %}PERFIL DA COMUNIDADE{% endif %}</span><p class="aom-presence-status" data-aom-status="{{profile.id}}" role="status">Presença no Age não confirmada</p></div>
   </div>
   {{challenged_tag(profile.most_challenged_count)}}
   {% if profile.quote %}<blockquote>“{{profile.quote}}”</blockquote>{% else %}<blockquote class="muted">Este jogador ainda não adicionou uma frase.</blockquote>{% endif %}

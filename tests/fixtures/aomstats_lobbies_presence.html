@@ -1,0 +1,20 @@
+<!doctype html><html><body><h1>Current Lobbies</h1>
+<!-- Reduced Svelte data shape observed on the three public tabs on 2026-09-13.
+     Fictional IDs and aliases. Old history and unrelated links are decoys. -->
+<a href="/profile/9009">Player outside the lobby list</a>
+<script>
+kit.start(app, element, {data:[
+ {type:"data",data:{metadata:{lastLobbyTime:1789265467}}},
+ {type:"data",data:{history:[{match_id:12345,raw_profile_id:9009,profile_id:9009,startgametime:1789265400,joinable:false}],
+ lobbies:[
+ {match_id:43270001,startgametime:1789265400,raw_profile_id:1001,profile_id:1001,alias:"Same name",joinable:false},
+ {match_id:43270002,startgametime:-1,raw_profile_id:1003,profile_id:null,alias:"Unranked human",joinable:true},
+ {match_id:43270002,startgametime:-1,raw_profile_id:-1,profile_id:null,alias:"AI",joinable:true},
+ {match_id:43270002,startgametime:-1,raw_profile_id:0,profile_id:null,alias:"OPEN",joinable:true},
+ {match_id:43270003,startgametime:1789265400,raw_profile_id:1002,profile_id:1002,alias:"lobbies:[{match_id:999,raw_profile_id:9008,profile_id:9008,joinable:false}]",joinable:false},
+ {match_id:43270004,startgametime:1789265300,raw_profile_id:9004,profile_id:9004,alias:"Ended game",joinable:false,win:true},
+ {match_id:43270005,startgametime:1789265300,raw_profile_id:9005,profile_id:9999,alias:"Conflicting IDs",joinable:false},
+ {match_id:43270006,startgametime:1789265300,profile_id:9006,alias:"Missing raw ID",joinable:false}
+ ]}}
+]});
+</script></body></html>

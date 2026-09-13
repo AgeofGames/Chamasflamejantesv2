@@ -6,3 +6,5 @@ Trechos públicos de HTML observados no navegador em 09/09/2026, usados para rep
 - `aomstats_ranked_38263962.html`: [partida ranqueada](https://aomstats.io/match/38263962) — Alfheim, 13:06, Makise_Kurisu_00 venceu Vitamina_B.
 
 Os testes também usam variações declaradas dessas amostras para validar ID incorreto, participantes extras, ausência de resultado e dessincronização. Essas variações são cenários de teste, não registros de outras partidas reais.
+
+`aomstats_lobbies_presence.html` reproduz a estrutura Svelte das três listas públicas de lobbies observadas em 13/09/2026, com IDs e apelidos fictícios. Contém salas, partidas em andamento, IA e dados fora da lista para verificar a seleção correta dos jogadores. Não é uma confirmação de presença de pessoas reais.

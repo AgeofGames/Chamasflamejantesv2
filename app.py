@@ -21,6 +21,7 @@ import requests
 from aomstats_matches import lookup_match, parse_match_page
 import arena_seasons
 import arena_rules
+import aom_presence
 from site_experience import install_experience
 from share_cards import render_arena_card, render_tournament_card
 from bs4 import BeautifulSoup
@@ -1746,6 +1747,7 @@ def migrate_v6_db():
     db.execute("INSERT OR REPLACE INTO site_meta(key,value) VALUES ('v6_migrated','1')")
     db.commit()
     arena_seasons.init_arena(db)
+    aom_presence.init_cache(db)
     db.commit()
     db.close()
 
@@ -5049,7 +5051,7 @@ def site_share_image():
 @app.get("/health")
 def health():
     get_db().execute('SELECT 1').fetchone()
-    return {"version":"25.2-duplas-tags","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"25.4-presenca-aomstats","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 @app.errorhandler(400)
@@ -5072,14 +5074,15 @@ def friendly_error(error):
 
 from arena_teams import install_teams
 install_teams(app, globals())
+aom_presence.install_presence(app, get_db)
 
 init_db()
 migrate_v6_db()
-print("🔥 CHAMAS FLAMEJANTES V25.2 — DUPLAS E TAGS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V25.4 — PRESENÇA AOMSTATS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V25.2 — DUPLAS E TAGS")
+    print(" 🔥 CHAMAS FLAMEJANTES V25.4 — PRESENÇA AOMSTATS")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

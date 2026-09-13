@@ -11,11 +11,12 @@
   <div class="social-profile-main">
     <article class="profile-identity-card build-library-card">
       <div class="profile-identity-glow"></div>
-      {% if social_avatar_src(profile) %}<img decoding="async" class="profile-identity-avatar" src="{{social_avatar_src(profile)}}" alt="Foto de {{profile.nickname}}">{% else %}<span class="profile-identity-avatar fallback">🔥</span>{% endif %}
+      <span class="aom-presence-avatar aom-profile-avatar-shell" data-aom-player="{{profile.id}}">{% if social_avatar_src(profile) %}<img decoding="async" class="profile-identity-avatar" src="{{social_avatar_src(profile)}}" alt="Foto de {{profile.nickname}}">{% else %}<span class="profile-identity-avatar fallback">🔥</span>{% endif %}</span>
+      <p class="aom-presence-status" data-aom-status="{{profile.id}}" role="status">Presença no Age não confirmada</p>
       <small>PERFIL DA ARENA X1</small><h1{% if player_name_color(profile) %} style="color:{{player_name_color(profile)}}"{% endif %}>{{profile.nickname}}</h1>
       {{challenged_tag(profile.most_challenged_count)}}
       {% if profile.quote %}<blockquote>“{{profile.quote}}”</blockquote>{% else %}<blockquote class="muted">Sem frase por enquanto.</blockquote>{% endif %}
-      <div class="profile-account-status">{% if profile.social_enabled %}<b>●</b> CONTA GOOGLE ATIVA{% else %}PERFIL DA COMUNIDADE{% endif %}</div>
+      <div class="profile-account-status">{% if profile.social_enabled %}CONTA GOOGLE ATIVA{% else %}PERFIL DA COMUNIDADE{% endif %}</div>
       <dl><div><dt>Elo 1x1</dt><dd>{{profile.elo_1v1 or 'SEM ELO'}}</dd></div><div><dt>Nível</dt><dd>{{profile.normal_level}} • {{profile.normal_level_label}}</dd></div><div><dt>AoMStats</dt><dd>#{{profile.aomstats_profile_id}}</dd></div></dl>
       {% if profile.aomstats_url %}<a class="mini-link" href="{{profile.aomstats_url}}" target="_blank" rel="noopener">ABRIR PERFIL AOMSTATS ↗</a>{% endif %}
     </article>

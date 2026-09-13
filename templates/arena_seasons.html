@@ -10,7 +10,7 @@
  <section class="season-table"><header><h2>{{queues[queue]}} · {{season[5:]}}/{{season[:4]}}</h2><span>{{'EM DISPUTA' if season==current else 'TEMPORADA ENCERRADA'}}</span></header>
  {% for r in records %}<article class="season-table-row">
   <b>#{{loop.index}}</b>
-  {% if r.is_active %}<a class="rank-avatar-link profile-popup-trigger" href="{{url_for('social_profile',player_id=r.player_id)}}" data-profile-card-url="{{url_for('social_profile_card',player_id=r.player_id)}}" aria-label="Ver perfil de {{r.nickname}}">{% else %}<span class="rank-avatar-link">{% endif %}
+  {% if r.is_active %}<a data-aom-player="{{r.player_id}}" class="aom-presence-avatar rank-avatar-link profile-popup-trigger" href="{{url_for('social_profile',player_id=r.player_id)}}" data-profile-card-url="{{url_for('social_profile_card',player_id=r.player_id)}}" aria-label="Ver perfil de {{r.nickname}}">{% else %}<span class="rank-avatar-link">{% endif %}
    {% if social_avatar_src(r) %}<img class="rank-avatar" src="{{social_avatar_src(r)}}" width="34" height="34" loading="lazy" decoding="async" alt="">{% else %}<span class="rank-avatar rank-avatar-fallback" aria-hidden="true">{{r.nickname[:1]|upper}}</span>{% endif %}
   {% if r.is_active %}</a>{% else %}</span>{% endif %}
   {% if r.is_active %}<a href="{{url_for('social_profile',player_id=r.player_id)}}" class="rank-name-badge profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=r.player_id)}}">{% else %}<span class="rank-name-badge">{% endif %}

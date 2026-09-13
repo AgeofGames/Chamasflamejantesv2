@@ -47,6 +47,8 @@
   <link rel="stylesheet" href="{{url_for('static',filename='experience.css')}}">
   <link rel="stylesheet" href="{{url_for('static',filename='arena_public.css')}}">
   <link rel="stylesheet" href="{{url_for('static',filename='arena_v24.css')}}">
+  <link rel="stylesheet" href="{{url_for('static',filename='aom_presence.css')}}">
+  <script defer src="{{url_for('static',filename='aom_presence.js')}}"></script>
   {% if request.endpoint=='x1_page' or (request.endpoint or '').startswith('teams_') %}<script defer src="{{url_for('static',filename='arena_v24.js')}}"></script>{% endif %}
   <script defer src="{{url_for('static',filename='app.js')}}"></script>
   {% if request.endpoint in ('knowledge_build_orders_page','knowledge_god_page','knowledge_build_page') %}<script defer src="{{url_for('static',filename='knowledge.js')}}"></script>{% endif %}
@@ -67,7 +69,7 @@
     {% if social_user %}
       <button class="social-nav-notifications" type="button" data-notification-toggle aria-expanded="false" aria-controls="notification-popover" aria-label="Abrir notificações">🔔{% if unread_notifications %}<b>{{unread_notifications}}</b>{% endif %}</button>
       <a class="social-nav-profile" href="{{url_for('social_my_profile') if social_user.player_id else url_for('social_profile_setup')}}">
-        {% if social_avatar_src(social_user) %}<img decoding="async" src="{{social_avatar_src(social_user)}}" alt="">{% else %}<span>🔥</span>{% endif %}
+        <span class="aom-presence-avatar aom-presence-shell" data-aom-player="{{social_user.player_id or ''}}">{% if social_avatar_src(social_user) %}<img decoding="async" src="{{social_avatar_src(social_user)}}" alt="">{% else %}<span>🔥</span>{% endif %}</span>
         <small{% if social_user.nickname and player_name_color(social_user) %} style="color:{{player_name_color(social_user)}}"{% endif %}>{{social_user.nickname or social_user.google_name or 'Meu perfil'}}</small>
       </a>
     {% else %}

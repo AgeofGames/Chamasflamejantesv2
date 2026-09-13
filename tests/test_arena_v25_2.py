@@ -76,7 +76,7 @@ class CommunityTagTests(unittest.TestCase):
         self.assertEqual(len(page.select('.monthly-ranking-row .most-challenged-tag')),1)
         self.assertIsNotNone(page.select_one('.monthly-ranking-row .rank-emblem'))
 
-    def test_upgrade_preserves_recorded_scores_and_new_defeats_cost_30(self):
+    def test_notification_migration_preserves_scores_and_new_defeats_cost_30(self):
         with site.app.app_context():
             db=site.get_db(); a,b=self.players[:2]
             with patch.object(rules,'outcome_points',return_value=(30,-20)):
@@ -88,7 +88,7 @@ class CommunityTagTests(unittest.TestCase):
             self.assertEqual([tuple(r) for r in db.execute('SELECT * FROM arena_results ORDER BY rowid')],saved)
             seasons.record_result(db,'x1',3,[a],[b])
             loss=db.execute('SELECT * FROM arena_results WHERE event_id=3 AND won=0').fetchone()
-            self.assertEqual((loss['points_delta'],loss['points_before'],loss['points_after'],loss['rules_version']),(-30,30,0,252))
+            self.assertEqual((loss['points_delta'],loss['points_before'],loss['points_after'],loss['rules_version']),(-30,30,0,253))
 
 
 class DuoLifecycleTests(unittest.TestCase):

@@ -1,8 +1,10 @@
-# 🔥 CHAMAS FLAMEJANTES V25.2 — DUPLAS E TAGS
+# 🔥 CHAMAS FLAMEJANTES V25.4 — PRESENÇA AOMSTATS
 
-Leia **ATUALIZACAO_V25_2.md** para as novidades. As regras vigentes estão em **Temporadas** no próprio site. Os capítulos antigos abaixo são histórico de versões.
+Leia **ATUALIZACAO_V25_4.md** para as novidades. As regras vigentes estão em **Temporadas** no próprio site. Os capítulos antigos abaixo são histórico de versões.
 
-- Pontuação base: +30 por vitória e −30 por derrota para os próximos resultados confirmados. Extratos já registrados conservam seus pontos.
+- Luz verde brilhante nas fotos de quem aparece em salas abertas, partidas ranqueadas ou Customs em andamento no AoMStats. Atualização automática, com expiração e indicação de sala ou partida.
+- Pontuação base: +30 por vitória e −30 por derrota, incluindo os resultados já registrados na temporada atual. O recálculo automático corrige o caso de 5 vitórias e 1 derrota normal que mostrava 130 para 120 pontos.
+- O saldo e o progresso atual dos emblemas são reconstruídos na ordem dos resultados. Bônus registrados, históricos, meses encerrados e conquistas anteriores são preservados.
 - Piso zero sem dívida: mesmo com 1 vitória e 7 derrotas, uma vitória normal partindo de zero dá 30 pontos.
 - Bônus por diferença de Elo, três desafios por adversário ao dia, bloqueio de Elo e emblemas permanecem.
 - Tag “Mais desafiado” para os líderes em desafios X1 recebidos no mês, compartilhada em empates.
@@ -10,9 +12,9 @@ Leia **ATUALIZACAO_V25_2.md** para as novidades. As regras vigentes estão em **
 - Convite respondido sai das notificações. Aviso de aceite permanece até ser lido. Ler notificações não desfaz a dupla.
 - Notificações automáticas a cada 3 segundos. Históricos, fotos redondas, dez emblemas e conquistas anteriores preservados.
 
-**Atualização:** envie o conteúdo completo deste ZIP ao GitHub conectado ao Railway, incluindo os módulos, templates e arquivos `static`. Preserve banco, volume, uploads e variáveis. `/health` deverá indicar `25.2-duplas-tags`.
+**Atualização:** envie o conteúdo completo deste ZIP ao GitHub conectado ao Railway, incluindo os módulos, templates e arquivos `static`. Preserve banco, volume, uploads e variáveis. `/health` deverá indicar `25.4-presenca-aomstats`.
 
-**Validação:** consulte ATUALIZACAO_V25_2.md. Testes locais com Google e AoMStats simulados. O site publicado ainda precisa receber este pacote.
+**Validação:** consulte ATUALIZACAO_V25_4.md. Testes locais com Google e AoMStats simulados. O site publicado ainda precisa receber este pacote.
 
 ---
 
