@@ -40,6 +40,15 @@
   </div>
 </section>
 
+<section class="section">
+  <div class="section-head"><div><span class="eyebrow">APRENDA E TREINE</span><h3>Guias de AoM Retold em português</h3><p class="section-copy">Prepare sua abertura, conheça os counters e pratique os atalhos antes da próxima batalha.</p></div></div>
+  <div class="seo-home-guides">
+    <a href="{{url_for('knowledge_build_orders_page')}}"><strong>Build orders por deus</strong><span>Estratégias de economia, rush e água com passos organizados por idade.</span><b>Explorar build orders →</b></a>
+    <a href="{{url_for('counter_guide_page')}}"><strong>Guia de counters</strong><span>Consulte as respostas para as unidades e adapte a composição do seu exército.</span><b>Ver counters →</b></a>
+    <a href="{{url_for('hotkeys_guide_page')}}"><strong>Teclado interativo</strong><span>Treine seleção, construções e comandos de Age of Mythology: Retold.</span><b>Consultar atalhos →</b></a>
+  </div>
+</section>
+
 <section class="section programs-home-section">
   <a class="programs-home-card" href="{{url_for('programs_page')}}">
     <span class="programs-home-icon" aria-hidden="true">↓</span>
@@ -66,7 +75,7 @@
     {% if community_best %}
     <article class="community-highlight best">
       <small>👑 MELHOR DA COMUNIDADE</small>
-      {% if avatar_src(community_best) %}<img loading="lazy" decoding="async" src="{{ avatar_src(community_best) }}" class="community-avatar">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}
+      {% if avatar_src(community_best) %}<img loading="lazy" decoding="async" src="{{ avatar_src(community_best) }}" class="community-avatar" alt="Foto de {{community_best.nickname}}">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}
       <h3{% if player_name_color(community_best) %} style="color:{{player_name_color(community_best)}}"{% endif %}>{{ community_best.nickname }}</h3>{% if community_best.has_elo %}<strong>{{ community_best.community_elo }} ELO</strong>{% else %}<strong class="no-elo-badge big">SEM ELO</strong><span class="level-line">{{ community_level_text(community_best) }}</span>{% endif %}<span class="normal-record">{{ community_best.normal_wins }}V • {{ community_best.normal_losses }}D em normais</span>{% if community_best.quote %}<span class="player-quote">“{{community_best.quote}}”</span>{% endif %}
       {% if community_best.aomstats_url %}<a class="neon-profile" target="_blank" href="{{ community_best.aomstats_url }}">PERFIL AOMSTATS ↗</a>{% endif %}
     </article>
@@ -74,7 +83,7 @@
     {% if community_worst and community_members|length > 1 %}
     <article class="community-highlight worst">
       <small>📉 MENOR ELO</small>
-      {% if avatar_src(community_worst) %}<img loading="lazy" decoding="async" src="{{ avatar_src(community_worst) }}" class="community-avatar">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}
+      {% if avatar_src(community_worst) %}<img loading="lazy" decoding="async" src="{{ avatar_src(community_worst) }}" class="community-avatar" alt="Foto de {{community_worst.nickname}}">{% else %}<span class="community-avatar fallback">🔥</span>{% endif %}
       <h3{% if player_name_color(community_worst) %} style="color:{{player_name_color(community_worst)}}"{% endif %}>{{ community_worst.nickname }}</h3>{% if community_worst.has_elo %}<strong>{{ community_worst.community_elo }} ELO</strong>{% else %}<strong class="no-elo-badge big">SEM ELO</strong><span class="level-line">{{ community_level_text(community_worst) }}</span>{% endif %}<span class="normal-record">{{ community_worst.normal_wins }}V • {{ community_worst.normal_losses }}D em normais</span>{% if community_worst.quote %}<span class="player-quote">“{{community_worst.quote}}”</span>{% endif %}
       {% if community_worst.aomstats_url %}<a class="neon-profile danger-neon" target="_blank" href="{{ community_worst.aomstats_url }}">PERFIL AOMSTATS ↗</a>{% endif %}
     </article>

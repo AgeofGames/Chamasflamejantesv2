@@ -1,12 +1,13 @@
-CHAMAS FLAMEJANTES V26.3 — HISTÓRICO COMPACTO
-Health: 26.3-historico-compacto
-“Com quem jogou” na mesma largura e alinhamento do card Conquistas, logo abaixo dele.
-Perfil: Histórico público → Compartilhar perfil → Emblemas da Arena → Dupla · 2×2 → Evolução dos pontos → Rivalidades → Conquistas.
-Quatro botões em um card pequeno abaixo da identidade do próprio perfil.
-Título “Este perfil é seu” e texto explicativo retirados.
-Temporada automática e emblemas sem duplicação na página.
-Mantidas as regras de pontos +30/−30, bônus por Elo e piso zero.
-Histórico, duplas, fotos, capas, notificações, presença com ID, agenda e replays preservados.
-Mural e favoritas/anotações permanecem removidos.
-5 testes Python existentes passaram nesta revisão; conferência em Chromium em quatro larguras.
-Instruções atuais em ATUALIZACAO_V26_3.md.
+CHAMAS FLAMEJANTES V27 — SEO E GOOGLE
+Health: 27.0-seo-google
+Títulos e descrições próprios para as páginas públicas.
+Endereços principais, nome do site, logo e navegação estruturada.
+Sitemap ampliado e mapa do site para pessoas e buscadores.
+Painel Google / SEO para configurar a verificação do Search Console.
+113 build orders e 23 deuses incluídos na revisão.
+Páginas privadas, APIs e filtros marcados para não serem indexados.
+Histórico, pontos, fotos, duplas, capas, notificações e compartilhamento preservados.
+Perfil compacto, com Com quem jogou na mesma largura do card acima.
+145 testes Python passaram, incluindo 11 de SEO.
+Instruções atuais em ATUALIZACAO_V27.md.
+A indexação e a posição nas buscas dependem do Google.

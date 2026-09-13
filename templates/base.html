@@ -4,24 +4,29 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="{{ site.accent_color if site else '#e95d20' }}">
-  <meta name="description" content="{% block meta_description %}Comunidade, torneios, conhecimento e Arena X1 de Age of Mythology: Retold.{% endblock %}">
-  <title>{% block title %}{{ site.title if site else 'Chamas Flamejantes' }}{% endblock %}</title>
+  {% set original_description %}{% block meta_description %}Comunidade, torneios, conhecimento e Arena X1 de Age of Mythology: Retold.{% endblock %}{% endset %}
+  {% set original_title %}{% block title %}{{ site.title if site else 'Chamas Flamejantes' }}{% endblock %}{% endset %}
+  {% set seo = seo_page(original_title, original_description) %}
+  <meta name="description" content="{{seo.description}}">
+  <title>{{seo.title}}</title>
+  <meta name="robots" content="{{seo.robots}}">
+  {% if seo.canonical %}<link rel="canonical" href="{{seo.canonical}}">{% endif %}
+  {% if seo.verification %}<meta name="google-site-verification" content="{{seo.verification}}">{% endif %}
   <link rel="icon" href="{{url_for('site_favicon_ico')}}" type="image/vnd.microsoft.icon" sizes="16x16 32x32 48x48 64x64 96x96 128x128 256x256">
   <link rel="icon" href="{{url_for('site_favicon_png')}}" type="image/png" sizes="96x96">
   <link rel="apple-touch-icon" href="{{url_for('site_apple_touch_icon')}}" sizes="180x180">
-  {% if request.endpoint == 'home' %}<link rel="canonical" href="{{public_base_url}}{{url_for('home')}}">{% endif %}
   {% block social_meta %}
   {% set share_base = public_base_url if public_base_url is defined else 'https://chamasflamejantes.com.br' %}
   {% set share_image = share_base ~ url_for('site_share_image') %}
-  {% set share_title = 'Chamas Flamejantes • Age of Mythology: Retold' %}
-  {% set share_description = 'Build orders, torneios, mapas e duelos na Arena X1. Faça parte da comunidade Chamas Flamejantes!' %}
+  {% set share_title = seo.title %}
+  {% set share_description = seo.description %}
   {% set share_image_alt = 'Chamas Flamejantes: Zeus e Rá, 113 build orders, torneios e Arena X1 de Age of Mythology: Retold.' %}
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Chamas Flamejantes">
   <meta property="og:locale" content="pt_BR">
   <meta property="og:title" content="{{ share_title }}">
   <meta property="og:description" content="{{ share_description }}">
-  <meta property="og:url" content="{{ share_base }}{{ request.path }}">
+  <meta property="og:url" content="{{ share_base ~ request.path if request.endpoint == 'home' else (seo.canonical or share_base ~ request.path) }}">
   <meta property="og:image" content="{{ share_image }}">
   <meta property="og:image:secure_url" content="{{ share_image }}">
   <meta property="og:image:type" content="image/jpeg">
@@ -34,6 +39,7 @@
   <meta name="twitter:image" content="{{ share_image }}">
   <meta name="twitter:image:alt" content="{{ share_image_alt }}">
   {% endblock %}
+  {% if seo.structured_data %}<script type="application/ld+json">{{seo.structured_data|tojson}}</script>{% endif %}
   <meta name="csrf-token" content="{{csrf_token()}}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -49,6 +55,7 @@
   <link rel="stylesheet" href="{{url_for('static',filename='arena_v24.css')}}">
   <link rel="stylesheet" href="{{url_for('static',filename='aom_presence.css')}}">
   <link rel="stylesheet" href="{{url_for('static',filename='community_hub.css')}}">
+  {% if request.endpoint in ('home','site_directory','admin_seo','hotkeys_guide_page') %}<link rel="stylesheet" href="{{url_for('static',filename='seo.css')}}">{% endif %}
   <script defer src="{{url_for('static',filename='community_hub.js')}}"></script>
   <script defer src="{{url_for('static',filename='aom_presence.js')}}"></script>
   {% if request.endpoint=='x1_page' or (request.endpoint or '').startswith('teams_') %}<script defer src="{{url_for('static',filename='arena_v24.js')}}"></script>{% endif %}
@@ -104,5 +111,5 @@
     <span><small>CRIADOR DO SITE</small><strong>{{site_creator.nickname if site_creator else 'Criador do site'}}</strong><em>Ver perfil no AoMStats ↗</em></span>
   </a>
 </div>
-<div class="footer-bottom"><span>Chamas Flamejantes • Comunidade de Age of Mythology: Retold</span><div class="footer-tools"><button type="button" data-native-share data-share-url="{{site_share_url}}" data-share-title="Chamas Flamejantes • Age of Mythology: Retold">Compartilhar site</button><button type="button" data-motion-toggle aria-pressed="false">Reduzir animações</button><a href="{{url_for('feedback_page')}}">Enviar feedback</a></div></div>
+<div class="footer-bottom"><span>Chamas Flamejantes • Comunidade de Age of Mythology: Retold</span><div class="footer-tools"><button type="button" data-native-share data-share-url="{{site_share_url}}" data-share-title="Chamas Flamejantes • Age of Mythology: Retold">Compartilhar site</button><button type="button" data-motion-toggle aria-pressed="false">Reduzir animações</button><a href="{{url_for('site_directory')}}">Mapa do site</a><a href="{{url_for('feedback_page')}}">Enviar feedback</a></div></div>
 </footer></body></html>

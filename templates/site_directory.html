@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="seo-shell">
+  <header class="seo-heading"><span class="eyebrow">EXPLORE A COMUNIDADE</span><h1>Mapa do site</h1><p>Encontre torneios, jogadores e guias de Age of Mythology: Retold em português.</p></header>
+  <section class="seo-panel"><h2>Seções do Chamas Flamejantes</h2><nav class="seo-directory-links" aria-label="Seções do site">{% for item in sections %}<a href="{{item.url}}">{{item.name}} →</a>{% endfor %}</nav></section>
+  <section class="seo-panel"><h2>Build orders por deus</h2><p>Escolha o deus ou abra diretamente a estratégia que você quer treinar.</p><div class="seo-god-grid">{% for god in god_groups %}<details><summary>{{god.name}} <span>{{god.builds|length}} builds</span></summary><a href="{{god.url}}">Todas as builds de {{god.name}} →</a><ul>{% for build in god.builds %}<li><a href="{{build.url}}">{{build.name}}</a></li>{% endfor %}</ul></details>{% endfor %}</div></section>
+</section>
+{% endblock %}

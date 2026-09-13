@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Google e SEO | Administração{% endblock %}
+{% block content %}
+<section class="seo-shell">
+  <a class="mini-link" href="{{url_for('admin')}}">← Voltar ao painel</a>
+  <header class="seo-heading"><span class="eyebrow">DESCOBERTA DO SITE</span><h1>Google e Search Console</h1><p>Configure a verificação e acompanhe a indexação das páginas públicas.</p></header>
+  <article class="seo-panel">
+    <h2>Verificar o site</h2>
+    <p>No Search Console, adicione a propriedade de prefixo de URL <strong>{{seo_origin}}/</strong> e escolha <strong>Tag HTML</strong>. Cole o código abaixo, salve e clique em <strong>Verificar</strong> no Google.</p>
+    <form method="post" action="{{url_for('admin_seo')}}">
+      <input type="hidden" name="_csrf" value="{{csrf_token()}}">
+      <label for="seo-verification">Código ou meta tag de verificação</label>
+      <textarea id="seo-verification" name="verification" rows="3" maxlength="2048" spellcheck="false" autocomplete="off"{% if verification_from_env %} readonly{% endif %}>{{verification}}</textarea>
+      {% if verification_from_env %}<p class="seo-note">Este código vem da variável GOOGLE_SITE_VERIFICATION do Railway.</p>{% else %}<button class="btn primary" type="submit">Salvar código</button>{% endif %}
+    </form>
+    <p class="seo-note">{{'Código presente na página inicial. A confirmação da propriedade é feita no Search Console.' if verification else 'Nenhum código de tag HTML configurado. Se o domínio já foi verificado por DNS, você pode manter assim.'}}</p>
+    <a class="btn" href="https://search.google.com/search-console" target="_blank" rel="noopener">Abrir Search Console ↗</a>
+  </article>
+  <article class="seo-panel">
+    <h2>Enviar o sitemap</h2><p>O sitemap reúne <strong>{{sitemap_count}} endereços públicos</strong> e acompanha novos perfis, guias, equipes e resultados confirmados.</p>
+    <p>Em <strong>Sitemaps</strong> no Search Console, envie:</p>
+    <a class="seo-address" href="{{url_for('sitemap_xml')}}" target="_blank" rel="noopener">{{seo_origin}}{{url_for('sitemap_xml')}}</a>
+    <p>Depois, use <strong>Inspeção de URL → Testar URL publicado → Solicitar indexação</strong> para a página inicial e os principais guias.</p>
+    <div class="seo-links"><a href="{{url_for('home')}}">Página inicial</a><a href="{{url_for('knowledge_build_orders_page')}}">Build orders</a><a href="{{url_for('open_tournaments_page')}}">Torneios</a><a href="{{url_for('x1_page')}}">Arena X1</a><a href="{{url_for('site_directory')}}">Mapa do site</a><a href="{{url_for('robots_txt')}}">robots.txt</a></div>
+    <p class="seo-note">O Google decide quais páginas indexar e em que prazo. Acompanhe os relatórios de Páginas e Desempenho; solicitar a mesma URL repetidamente não acelera o rastreamento.</p>
+  </article>
+</section>
+{% endblock %}

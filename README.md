@@ -1,18 +1,20 @@
-# 🔥 CHAMAS FLAMEJANTES V26.3 — HISTÓRICO COMPACTO
+# 🔥 CHAMAS FLAMEJANTES V27 — SEO E GOOGLE
 
-Pacote completo para atualizar o site no GitHub/Railway. Leia **ATUALIZACAO_V26_3.md** para os detalhes desta revisão.
+Pacote completo para atualizar o site no GitHub/Railway. Leia **ATUALIZACAO_V27.md** para publicar e configurar o Google Search Console.
 
-- **Com quem jogou** agora fica na mesma coluna, largura e alinhamento de **Conquistas**, imediatamente abaixo desse card. As linhas dos confrontos também acompanham a largura disponível.
-- Blocos do perfil nesta ordem: **Histórico público → Compartilhar perfil → Emblemas da Arena → Dupla · 2×2 → Evolução dos pontos → Rivalidades → Conquistas**.
-- **Alterar meus dados**, **Abrir notificações**, **Escolher capa** e **Minha agenda** ficam em um card pequeno, com duas linhas de botões, imediatamente abaixo do card de identidade do próprio perfil da Arena.
-- Removidos o título **Este perfil é seu** e seu texto explicativo.
-- A temporada exibida acompanha o mês atual automaticamente. Os emblemas aparecem uma única vez na página e continuam disponíveis na janela flutuante do perfil.
-- Mantidos os cards compactos, gráfico interativo, histórico, pontos, duplas, fotos redondas, presença com ID e botão de copiar, compartilhamento, agendamentos e replays.
-- Mural e favoritas/anotações continuam removidos. O catálogo normal de build orders e seus checklists permanecem disponíveis.
+- Títulos e descrições próprios para as páginas públicas, incluindo 113 build orders e 23 deuses.
+- Endereços principais consistentes, dados estruturados de site e navegação, logo e favicon preservados.
+- Sitemap automático ampliado para perfis, equipes, temporadas, rivalidades, replays e resultados confirmados.
+- Mapa do site no rodapé e atalhos para os guias na página inicial.
+- Painel **Google / SEO** para inserir o código de verificação do Search Console e consultar o endereço do sitemap.
+- Login, administração, notificações, agenda pessoal, APIs e variantes de filtros não entram como páginas principais de busca.
+- Histórico, pontos, regras de desafios, duplas, fotos, capas e cards de compartilhamento preservados. O perfil continua compacto e na ordem solicitada; **Com quem jogou** permanece alinhado com o card acima.
 
-**Atualização:** envie o conteúdo completo ao GitHub conectado ao Railway, incluindo módulos, templates e `static`. Preserve banco, volume, replays, fotos e variáveis atuais. `/health` deverá indicar `26.3-historico-compacto`.
+**Atualização:** envie o conteúdo completo ao GitHub/Railway, incluindo **site_seo.py**, templates e `static`. Preserve banco, volume, fotos, replays e variáveis. `/health` deverá indicar **27.0-seo-google**.
 
-**Validação desta revisão:** 5 testes Python existentes passaram, cobrindo perfis, filtros e paginação do histórico. Conferência em Chromium nas larguras 1920, 1024, 768 e 390 px: histórico alinhado ao card anterior, sem rolagem horizontal, filtros de vitórias e derrotas funcionais. Foram usados banco isolado e integrações externas simuladas.
+**Google:** depois de publicar, use **Painel → Google / SEO** para a verificação, se necessário, e envie `https://chamasflamejantes.com.br/sitemap.xml` no Search Console. O Google determina o prazo e a posição nas buscas; não há indexação imediata garantida.
+
+**Validação:** 145 testes Python passaram com dados isolados e integrações externas simuladas, incluindo 11 testes específicos de SEO e rastreamento local das páginas do sitemap.
 
 ---
 
