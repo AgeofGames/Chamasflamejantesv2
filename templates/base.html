@@ -48,6 +48,8 @@
   <link rel="stylesheet" href="{{url_for('static',filename='arena_public.css')}}">
   <link rel="stylesheet" href="{{url_for('static',filename='arena_v24.css')}}">
   <link rel="stylesheet" href="{{url_for('static',filename='aom_presence.css')}}">
+  <link rel="stylesheet" href="{{url_for('static',filename='community_hub.css')}}">
+  <script defer src="{{url_for('static',filename='community_hub.js')}}"></script>
   <script defer src="{{url_for('static',filename='aom_presence.js')}}"></script>
   {% if request.endpoint=='x1_page' or (request.endpoint or '').startswith('teams_') %}<script defer src="{{url_for('static',filename='arena_v24.js')}}"></script>{% endif %}
   <script defer src="{{url_for('static',filename='app.js')}}"></script>
@@ -79,7 +81,7 @@
   <button class="mobile-nav-toggle" type="button" aria-expanded="true" aria-controls="main-navigation"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Menu</span></button>
 </header>
 {% if social_user %}<aside class="notification-popover" id="notification-popover" hidden aria-label="Notificações da Arena X1">
-  <header><div><small>DESAFIOS ATIVOS · ATUALIZAÇÃO AUTOMÁTICA</small><h2>Notificações</h2></div><button type="button" data-notification-close aria-label="Fechar">×</button></header>
+  <header><div><small>MENSAGENS DA COMUNIDADE · ATUALIZAÇÃO AUTOMÁTICA</small><h2>Notificações</h2></div><button type="button" data-notification-close aria-label="Fechar">×</button></header>
   <div class="notification-popover-list" data-notification-list>
     {% include '_notification_items.html' %}
   </div>

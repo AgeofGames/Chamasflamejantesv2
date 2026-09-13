@@ -6,9 +6,10 @@
   <span class="rank-position">{{loop.index}}</span>
   <button type="button" data-aom-player="{{p.id}}" class="aom-presence-avatar rank-avatar-link profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=p.id)}}" aria-label="Ver perfil de {{p.nickname}}">{% if social_avatar_src(p) %}<img class="rank-avatar" src="{{social_avatar_src(p)}}" width="34" height="34" loading="lazy" decoding="async" alt="">{% else %}<span class="rank-avatar rank-avatar-fallback" aria-hidden="true">{{p.nickname[:1]|upper}}</span>{% endif %}</button>
   <button type="button" class="rank-player-info profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=p.id)}}"><span class="rank-name-badge"><strong{% if player_name_color(p) %} style="color:{{player_name_color(p)}}"{% endif %}>{{p.nickname}}</strong><img class="rank-emblem" src="{{url_for('static',filename=p.rank.badge.thumbnail)}}" width="34" height="34" loading="lazy" decoding="async" alt="Emblema {{p.rank.badge.name}}" title="{{p.rank.badge.name}} · nível {{p.rank.badge.level}}"></span><small>{{p.rank.wins}} V · {{p.rank.losses}} D</small>{{challenged_tag(p.most_challenged_count)}}</button>
+  <span class="rank-match-area">{% with presence_id=p.id %}{% include '_aom_match_controls.html' %}{% endwith %}</span>
   <b class="rank-points">{{p.rank.points}}<small>PTS</small></b>
  </article>{% else %}<p class="arena-muted">As primeiras batalhas vão definir este ranking.</p>{% endfor %}
  </div>
  <p class="arena-muted">A classificação recomeça todo mês. Seus resultados e emblemas conquistados ficam no perfil.</p>
- <a class="btn arena-history-button" href="{{url_for('arena_seasons_page',modo=queue)}}">Ver temporadas e regras →</a>
+ <a class="btn arena-history-button" href="{{url_for('arena_seasons_page',modo=queue)}}">Ver ranking completo e regras →</a>
 </aside>

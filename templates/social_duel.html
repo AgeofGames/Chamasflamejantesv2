@@ -25,6 +25,7 @@
   {% if duel.status=='refused' %}<article class="duel-refused-banner"><strong>FUGIU DA BATALHA</strong><span>{{duel.challenged.nickname}} recusou o desafio enviado por {{duel.challenger.nickname}}.</span></article>{% endif %}
 
  {% include '_arena_points_statement.html' %}
+{% with extra_queue='x1' %}{% include '_hub_duel_extras.html' %}{% endwith %}
   {% with card_title=('Compartilhar vitória' if duel.status=='completed' else 'Compartilhar desafio'),card_image_url=duel.share_image_url,card_alt=duel.share_title,card_download_url=duel.download_url %}{% include '_share_card_panel.html' %}{% endwith %}
 
 </section>

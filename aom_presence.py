@@ -70,7 +70,7 @@ def parse_lobbies(document, source, now=None):
     source_at = min(timestamps)
     if not now - SOURCE_MAX_AGE < source_at <= now + 60:
         raise ValueError('AoMStats lobby snapshot is stale')
-    players = {}
+    players, starts = {}, {}
     for literal in arrays:
         for row in _serialized_records(literal):
             # Positive raw IDs also identify humans who have no ranked profile.
@@ -83,16 +83,18 @@ def parse_lobbies(document, source, now=None):
             start = row.get('startgametime')
             if type(start) is not int: continue
             if source == 'open' and row.get('joinable') is True and start <= 0:
-                players[str(raw)] = 'lobby'
+                players[str(raw)] = {'state': 'lobby'}
             elif source in ('ranked', 'customs') and row.get('joinable') is False and 0 < start <= source_at + 60:
-                players[str(raw)] = 'match'
+                if start >= starts.get(str(raw), 0):
+                    players[str(raw)] = {'state': 'match', 'match_id': str(row['match_id'])}
+                    starts[str(raw)] = start
     return {'players': players, 'source_at': source_at}
 
 
 def fetch_source(source):
     deadline = time.monotonic() + FETCH_BUDGET
     with requests.get(SOURCES[source], headers={
-        'User-Agent': 'ChamasFlamejantes/25.4 (+https://chamasflamejantes.com.br)',
+        'User-Agent': 'ChamasFlamejantes/26 (+https://chamasflamejantes.com.br)',
         'Accept': 'text/html', 'Accept-Language': 'en-US,en;q=0.9',
     }, timeout=(5, 5), stream=True, allow_redirects=False) as response:
         if response.status_code != 200:
@@ -144,9 +146,14 @@ def snapshot(db):
     if claimed: db.commit()
     active = {}
     for row in db.execute('SELECT * FROM aom_presence_cache WHERE expires_at>?', (now,)):
-        for profile, state in json.loads(row['payload']).items():
+        for profile, evidence in json.loads(row['payload']).items():
+            # Old cache entries remain compatible until the next shared refresh.
+            state = evidence.get('state') if isinstance(evidence, dict) else evidence
+            if state not in ('lobby', 'match'): continue
+            match_id = str(evidence.get('match_id', '')) if isinstance(evidence, dict) and state == 'match' else ''
+            if not (match_id.isascii() and match_id.isdigit() and 0 < len(match_id) <= 20 and int(match_id) > 0): match_id = ''
             current = active.get(profile)
-            candidate = {'state': state, 'source_at': row['source_at'], 'expires_at': row['expires_at']}
+            candidate = {'state': state, 'match_id': match_id, 'source_at': row['source_at'], 'expires_at': row['expires_at']}
             # A more recent room takes precedence over an older match listing.
             if not current or (candidate['source_at'], state == 'match') > (current['source_at'], current['state'] == 'match'):
                 active[profile] = candidate
@@ -166,4 +173,6 @@ def install_presence(app, get_db):
             if item and item['expires_at'] > now:
                 players[str(row['id'])] = {'state': item['state'],
                     'expires_in': max(0, int(item['expires_at'] - now))}
+                if item.get('match_id'):
+                    players[str(row['id'])]['match_id'] = item['match_id']
         return jsonify(players=players, refresh_after=20, source=SOURCES['ranked'])

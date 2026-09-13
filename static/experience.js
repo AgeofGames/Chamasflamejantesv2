@@ -78,7 +78,7 @@
         setTimeout(() => node.classList.remove('motion-enter'), 850);
       });
     }, {threshold:0.05, rootMargin:'0px 0px -12px'});
-    const selector = '.hero-content,.page-hero,.knowledge-hero-copy,.section-head,.mode-card,.feature,.god-knowledge-card,.build-library-card,.counter-guide-launch,.arena-step,.profile-battle-stats,.profile-owner-actions,.share-panel,.community-highlight,.community-form-card,.build-phase,.counter-unit-card,.admin-block,.duel-message-window,.duel-versus-card';
+    const selector = '.hero-content,.page-hero,.knowledge-hero-copy,.section-head,.mode-card,.feature,.god-knowledge-card,.build-library-card,.counter-guide-launch,.arena-step,.profile-battle-stats,.profile-owner-actions,.share-panel,.community-highlight,.community-form-card,.build-phase,.counter-unit-card,.admin-block,.duel-message-window,.duel-versus-card,.hub-panel,.hub-page-head,.hub-rival-hero';
     container.querySelectorAll(selector).forEach((node, index) => {
       if (index > 160 || observed.has(node) || node.hidden) return;
       observed.add(node);

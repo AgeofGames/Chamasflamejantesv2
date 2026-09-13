@@ -16,6 +16,7 @@
   {% if r.is_active %}<a href="{{url_for('social_profile',player_id=r.player_id)}}" class="rank-name-badge profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=r.player_id)}}">{% else %}<span class="rank-name-badge">{% endif %}
    <span class="rank-player-name"{% if r.nickname_color %} style="color:{{r.nickname_color}}"{% endif %}>{{r.nickname}}{% if season==current %}{{challenged_tag(social_most_challenged(r.player_id))}}{% endif %}</span><img class="rank-emblem" src="{{url_for('static',filename=r.badge.thumbnail)}}" width="34" height="34" loading="lazy" decoding="async" alt="Emblema {{r.badge.name}}" title="{{r.badge.name}} · nível {{r.badge.level}}">
   {% if r.is_active %}</a>{% else %}</span>{% endif %}
+  <span class="rank-match-area">{% with presence_id=r.player_id %}{% include '_aom_match_controls.html' %}{% endwith %}</span>
   <strong>{{r.points}} <small>pts</small></strong><small>{{r.wins}} V · {{r.losses}} D</small>
  </article>{% else %}<div class="empty"><p>Aguardando a primeira partida confirmada desta temporada.</p></div>{% endfor %}
  </section>

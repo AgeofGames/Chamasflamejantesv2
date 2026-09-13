@@ -22,6 +22,8 @@ from aomstats_matches import lookup_match, parse_match_page
 import arena_seasons
 import arena_rules
 import aom_presence
+import community_hub
+import duel_extras
 from site_experience import install_experience
 from share_cards import render_arena_card, render_tournament_card
 from bs4 import BeautifulSoup
@@ -1748,6 +1750,8 @@ def migrate_v6_db():
     db.commit()
     arena_seasons.init_arena(db)
     aom_presence.init_cache(db)
+    community_hub.init_schema(db)
+    duel_extras.init_schema(db)
     db.commit()
     db.close()
 
@@ -2259,6 +2263,7 @@ def social_notification_items(account_id, limit=12):
            LEFT JOIN arena_team_duels td ON n.arena_url LIKE '/arena/equipes/duelo/%'
              AND td.id=CAST(SUBSTR(n.arena_url,LENGTH('/arena/equipes/duelo/')+1) AS INTEGER)
            WHERE n.account_id=?
+             AND (n.is_read=0 OR (n.kind NOT LIKE 'schedule_%' AND n.kind<>'community_comment'))
              AND (n.duel_id IS NULL OR d.status IN ('pending','accepted','match_pending'))
              AND (n.arena_url NOT LIKE '/arena/equipes/duelo/%'
                   OR td.status IN ('pending','accepted','match_pending'))
@@ -4196,6 +4201,7 @@ def social_notifications_feed():
     account = current_social_account()
     if not account:
         return jsonify(error='Entre novamente para ver suas notificações.'), 401
+    duel_extras.process_reminders(get_db())
     items = social_notification_items(account['account_id'])
     unread = items[0]['unread_total'] if items else 0
     cursor = hashlib.sha256(json.dumps([items, unread], sort_keys=True).encode()).hexdigest()[:20]
@@ -5051,7 +5057,7 @@ def site_share_image():
 @app.get("/health")
 def health():
     get_db().execute('SELECT 1').fetchone()
-    return {"version":"25.5-ranking-completo","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"26-comunidade-jornada","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 @app.errorhandler(400)
@@ -5075,14 +5081,17 @@ def friendly_error(error):
 from arena_teams import install_teams
 install_teams(app, globals())
 aom_presence.install_presence(app, get_db)
+community_hub.install(app, globals())
+duel_extras.install(app, globals())
 
 init_db()
 migrate_v6_db()
-print("🔥 CHAMAS FLAMEJANTES V25.5 — RANKING COMPLETO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+duel_extras.start_reminder_worker(app, globals())
+print("🔥 CHAMAS FLAMEJANTES V26 — COMUNIDADE E JORNADA\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V25.5 — RANKING COMPLETO")
+    print(" 🔥 CHAMAS FLAMEJANTES V26 — COMUNIDADE E JORNADA")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

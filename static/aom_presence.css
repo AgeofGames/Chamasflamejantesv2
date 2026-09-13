@@ -23,3 +23,12 @@
 .profile-duo-members .aom-presence-shell{flex:0 0 36px}
 .profile-account-status,.profile-online-badge{color:#a4b1bc;border-color:#a4b1bc40}
 @media(forced-colors:active){.aom-presence-avatar[data-aom-state]::after{background:Highlight;border-color:Canvas;forced-color-adjust:none}}
+
+.aom-match-controls{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap;margin:8px 0;color:#baf8cd;font:500 10px/1.5 Inter,system-ui,sans-serif}
+.aom-match-controls[hidden]{display:none!important}.aom-match-controls b{font:600 11px/1.5 Inter,system-ui,sans-serif;color:#abf5c0;user-select:all;letter-spacing:.03em;overflow-wrap:anywhere}
+.aom-match-controls button{border:1px solid #58ff9140;border-radius:6px;background:#58ff910b;color:#baf8cd;padding:7px 9px;min-height:30px;font:600 10px Inter,system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+.aom-match-controls button:hover{background:#58ff911b}.aom-match-controls button:focus-visible{outline:2px solid #a5ffc3;outline-offset:2px}.aom-match-controls small{flex-basis:100%;font-size:10px;color:#bdcbbf}.aom-match-controls small:empty{display:none}
+.monthly-ranking-row>.rank-match-area,.season-table-row>.rank-match-area{grid-column:3;grid-row:2;min-width:0}.rank-match-area:not(:has(.aom-match-controls:not([hidden]))){display:none}
+.monthly-ranking-row>.rank-points{grid-column:4;grid-row:1}.season-table-row>.rank-match-area+strong{grid-column:4;grid-row:1}.season-table-row>.rank-match-area+strong+small{grid-column:5;grid-row:1}
+.rank-match-area .aom-match-controls{margin:0 0 6px}.profile-popover-top .aom-match-controls{font-size:10px}.social-player-card-body .aom-match-controls{margin:8px 0}
+@media(max-width:700px){.season-table-row>.rank-match-area{grid-column:3 / 5;grid-row:3}.season-table-row>.rank-match-area+strong+small{grid-column:3 / 5;grid-row:2}.aom-match-controls button{min-height:34px}}

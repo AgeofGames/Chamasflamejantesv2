@@ -16,12 +16,18 @@ DOCUMENT = (Path(__file__).parent/'fixtures/aomstats_lobbies_presence.html').rea
 
 
 class ParsingTests(unittest.TestCase):
+    def test_duplicate_listings_choose_the_most_recent_started_match(self):
+        older='{match_id:41230000,startgametime:1789265100,raw_profile_id:1001,profile_id:1001,joinable:false}'
+        doc=DOCUMENT.replace('lobbies:[\n','lobbies:[\n'+older+',\n',1)
+        doc=doc.replace('alias:"Missing raw ID",joinable:false}','alias:"Missing raw ID",joinable:false},'+older)
+        self.assertEqual(presence.parse_lobbies(doc,'customs',STAMP)['players']['1001']['match_id'],'43270001')
+
     def test_three_lists_use_human_ids_not_names_history_ai_or_placeholders(self):
         for source in ('ranked','customs'):
             data = presence.parse_lobbies(DOCUMENT,source,STAMP+1)
-            self.assertEqual(data['players'],{'1001':'match','1002':'match'})
+            self.assertEqual(data['players'],{'1001':{'state':'match','match_id':'43270001'},'1002':{'state':'match','match_id':'43270003'}})
         data = presence.parse_lobbies(DOCUMENT,'open',STAMP+1)
-        self.assertEqual(data['players'],{'1003':'lobby'})
+        self.assertEqual(data['players'],{'1003':{'state':'lobby'}})
 
     def test_empty_is_a_valid_snapshot_but_errors_and_stale_pages_are_not(self):
         empty='<script>{metadata:{lastLobbyTime:%d},lobbies:[]}</script>'%STAMP
@@ -53,6 +59,18 @@ class PresenceFlows(unittest.TestCase):
     post = fixtures.SiteFlows.post
     row = fixtures.SiteFlows.row
     make_team = teams.TeamFlows.make_team
+
+    def test_match_ids_follow_site_players_while_rooms_never_expose_a_game_id(self):
+        now=[STAMP]
+        def source(key):return presence.parse_lobbies(DOCUMENT,key,STAMP)
+        with patch.object(presence.time,'time',side_effect=lambda:now[0]),patch.object(presence,'fetch_source',side_effect=source):
+            data=self.client.get('/api/arena/presenca').get_json()['players']
+            self.assertEqual(data[str(self.players[0])]['match_id'],'43270001')
+            self.assertEqual(data[str(self.players[1])]['match_id'],'43270003')
+            self.assertNotIn('match_id',data[str(self.players[2])])
+            now[0]+=90
+            with patch.object(presence,'fetch_source',side_effect=requests.Timeout):
+                self.assertEqual(self.client.get('/api/arena/presenca').get_json()['players'],{})
 
     def fake_source(self, source):
         return {'players':{'1001':'match'} if source=='ranked' else

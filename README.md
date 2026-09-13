@@ -1,21 +1,23 @@
-# 🔥 CHAMAS FLAMEJANTES V25.5 — RANKING COMPLETO
+# 🔥 CHAMAS FLAMEJANTES V26 — COMUNIDADE E JORNADA
 
-Leia **ATUALIZACAO_V25_5.md** para as novidades. As regras vigentes estão em **Temporadas** no próprio site. Os capítulos antigos abaixo são histórico de versões.
+Pacote completo do site para GitHub/Railway. Leia **ATUALIZACAO_V26.md** para conhecer os recursos e a instalação.
 
-- Ranking da Arena completo, sem limite de dez jogadores; inclui os perfis ativos com AoMStats que ainda estão sem partidas ou pontos.
-- Luz verde brilhante nas fotos de quem aparece em salas abertas, partidas ranqueadas ou Customs em andamento no AoMStats. Atualização automática, com expiração e indicação de sala ou partida.
-- Pontuação base: +30 por vitória e −30 por derrota, incluindo os resultados já registrados na temporada atual. O recálculo automático corrige o caso de 5 vitórias e 1 derrota normal que mostrava 130 para 120 pontos.
-- O saldo e o progresso atual dos emblemas são reconstruídos na ordem dos resultados. Bônus registrados, históricos, meses encerrados e conquistas anteriores são preservados.
-- Piso zero sem dívida: mesmo com 1 vitória e 7 derrotas, uma vitória normal partindo de zero dá 30 pontos.
-- Bônus por diferença de Elo, três desafios por adversário ao dia, bloqueio de Elo e emblemas permanecem.
-- Tag “Mais desafiado” para os líderes em desafios X1 recebidos no mês, compartilhada em empates.
-- Dupla formada visível nos dois perfis e na janela flutuante. Qualquer integrante pode desfazê-la no próprio perfil, no 2×2 ou na página da equipe, desde que não haja duelo ativo.
-- Convite respondido sai das notificações. Aviso de aceite permanece até ser lido. Ler notificações não desfaz a dupla.
-- Notificações automáticas a cada 3 segundos. Históricos, fotos redondas, dez emblemas e conquistas anteriores preservados.
+- Presença do AoMStats com luz verde; quando houver uma partida detectada, mostra o ID e o botão **Copiar ID**, com atualização e expiração automáticas.
+- Rivalidades X1 com placar, histórico, última vitória e maior sequência de cada jogador.
+- Gráfico mensal de evolução dos pontos, com vitórias, derrotas, bônus por Elo e saldo após cada partida.
+- Mural com estratégias, novidades, cards de vitórias confirmadas, comentários e curtidas.
+- Agendamento de X1, duplas e trios, com aceite dos dois lados e lembretes nas notificações do site.
+- Conquistas permanentes: primeira vitória, cinco vitórias seguidas na mesma modalidade e vitória sobre Elo maior registrado no duelo.
+- Capas de perfil com as artes dos deuses e panteões, mantendo foto redonda e emblemas.
+- Build orders favoritas e anotações privadas, salvas na conta Google.
+- Replays dos duelos concluídos: envio pelos participantes, download público e comentários para análise.
+- Ranking completo, tag “Mais desafiado”, dupla no perfil, notificações automáticas e todos os recursos anteriores preservados.
 
-**Atualização:** envie o conteúdo completo deste ZIP ao GitHub conectado ao Railway, incluindo os módulos, templates e arquivos `static`. Preserve banco, volume, uploads e variáveis. `/health` deverá indicar `25.5-ranking-completo`.
+**Pontuação:** +30 por vitória e −30 por derrota como base; os bônus por Elo e demais regras permanecem. O piso é zero, sem dívida acumulada. Históricos e emblemas anteriores são preservados.
 
-**Validação:** confira ATUALIZACAO_V25_5.md. A lista foi conferida em banco local isolado. O site publicado ainda precisa receber este pacote.
+**Atualização:** envie o conteúdo completo ao GitHub conectado ao Railway, incluindo os módulos, templates e arquivos `static`. Preserve banco, volume, uploads e variáveis. `/health` deverá indicar `26-comunidade-jornada`. Os replays ficam na pasta `arena_replays`, no mesmo volume do banco.
+
+**Validação:** 137 testes Python e 40 JavaScript passaram. As consultas externas foram simuladas; as novas telas foram verificadas por renderização de HTML e testes de interação em JavaScript. O navegador de teste não estava disponível neste ambiente. O site publicado ainda precisa receber este pacote.
 
 ---
 

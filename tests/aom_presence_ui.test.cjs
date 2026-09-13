@@ -11,12 +11,20 @@ function avatar(id) {
   return {dataset:{aomPlayer:String(id)}, getAttribute:key=>attrs.get(key)??null,
     setAttribute:(key,value)=>attrs.set(key,value),removeAttribute:key=>attrs.delete(key)};
 }
-function setup(responses, initial=[avatar(1),avatar(1),avatar(2)]) {
+function matchControls(id) {
+  const value={textContent:''},note={textContent:''};
+  const wrapper={dataset:{aomMatch:String(id)},hidden:true};
+  const button={dataset:{copyMatch:''},textContent:'Copiar ID',disabled:false,
+    closest:selector=>selector==='[data-copy-match]'?button:selector==='[data-aom-match]'?wrapper:null};
+  wrapper.querySelector=selector=>selector==='[data-copy-match]'?button:selector==='[data-aom-match-value]'?value:selector==='[data-aom-copy-status]'?note:null;
+  return Object.assign(wrapper,{button,value,note});
+}
+function setup(responses, initial=[avatar(1),avatar(1),avatar(2)], matches=[], clipboard={writeText:async()=>{}}) {
   let now=100000,calls=0;
   const events={},windowEvents={},timers=new Map(),intervals=[];
   const nodes=initial,statuses=[{dataset:{aomStatus:'1'},textContent:''}];
   const document={hidden:false,querySelector:()=>nodes[0]||null,
-    querySelectorAll:selector=>selector==='[data-aom-player]'?nodes:statuses,
+    querySelectorAll:selector=>selector==='[data-aom-player]'?nodes:selector==='[data-aom-status]'?statuses:selector==='[data-aom-match]'?matches:[],
     addEventListener:(event,fn)=>events[event]=fn};
   const window={addEventListener:(event,fn)=>windowEvents[event]=fn};
   const fetch=async(url,options)=>{
@@ -28,10 +36,10 @@ function setup(responses, initial=[avatar(1),avatar(1),avatar(2)]) {
     if (response instanceof Error) throw response;
     return {ok:true,json:async()=>response||{players:{}}};
   };
-  vm.runInNewContext(source,{document,window,fetch,AbortController,console,Date:{now:()=>now},
+  vm.runInNewContext(source,{document,window,fetch,navigator:{clipboard},AbortController,console,Date:{now:()=>now},
     setInterval:(fn,ms)=>intervals.push({fn,ms}),setTimeout:(fn,ms)=>{
       const id=Symbol();timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id)});
-  return {nodes,statuses,document,events,windowEvents,intervals,timers,
+  return {nodes,statuses,matches,document,events,windowEvents,intervals,timers,
     get calls(){return calls;},advance:ms=>now+=ms};
 }
 
@@ -91,4 +99,59 @@ test('invalid states and expired confirmations never turn green and lifetime is 
   state.advance(20000);await state.intervals[0].fn();await settle();
   assert.equal(state.nodes[0].dataset.aomState,'match');state.document.hidden=true;
   state.advance(90000);await state.intervals[0].fn();assert.equal(state.nodes[0].dataset.aomState,undefined);
+});
+
+test('detected match ID is displayed and clipboard receives only the numeric ID',async()=>{
+  const controls=matchControls(1),copied=[];
+  const state=setup([{players:{1:{state:'match',match_id:'43270001',expires_in:90}}}],undefined,[controls],{writeText:async text=>copied.push(text)});
+  await settle();assert.equal(controls.hidden,false);assert.equal(controls.value.textContent,'43270001');
+  assert.match(state.nodes[0].getAttribute('title'),/43270001/);
+  let stopped=false,prevented=false;
+  await state.events.click({target:controls.button,preventDefault(){prevented=true;},stopPropagation(){stopped=true;}});
+  assert.deepEqual(copied,['43270001']);assert.equal(stopped,true);assert.equal(prevented,true);
+  assert.equal(controls.button.textContent,'ID copiado ✓');
+});
+
+test('same online state with a new match ID updates both tooltip and copy controls without reload',async()=>{
+  const controls=matchControls(1);
+  const state=setup([{players:{1:{state:'match',match_id:'43270001',expires_in:90}}},
+    {players:{1:{state:'match',match_id:'43270099',expires_in:90}}}],undefined,[controls]);
+  await settle();controls.button.textContent='ID copiado ✓';controls.note.textContent='copiado';
+  state.advance(20000);await state.intervals[0].fn();await settle();
+  assert.equal(controls.value.textContent,'43270099');assert.equal(controls.button.dataset.copyMatch,'43270099');
+  assert.equal(controls.button.textContent,'Copiar ID');assert.equal(controls.note.textContent,'');
+  assert.match(state.nodes[0].getAttribute('title'),/43270099/);
+});
+
+test('a room, missing ID or invalid provider ID never enables copying a match',async()=>{
+  for(const item of [{state:'lobby',match_id:'43270002'},{state:'match'},{state:'match',match_id:'x<script>'},
+    {state:'match',match_id:'0'},{state:'match',match_id:43270002}]){
+    const controls=matchControls(1),state=setup([{players:{1:{...item,expires_in:90}}}],undefined,[controls]);
+    await settle();assert.equal(controls.hidden,true);assert.equal(controls.button.disabled,true);
+    assert.equal(controls.button.dataset.copyMatch,'');assert.equal(state.nodes[0].dataset.aomMatchId,'');
+  }
+});
+
+test('expired evidence clears the ID and a stale copy click cannot copy it',async()=>{
+  const controls=matchControls(1),copied=[];
+  const state=setup([{players:{1:{state:'match',match_id:'43270001',expires_in:15}}}],undefined,[controls],{writeText:async text=>copied.push(text)});
+  await settle();state.document.hidden=true;state.advance(15000);
+  await state.events.click({target:controls.button,preventDefault(){},stopPropagation(){}});
+  assert.deepEqual(copied,[]);assert.equal(controls.hidden,true);assert.equal(controls.value.textContent,'');
+  assert.equal(controls.button.disabled,true);assert.equal(state.nodes[0].dataset.aomMatchId,undefined);
+});
+
+test('profile modal gets a valid match ID from shared presence without another fetch',async()=>{
+  const state=setup([{players:{1:{state:'match',match_id:'43270001',expires_in:90}}}]);await settle();
+  const controls=matchControls(1);state.matches.push(controls);state.nodes.push(avatar(1));
+  state.events['chamas:content']();await settle();
+  assert.equal(controls.hidden,false);assert.equal(controls.value.textContent,'43270001');assert.equal(state.calls,1);
+});
+
+test('clipboard rejection keeps the ID readable and offers manual copying',async()=>{
+  const controls=matchControls(1);
+  const state=setup([{players:{1:{state:'match',match_id:'43270001',expires_in:90}}}],undefined,[controls],{writeText:async()=>{throw new Error('denied');}});
+  await settle();await state.events.click({target:controls.button,preventDefault(){},stopPropagation(){}});
+  assert.equal(controls.hidden,false);assert.equal(controls.value.textContent,'43270001');
+  assert.match(controls.note.textContent,/copie manualmente/);assert.equal(controls.button.disabled,false);
 });

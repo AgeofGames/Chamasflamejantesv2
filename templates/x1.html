@@ -51,7 +51,7 @@
         <div class="social-player-card-body"><small>{% if p.social_enabled %}PERFIL ATIVO{% else %}PERFIL DA COMUNIDADE{% endif %}</small><h3{% if player_name_color(p) %} style="color:{{player_name_color(p)}}"{% endif %}>{{p.nickname}}</h3>
           {{challenged_tag(p.most_challenged_count)}}
           {% if p.quote %}<blockquote>“{{p.quote}}”</blockquote>{% endif %}
-          <div class="social-player-mini-stats"><span><b>{{p.stats.wins}}</b> vitórias</span><span><b>{{p.stats.losses}}</b> derrotas</span><span><b>{{p.elo_1v1 or '—'}}</b> Elo</span></div>
+          {% with presence_id=p.id %}{% include '_aom_match_controls.html' %}{% endwith %}<div class="social-player-mini-stats"><span><b>{{p.stats.wins}}</b> vitórias</span><span><b>{{p.stats.losses}}</b> derrotas</span><span><b>{{p.elo_1v1 or '—'}}</b> Elo</span></div>
           <a class="open-build" href="{{url_for('social_profile',player_id=p.id)}}"><span>{{'VER PERFIL E DESAFIAR' if p.social_enabled else 'VER PERFIL'}}</span><b>→</b></a>
         </div>
       </article>
