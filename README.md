@@ -1,4 +1,21 @@
-# 🔥 CHAMAS FLAMEJANTES V24.2 — EMBLEMAS DA ARENA
+# 🔥 CHAMAS FLAMEJANTES V25 — PONTOS E NOTIFICAÇÕES
+
+Leia **ATUALIZACAO_V25.md** para publicar e conferir as regras vigentes. Os capítulos antigos abaixo são histórico de versões; as regras da V25 prevalecem.
+
+- Notificações de desafios ativos atualizadas automaticamente a cada 3 segundos, com histórico preservado nos perfis.
+- Pontuação base +30/−20; vitória do menor Elo com diferença superior a 100 vale +90/−90, aumentando 30 a cada nova faixa de 100.
+- Saldo auditável por partida e correção automática da temporada corrente. Rebaixamento de emblema separado dos pontos.
+- Três desafios por par de adversários ao dia, em ambos os sentidos e somando modalidades. Cancelamentos não liberam a cota.
+- Bloqueio entre Elo 1300 ou mais e Elo 1000 ou menos. Regras e exemplos visíveis em Temporadas.
+- Fotos redondas e os dez emblemas da V24.2 preservados.
+
+**Atualização:** envie o conteúdo completo deste ZIP ao GitHub conectado ao Railway, incluindo os módulos, templates e arquivos `static`. Preserve banco, volume, uploads e variáveis. `/health` deverá indicar `25-pontos-notificacoes`.
+
+**Validação:** 81 testes Python e 20 JavaScript. Testes locais com serviços externos simulados. O site publicado ainda precisa receber este pacote.
+
+---
+
+# Histórico das versões anteriores
 
 ## Artes dos emblemas da V24.2
 

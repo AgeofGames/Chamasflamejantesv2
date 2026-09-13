@@ -1,0 +1,10 @@
+{% if duel.scoring %}
+<section class="arena-season-rules arena-points-statement">
+ <h2>Pontos desta partida</h2>
+ <div class="arena-rules-table"><table><thead><tr><th>Jogador</th><th>Resultado</th><th>Saldo após a partida</th></tr></thead><tbody>
+ {% for entry in duel.scoring %}<tr><td>{{entry.nickname}}</td><td>{% if entry.points_delta is not none %}{{'+' if entry.points_delta>0 else ''}}{{entry.points_delta}} pts{% else %}Regra da temporada anterior{% endif %}</td><td>{{entry.balance_after if entry.balance_after is not none else entry.points_after}} pts</td></tr>{% endfor %}
+ </tbody></table></div>
+ <p>{% if duel.scoring[0].rating_self is not none and duel.scoring[0].rating_opponent is not none %}Elo registrado para o cálculo: {{duel.scoring[0].rating_self|round(2)}} × {{duel.scoring[0].rating_opponent|round(2)}}.{% else %}Sem Elo histórico disponível para bônus; pontuação base da temporada.{% endif %} O rebaixamento de emblema não tira pontos extras do ranking.</p>
+ <a href="{{url_for('arena_seasons_page',_anchor='regras')}}">Entenda a pontuação →</a>
+</section>
+{% endif %}

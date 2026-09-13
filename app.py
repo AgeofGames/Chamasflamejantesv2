@@ -20,6 +20,7 @@ from urllib.parse import quote, urlencode, urljoin, urlparse
 import requests
 from aomstats_matches import lookup_match, parse_match_page
 import arena_seasons
+import arena_rules
 from site_experience import install_experience
 from share_cards import render_arena_card, render_tournament_card
 from bs4 import BeautifulSoup
@@ -2099,6 +2100,18 @@ def social_duel_row(duel_id=None, share_token=None):
     return get_db().execute("SELECT * FROM social_duels WHERE share_token=?", (share_token,)).fetchone()
 
 
+def prime_duel_scores(rows):
+    cache = g.setdefault('arena_duel_scores', {})
+    missing = sorted({r['id'] for r in rows if r['status']=='completed'} - cache.keys())
+    for offset in range(0,len(missing),400):
+        batch = missing[offset:offset+400]
+        for did in batch: cache[did] = []
+        for result in get_db().execute(f'''SELECT r.*,p.nickname FROM arena_results r
+          JOIN players p ON p.id=r.player_id WHERE r.queue='x1'
+          AND r.event_id IN ({','.join('?' for _ in batch)}) ORDER BY r.won DESC''',batch):
+            cache[result['event_id']].append(dict(result))
+
+
 def social_duel_payload(row):
     if not row:
         return None
@@ -2143,6 +2156,8 @@ def social_duel_payload(row):
             "created_at": row["finished_at"],
         })
     data["chat_events"] = events
+    prime_duel_scores([row])
+    data['scoring'] = g.arena_duel_scores.get(row['id'],[])
     endpoint_url = (
         url_for("social_duel_result_share", share_token=row["share_token"])
         if row["status"] == "completed"
@@ -2174,6 +2189,7 @@ def social_duels_query(where="", params=(), limit=100):
     sql += " ORDER BY id DESC LIMIT ?"
     rows = get_db().execute(sql, (*params, int(limit))).fetchall()
     prime_social_players({row[key] for row in rows for key in ('challenger_id','challenged_id','winner_id','loser_id') if row[key]})
+    prime_duel_scores(rows)
     return [social_duel_payload(row) for row in rows]
 
 
@@ -2202,6 +2218,7 @@ def public_duel_history(player_id=None, per_page=12):
         ORDER BY COALESCE(NULLIF(finished_at,''),NULLIF(responded_at,''),requested_at) DESC,id DESC
         LIMIT ? OFFSET ?""", (*params, per_page, (page - 1) * per_page)).fetchall()
     prime_social_players({row[key] for row in rows for key in ('challenger_id','challenged_id','winner_id','loser_id') if row[key]})
+    prime_duel_scores(rows)
     items = []
     for row in rows:
         duel = social_duel_payload(row)
@@ -2218,7 +2235,8 @@ def social_notification_items(account_id, limit=12):
         """SELECT n.*,p.nickname actor_name,p.nickname_color actor_name_color,
                   p.avatar_url,p.avatar_file,d.status duel_status,d.challenged_id,
                   tm.state team_invite_state,t.archived team_archived,
-                  td.status team_duel_status,td.captain_b team_captain_b
+                  td.status team_duel_status,td.captain_b team_captain_b,
+                  SUM(CASE WHEN n.is_read=0 THEN 1 ELSE 0 END) OVER() unread_total
            FROM social_notifications n
            LEFT JOIN players p ON p.id=n.actor_player_id
            LEFT JOIN social_duels d ON d.id=n.duel_id
@@ -2228,7 +2246,13 @@ def social_notification_items(account_id, limit=12):
            LEFT JOIN arena_team_members tm ON tm.team_id=t.id AND tm.player_id=recipient.player_id
            LEFT JOIN arena_team_duels td ON n.arena_url LIKE '/arena/equipes/duelo/%'
              AND td.id=CAST(SUBSTR(n.arena_url,LENGTH('/arena/equipes/duelo/')+1) AS INTEGER)
-           WHERE n.account_id=? ORDER BY n.id DESC LIMIT ?""",
+           WHERE n.account_id=?
+             AND (n.duel_id IS NULL OR d.status IN ('pending','accepted','match_pending'))
+             AND (n.arena_url NOT LIKE '/arena/equipes/duelo/%'
+                  OR td.status IN ('pending','accepted','match_pending'))
+             AND (n.arena_url NOT LIKE '/arena/equipe/%'
+                  OR (t.archived=0 AND (n.kind<>'team_invite' OR tm.state='invited')))
+           ORDER BY n.id DESC LIMIT ?""",
         (account_id, int(limit)),
     ).fetchall()
     return [{key: row[key] for key in row.keys()} for row in rows]
@@ -2242,11 +2266,8 @@ def inject_globals_v5():
         unread_notifications = 0
         notification_items = []
         if social_user:
-            unread_notifications = get_db().execute(
-                "SELECT COUNT(*) c FROM social_notifications WHERE account_id=? AND is_read=0",
-                (social_user["account_id"],),
-            ).fetchone()["c"]
             notification_items = social_notification_items(social_user["account_id"])
+            unread_notifications = notification_items[0]['unread_total'] if notification_items else 0
         return {
             "site": settings(),
             "nav_tournaments": [t for t in all_tournaments(public_only=True) if t["status"] != "finalizado"][:10],
@@ -3788,9 +3809,10 @@ def social_profile(player_id):
     can_challenge = bool(
         viewer and viewer["player_id"] and viewer["player_id"] != player_id and profile["social_enabled"]
     )
+    challenge_rules = arena_rules.challenge_check(get_db(),[viewer['player_id']],[player_id]) if can_challenge else None
     profile_url = absolute_site_url(url_for("social_profile", player_id=player_id))
     return render_template(
-        "social_profile.html", profile=profile, history=history, can_challenge=can_challenge,
+        "social_profile.html", profile=profile, history=history, can_challenge=can_challenge, challenge_rules=challenge_rules,
         is_owner=is_owner, profile_url=profile_url,
         share=build_share_links(profile_url, f"Perfil de {profile['nickname']} na Arena X1"),
     )
@@ -3803,9 +3825,11 @@ def social_profile_card(player_id):
         abort(404)
     profile = social_player_payload(player)
     viewer = current_social_account()
+    can_challenge = bool(viewer and viewer['player_id'] and viewer['player_id']!=player_id and profile['social_enabled'])
     return render_template(
         "_social_profile_card.html", profile=profile, history=public_duel_history(player_id, per_page=5),
-        can_challenge=bool(viewer and viewer["player_id"] and viewer["player_id"] != player_id and profile["social_enabled"]),
+        can_challenge=can_challenge,
+        challenge_rules=arena_rules.challenge_check(get_db(),[viewer['player_id']],[player_id]) if can_challenge else None,
         compact=True,
     )
 
@@ -3833,13 +3857,19 @@ def social_challenge_player(player_id):
         db.rollback()
         flash("Já existe um desafio ativo entre vocês.", "error")
         return redirect(url_for("social_duel", duel_id=duplicate["id"]))
+    rules = arena_rules.challenge_check(db,[challenger_id],[player_id])
+    if not rules['allowed']:
+        db.rollback()
+        flash(rules['reason'], 'error')
+        return redirect(url_for('social_profile',player_id=player_id))
     message = (request.form.get("message") or "Prepare-se para a batalha!").strip()[:280]
     cursor = db.execute(
-        """INSERT INTO social_duels(challenger_id,challenged_id,message,share_token)
-           VALUES (?,?,?,?)""",
-        (challenger_id, player_id, message, secrets.token_urlsafe(18)),
+        """INSERT INTO social_duels(challenger_id,challenged_id,message,share_token,rating_a,rating_b,rating_source)
+           VALUES (?,?,?,?,?,?,'challenge')""",
+        (challenger_id, player_id, message, secrets.token_urlsafe(18), rules['rating_a'], rules['rating_b']),
     )
     duel_id = cursor.lastrowid
+    arena_rules.record_attempt(db,'x1',duel_id,[challenger_id],[player_id])
     create_social_notification(
         player_id, challenger_id, duel_id, "challenge",
         f"{viewer['nickname']} desafiou você para um X1.",
@@ -4144,8 +4174,7 @@ def social_notifications():
         get_db().execute("UPDATE social_notifications SET is_read=1 WHERE account_id=?", (account["account_id"],))
         get_db().commit()
         return redirect(safe_next_url(request.form.get("next"), "social_notifications"))
-    rows = social_notification_items(account["account_id"], 100)
-    return render_template("social_notifications.html", notifications=rows)
+    return render_template("social_notifications.html")
 
 
 @app.get('/api/notificacoes')
@@ -4154,10 +4183,7 @@ def social_notifications_feed():
     if not account:
         return jsonify(error='Entre novamente para ver suas notificações.'), 401
     items = social_notification_items(account['account_id'])
-    unread = get_db().execute(
-        'SELECT COUNT(*) FROM social_notifications WHERE account_id=? AND is_read=0',
-        (account['account_id'],)
-    ).fetchone()[0]
+    unread = items[0]['unread_total'] if items else 0
     cursor = hashlib.sha256(json.dumps([items, unread], sort_keys=True).encode()).hexdigest()[:20]
     if request.args.get('cursor') == cursor:
         return '', 204
@@ -5011,7 +5037,7 @@ def site_share_image():
 @app.get("/health")
 def health():
     get_db().execute('SELECT 1').fetchone()
-    return {"version":"24.2-emblemas","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"25-pontos-notificacoes","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 @app.errorhandler(400)
@@ -5037,11 +5063,11 @@ install_teams(app, globals())
 
 init_db()
 migrate_v6_db()
-print("🔥 CHAMAS FLAMEJANTES V24.2 — EMBLEMAS DA ARENA\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V25 — PONTOS E NOTIFICAÇÕES\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V24.2 — EMBLEMAS DA ARENA")
+    print(" 🔥 CHAMAS FLAMEJANTES V25 — PONTOS E NOTIFICAÇÕES")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

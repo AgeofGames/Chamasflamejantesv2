@@ -77,11 +77,11 @@
   <button class="mobile-nav-toggle" type="button" aria-expanded="true" aria-controls="main-navigation"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg><span>Menu</span></button>
 </header>
 {% if social_user %}<aside class="notification-popover" id="notification-popover" hidden aria-label="Notificações da Arena X1">
-  <header><div><small>MENSAGENS DA ARENA</small><h2>Notificações</h2></div><button type="button" data-notification-close aria-label="Fechar">×</button></header>
-  <div class="notification-popover-list">
+  <header><div><small>DESAFIOS ATIVOS · ATUALIZAÇÃO AUTOMÁTICA</small><h2>Notificações</h2></div><button type="button" data-notification-close aria-label="Fechar">×</button></header>
+  <div class="notification-popover-list" data-notification-list>
     {% include '_notification_items.html' %}
   </div>
-  <footer><form method="post" action="{{url_for('social_notifications')}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><input type="hidden" name="next" value="{{request.full_path.rstrip('?')}}"><button type="submit">MARCAR TODAS COMO LIDAS</button></form><a href="{{url_for('social_notifications')}}">VER HISTÓRICO</a></footer>
+  <footer><form method="post" action="{{url_for('social_notifications')}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><input type="hidden" name="next" value="{{request.full_path.rstrip('?')}}"><button type="submit">MARCAR TODAS COMO LIDAS</button></form><a href="{{url_for('social_my_profile')}}">HISTÓRICO NO PERFIL</a></footer>
 </aside>{% endif %}
 <main id="main-content" tabindex="-1">{% with messages=get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-wrap" aria-live="polite">{% for category,message in messages %}<div class="flash {{category}}" role="status"><span>{{message}}</span><button type="button" data-dismiss-flash aria-label="Fechar aviso">×</button></div>{% endfor %}</div>{% endif %}{% endwith %}{% block content %}{% endblock %}</main>
 <div class="toast-region" aria-live="polite" aria-atomic="true"></div>

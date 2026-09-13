@@ -11,6 +11,8 @@
   <div class="profile-popover-links"><a class="btn" href="{{url_for('social_profile',player_id=profile.id)}}">VER PERFIL COMPLETO</a>{% if profile.aomstats_url %}<a class="mini-link" href="{{profile.aomstats_url}}" target="_blank" rel="noopener">AoMStats ↗</a>{% endif %}</div>
   {% include '_profile_history.html' %}
   {% if can_challenge %}
-  <form class="profile-challenge-form" method="post" action="{{url_for('social_challenge_player',player_id=profile.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><label><span>Mensagem do desafio</span><textarea name="message" maxlength="280" placeholder="Prepare-se para a batalha!">Prepare-se para a batalha!</textarea></label><button class="btn primary">⚔️ DESAFIAR {{profile.nickname}}</button></form>
+  {% include '_arena_challenge_rules.html' %}
+  {% if not challenge_rules or challenge_rules.allowed %}
+  <form class="profile-challenge-form" method="post" action="{{url_for('social_challenge_player',player_id=profile.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><label><span>Mensagem do desafio</span><textarea name="message" maxlength="280" placeholder="Prepare-se para a batalha!">Prepare-se para a batalha!</textarea></label><button class="btn primary">⚔️ DESAFIAR {{profile.nickname}}</button></form>{% endif %}
   {% elif not social_user %}<a class="btn primary full-button" href="{{url_for('social_login',next=url_for('social_profile',player_id=profile.id))}}">ENTRAR PARA DESAFIAR</a>{% elif not profile.social_enabled %}<p class="profile-unavailable">Esse jogador ainda não ativou uma conta social.</p>{% endif %}
 </article>

@@ -1,3 +1,5 @@
+> Documento histórico da V24. As regras de pontuação, limites e atualização vigentes estão em ATUALIZACAO_V25.md.
+
 # Arena V24: equipes e temporadas
 
 ## Atualização

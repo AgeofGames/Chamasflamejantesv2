@@ -20,7 +20,8 @@
   <input type="hidden" name="_csrf" value="{{csrf_token()}}"><label>ID da partida<input name="match_id" inputmode="numeric" pattern="[0-9]{5,12}" minlength="5" maxlength="12" required value="{{duel.match_id}}" placeholder="Ex.: 43115933"></label>
   <button class="btn primary">Verificar no AoMStats</button><p class="arena-request-status" role="status" aria-live="polite"></p>
   {% if duel.match_error %}<p class="arena-muted">{{duel.match_error}}</p>{% endif %}
- </form>{% elif duel.status=='completed' %}<div class="arena-result-summary"><h2>{{duel.name_a if duel.winner_side=='a' else duel.name_b}} venceu!</h2><p>+30 pontos para cada vencedor. A pontuação e o histórico de todos os integrantes foram atualizados.</p><a class="btn" href="{{url_for('arena_seasons_page',modo=duel.size~'v'~duel.size)}}">Ver ranking da temporada</a></div>{% elif duel.status in ('accepted','match_pending') %}<p class="arena-muted">{{duel.match_error or 'Os integrantes informarão o ID depois que a partida terminar.'}}</p>{% endif %}
+ </form>{% elif duel.status=='completed' %}<div class="arena-result-summary"><h2>{{duel.name_a if duel.winner_side=='a' else duel.name_b}} venceu!</h2><p>A pontuação de cada integrante está no extrato abaixo. O histórico de todos foi preservado.</p><a class="btn" href="{{url_for('arena_seasons_page',modo=duel.size~'v'~duel.size)}}">Ver ranking da temporada</a></div>{% elif duel.status in ('accepted','match_pending') %}<p class="arena-muted">{{duel.match_error or 'Os integrantes informarão o ID depois que a partida terminar.'}}</p>{% endif %}
+ {% include '_arena_points_statement.html' %}
  {% with card_title=('Compartilhar vitória em equipe' if duel.status=='completed' else 'Compartilhar desafio'),card_image_url=duel.image,card_alt=duel.title,card_download_url=duel.download %}{% include '_share_card_panel.html' %}{% endwith %}
 </section>
 {% endblock %}

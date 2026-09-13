@@ -1,4 +1,14 @@
 /* V24: compact Arena surfaces. All rules stay inside Arena components. */
+.arena-rules-table{max-width:100%;overflow-x:auto;margin:18px 0;border:1px solid #ffffff1a;border-radius:9px}
+.arena-rules-table table{width:100%;border-collapse:collapse;font-size:13px;text-align:left;line-height:1.6}
+.arena-rules-table th,.arena-rules-table td{padding:12px 14px;border-bottom:1px solid #ffffff14;vertical-align:top}
+.arena-rules-table th{background:#d86b2115;color:#efbb89;font-weight:600}.arena-rules-table tr:last-child td{border-bottom:0}
+.arena-season-rules h3{font-size:18px;margin-top:28px;color:#efd5b6}.arena-season-rules p{font-size:13px;color:#bbc1c8;line-height:1.8}
+.arena-season-rules a,.arena-challenge-rules a{color:#f0b082;font-size:12px}.arena-points-statement{margin:26px 0}
+.arena-challenge-rules{padding:15px;margin:14px 0;border:1px solid #c6824145;border-radius:9px;background:#b35c1910}
+.arena-challenge-rules p{font-size:13px;line-height:1.65;margin:0 0 8px}.arena-challenge-rules small{display:block;color:#adb3bb;font-size:11px;line-height:1.6}
+.arena-challenge-rules a{display:inline-block;margin-top:8px}.arena-history-points{color:#e7bd8d;font-size:12px}
+@media(max-width:600px){.arena-rules-table th,.arena-rules-table td{padding:9px 8px;font-size:11px}.notification-popover header small{letter-spacing:.03em;font-size:8px}}
 .arena-mode-tabs{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 26px}
 .arena-mode-tabs a{padding:9px 15px;border:1px solid #ffffff19;border-radius:7px;color:#b8bdc4;font-family:inherit;font-size:12px;font-weight:600;line-height:1.4;text-decoration:none;background:#0c1014b3}
 .arena-mode-tabs a:hover,.arena-mode-tabs a[aria-current]{color:#fff;border-color:#e96a27;background:#dc591a20}

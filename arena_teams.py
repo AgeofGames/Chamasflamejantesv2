@@ -9,6 +9,7 @@ import time
 from flask import abort, flash, redirect, render_template, request, url_for, jsonify
 from aomstats_matches import lookup_match
 import arena_seasons
+import arena_rules
 from share_cards import render_team_card
 
 ACTIVE = ('pending','accepted','match_pending')
@@ -66,6 +67,9 @@ def install_teams(app, api):
         roster = db().execute('SELECT * FROM arena_duel_members WHERE duel_id=? ORDER BY side,player_id',(did,)).fetchall()
         api['prime_social_players']([r['player_id'] for r in roster])
         data['members'] = [dict(r,profile=player(r['player_id'])) for r in roster]
+        data['scoring'] = [dict(r) for r in db().execute('''SELECT r.*,p.nickname FROM arena_results r
+          JOIN players p ON p.id=r.player_id WHERE r.queue=? AND r.event_id=? ORDER BY r.won DESC,r.player_id''',
+          (f"{row['size']}v{row['size']}",did))]
         data['a'] = [m for m in data['members'] if m['side']=='a']
         data['b'] = [m for m in data['members'] if m['side']=='b']
         data['label'] = api['SOCIAL_DUEL_LABELS'].get(row['status'],'Duelo de equipes')
@@ -198,9 +202,17 @@ def install_teams(app, api):
         if not a['ready'] or not b['ready'] or a['size']!=b['size'] or team_ids(a)&team_ids(b) or a['busy'] or b['busy']:
             db().rollback(); flash('As duas equipes precisam estar completas, na mesma modalidade e sem outro duelo ativo.','error')
             return redirect(url_for('teams_profile',tid=tid))
-        did=db().execute('''INSERT INTO arena_team_duels(team_a,team_b,size,name_a,name_b,captain_a,captain_b,message,share_token)
-          VALUES(?,?,?,?,?,?,?,?,?)''',(mine_id,tid,a['size'],a['name'],b['name'],pid,b['captain_id'],
-          request.form.get('message','Preparem-se para a batalha!').strip()[:280],secrets.token_urlsafe(18))).lastrowid
+        queue = f"{a['size']}v{a['size']}"
+        rules = arena_rules.challenge_check(db(),team_ids(a),team_ids(b),queue)
+        if not rules['allowed']:
+            db().rollback(); flash(rules['reason'],'error')
+            return redirect(url_for('teams_profile',tid=tid))
+        did=db().execute('''INSERT INTO arena_team_duels(team_a,team_b,size,name_a,name_b,captain_a,captain_b,message,share_token,
+          rating_a,rating_b,rating_source) VALUES(?,?,?,?,?,?,?,?,?,?,?,'challenge')''',
+          (mine_id,tid,a['size'],a['name'],b['name'],pid,b['captain_id'],
+          request.form.get('message','Preparem-se para a batalha!').strip()[:280],secrets.token_urlsafe(18),
+          rules['rating_a'],rules['rating_b'])).lastrowid
+        arena_rules.record_attempt(db(),queue,did,team_ids(a),team_ids(b))
         for side,data in [('a',a),('b',b)]:
             for m in data['members']:
                 db().execute('INSERT INTO arena_duel_members VALUES(?,?,?,?)',(did,m['player_id'],side,m['aomstats_profile_id']))
@@ -323,7 +335,7 @@ def install_teams(app, api):
         rows=db().execute('''SELECT s.*,p.nickname,p.nickname_color,p.avatar_url,p.avatar_file,p.is_active
           FROM arena_standings s JOIN players p ON p.id=s.player_id
           WHERE s.season=? AND s.queue=? ORDER BY s.points DESC,s.wins DESC,s.losses,s.player_id''',(selected,queue)).fetchall()
-        return render_template('arena_seasons.html',records=[dict(r,badge=arena_seasons.badge(r['points'])) for r in rows],
+        return render_template('arena_seasons.html',records=[dict(r,badge=arena_seasons.standing_badge(r)) for r in rows],
             season=selected,months=months,queue=queue,queues=arena_seasons.QUEUES,tiers=arena_seasons.TIERS,
             current=arena_seasons.period())
 
@@ -336,3 +348,4 @@ def install_teams(app, api):
         return data
     app.jinja_env.globals['arena_profile_progress']=profile_progress
     app.jinja_env.globals['arena_badge']=arena_seasons.badge
+    app.jinja_env.globals['arena_outcome_points']=arena_rules.outcome_points

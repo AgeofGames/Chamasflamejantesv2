@@ -1,5 +1,5 @@
 <aside class="arena-ranking-panel monthly-ranking">
- <div class="section-head"><div><span class="eyebrow">TEMPORADA {{season[5:]}}/{{season[:4]}}</span><h2>Ranking {{queue|upper}}</h2><p>+30 por vitória · −15 por derrota</p></div></div>
+ <div class="section-head"><div><span class="eyebrow">TEMPORADA {{season[5:]}}/{{season[:4]}}</span><h2>Ranking {{queue|upper}}</h2><p>Base: +30 vitória · −20 derrota · bônus por Elo</p><a class="mini-link" href="{{url_for('arena_seasons_page',_anchor='regras')}}">REGRAS E BÔNUS →</a></div></div>
  <div class="monthly-ranking-list">
  {% for p in ranking[:10] %}<article class="monthly-ranking-row">
   <span class="rank-position">{{loop.index}}</span>

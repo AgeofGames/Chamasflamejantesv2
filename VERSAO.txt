@@ -1,23 +1,14 @@
-CHAMAS FLAMEJANTES V24.2 — EMBLEMAS DA ARENA
-Dez artes enviadas identificadas pelo nome: Brasa, Chama, Forja, Guardião, Guerreiro, Conquistador, Herói, Lenda, Titã e Imortal.
-Emblemas de 34 × 34 px após o nome nos rankings X1, duplas, trios e temporadas, do mesmo tamanho das fotos redondas.
-Fotos preservadas; foto e nome continuam abrindo o perfil do jogador.
-Perfil e janela flutuante com emblemas em destaque, cor do nível, pontos e barra de progresso.
-Catálogo e conquistas anteriores com as mesmas artes. Brasa inicial visível antes da primeira partida.
-WebP transparente otimizado: vinte arquivos em static/arena/emblemas, total de 353304 bytes.
-Health atual: 24.2-emblemas. Regras de pontos, emblemas e dados preservados.
-Desafios da comunidade em uma janela suspensa compacta; jogadores e ranking lado a lado.
-Arena 2×2 e 3×3 com convites, aceite dos integrantes, desafios entre capitães e elencos preservados.
-Ranking mensal por modalidade: +30 por vitória, −15 por derrota e 10 emblemas de Brasa a Imortal.
-Queda de nível após 3 derrotas seguidas ou 4 acumuladas; penalidades não se somam na mesma partida.
-Temporadas de Brasília, pontos zerados a cada mês e emblemas finais guardados sem apagar o histórico.
-Verificação de duplas/trios no AoMStats, IDs não reutilizáveis, pontos não duplicados e cards para redes sociais.
-66 testes Python e 14 JavaScript passaram. Atualização: ARENA_TEMPORADAS_V24.md. Health: 24-equipes-temporadas.
-Histórico com adversários, partidas, vitórias, derrotas e fugas no perfil e na janela flutuante.
-Desafios e IDs públicos; ações reservadas aos jogadores envolvidos.
-Cards de vitória e das sete modalidades de torneio, com prévia nos links e download da imagem.
-Logo da chama em ICO/PNG, endereço público da capa e novo link /compartilhar.
-Correção da confirmação de duelos pelo histórico do AoMStats, consulta com limite de tempo e opção de corrigir o ID.
-Capa para WhatsApp e outras redes, metadados Open Graph completos e imagem pública otimizada.
-Navegação responsiva • animações leves • perfil compacto • notificações atualizadas • checklist de estudo • consultas em lote • arquivos versionados e comprimidos.
-Admin existente preservado; em banco novo, crie o primeiro acesso em /setup.
+CHAMAS FLAMEJANTES V25 — PONTOS E NOTIFICAÇÕES
+Health: 25-pontos-notificacoes
+Notificações ativas com atualização automática a cada 3 segundos.
+Duelo encerrado sai das notificações e permanece no histórico do perfil.
+Base +30 por vitória, −20 por derrota. Bônus de azarão conforme diferença de Elo.
+Elo registrado no desafio; extrato de pontuação no duelo e no histórico X1.
+Correção automática da temporada corrente; temporadas anteriores preservadas.
+Rebaixamento de emblema separado da soma dos pontos do ranking.
+Três desafios por dia entre os mesmos adversários, somando sentidos e modalidades.
+Cancelamentos e recusas contam no limite. Dia de Brasília.
+Bloqueio entre Elo 1300 ou mais e Elo 1000 ou menos, nos dois sentidos.
+Fotos redondas, dez emblemas, torneios, perfis, equipes e cards preservados.
+81 testes Python e 20 JavaScript passaram, com consultas externas simuladas.
+Instruções completas e regras em ATUALIZACAO_V25.md.

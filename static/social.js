@@ -6,32 +6,52 @@
   const toggle = document.querySelector('[data-notification-toggle]');
   let opener, retryTrigger, controller, requestNumber = 0, previousOverflow = '';
   let feedCursor = '', feedBusy = false, feedEnabled = !!notifications, lastFeed = 0;
+  let feedDelay = 3000, feedAbort;
+  let knownUnread = Number(toggle?.querySelector('b')?.textContent) || 0;
   const focusable = container => [...container.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),textarea:not([disabled]),select:not([disabled]),[tabindex="0"]')]
     .filter(node => !node.closest('[hidden]') && node.getClientRects().length);
 
-  const refreshFeed = async () => {
-    if (!feedEnabled || feedBusy || document.hidden || Date.now() - lastFeed < 20000) return;
+  const applyFeed = data => {
+    let badge = toggle?.querySelector('b');
+    if (toggle && !badge && data.unread) { badge = document.createElement('b'); toggle.append(badge); }
+    if (badge) { badge.textContent = data.unread > 99 ? '99+' : String(data.unread); badge.hidden = !data.unread; }
+    toggle?.setAttribute('aria-label', data.unread ? 'Abrir notificações: ' + data.unread + ' não lidas' : 'Abrir notificações');
+    if (data.unread > knownUnread) window.chamasNotify?.('Você tem novas notificações na Arena.');
+    knownUnread = data.unread;
+    document.querySelectorAll('[data-notification-list]').forEach(list => {
+      const focused = list.contains(document.activeElement) ? document.activeElement : null;
+      const key = focused?.closest('[data-notification-id]')?.dataset.notificationId;
+      const action = focused?.closest('form')?.getAttribute('action');
+      const href = focused?.getAttribute('href');
+      const name = focused?.getAttribute('name'), value = focused?.getAttribute('value');
+      list.innerHTML = data.html;
+      // A completed duel must disappear even when its old action has focus.
+      if (focused) {
+        const row = [...list.querySelectorAll('[data-notification-id]')].find(node => node.dataset.notificationId === key);
+        const replacement = row && [...row.querySelectorAll('a,button')].find(node =>
+          href ? node.getAttribute('href') === href :
+            node.closest('form')?.getAttribute('action') === action &&
+            node.getAttribute('name') === name && node.getAttribute('value') === value);
+        (replacement || notifications?.querySelector('[data-notification-close]') || toggle)?.focus({preventScroll:true});
+      }
+    });
+    feedCursor = data.cursor;
+  };
+
+  const refreshFeed = async (force = false) => {
+    if (!feedEnabled || feedBusy || document.hidden || (!force && Date.now() - lastFeed < feedDelay)) return;
     feedBusy = true; lastFeed = Date.now();
-    const abort = new AbortController();
-    const timeout = setTimeout(() => abort.abort(), 10000);
+    const abort = new AbortController(); feedAbort = abort;
+    const timeout = setTimeout(() => abort.abort(), 8000);
     try {
       const response = await fetch('/api/notificacoes?cursor=' + encodeURIComponent(feedCursor), {signal:abort.signal, cache:'no-store', credentials:'same-origin'});
       if (response.status === 401) { feedEnabled = false; return; }
-      if (response.status === 204) return;
-      if (!response.ok) return;
+      if (response.status === 204) { feedDelay = 3000; return; }
+      if (!response.ok) throw new Error('Feed unavailable');
       const data = await response.json();
-      let badge = toggle?.querySelector('b');
-      if (toggle && !badge && data.unread) { badge = document.createElement('b'); toggle.append(badge); }
-      if (badge) { badge.textContent = data.unread > 99 ? '99+' : String(data.unread); badge.hidden = !data.unread; }
-      toggle?.setAttribute('aria-label', data.unread ? 'Abrir notificações: ' + data.unread + ' não lidas' : 'Abrir notificações');
-      const list = notifications?.querySelector('.notification-popover-list');
-      // Do not remove an action under someone's keyboard focus.
-      if (list && !list.contains(document.activeElement)) {
-        list.innerHTML = data.html;
-        feedCursor = data.cursor;
-      }
+      applyFeed(data); feedDelay = 3000;
     } catch (_) {
-      // Existing messages stay usable during temporary network failures.
+      feedDelay = Math.min(30000, feedDelay * 2);
     } finally { clearTimeout(timeout); feedBusy = false; }
   };
 
@@ -39,7 +59,7 @@
     if (!notifications) return;
     notifications.hidden = !open;
     toggle?.setAttribute('aria-expanded', String(open));
-    if (open) { refreshFeed(); notifications.querySelector('[data-notification-close]')?.focus(); }
+    if (open) { refreshFeed(true); notifications.querySelector('[data-notification-close]')?.focus(); }
     else if (restore) toggle?.focus();
   };
   const closeModal = () => {
@@ -133,9 +153,14 @@
     search.addEventListener('input',apply); apply();
   }
   if (notifications) {
-    setInterval(refreshFeed,45000);
-    document.addEventListener('visibilitychange', () => { if (!document.hidden) refreshFeed(); });
-    // The first response already includes messages, so no immediate duplicate request.
-    lastFeed=Date.now();
+    setInterval(() => refreshFeed(),3000);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) refreshFeed(true); else feedAbort?.abort();
+    });
+    window.addEventListener('focus', () => refreshFeed(true));
+    window.addEventListener('online', () => refreshFeed(true));
+    window.addEventListener('pagehide', () => feedAbort?.abort());
+    window.addEventListener('pageshow', () => refreshFeed(true));
+    refreshFeed(true);
   }
 })();

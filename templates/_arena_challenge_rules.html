@@ -1,0 +1,12 @@
+{% if challenge_rules %}
+<div class="arena-challenge-rules">
+ {% if challenge_rules.allowed %}
+ <p><strong>{{challenge_rules.remaining}} de 3 desafios disponíveis hoje</strong> contra este jogador.</p>
+ {% set win=arena_outcome_points(challenge_rules.rating_a,challenge_rules.rating_b) %}
+ {% set loss=arena_outcome_points(challenge_rules.rating_b,challenge_rules.rating_a) %}
+ <p>Se você vencer: <strong>+{{win[0]}} pts</strong> · Se perder: <strong>{{loss[1]}} pts</strong>.</p>
+ {% else %}<p role="status"><strong>{{challenge_rules.reason}}</strong></p>{% endif %}
+ <small>O limite soma os dois sentidos e as modalidades. Cancelar não libera outra tentativa.</small>
+ <a href="{{url_for('arena_seasons_page',_anchor='regras')}}">Ver regras e faixas de Elo →</a>
+</div>
+{% endif %}
