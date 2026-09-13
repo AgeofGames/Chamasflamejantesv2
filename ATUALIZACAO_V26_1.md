@@ -1,5 +1,7 @@
 # V26.1 — Perfil compacto e remoções
 
+Registro da versão anterior. Para a organização atual do perfil e as instruções desta entrega, consulte **ATUALIZACAO_V26_2.md**.
+
 ## Removido
 
 - Mural da comunidade, publicações de vitória/estratégia/novidade, curtidas e comentários do mural.

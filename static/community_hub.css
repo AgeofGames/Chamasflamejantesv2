@@ -80,3 +80,14 @@
 .hub-rivalry-shell .hub-rival-records p{font-size:11px}
 .hub-covers-shell{width:min(900px,calc(100% - 36px))}
 @media(max-width:600px){.social-profile-main .profile-journey-card{padding:16px}.social-profile-main .profile-owner-buttons .btn{font-size:10px}.hub-profile-journey .hub-chart-filters .btn{width:auto}.hub-profile-journey .hub-rival-row{gap:4px 10px}.hub-profile-journey .hub-rival-person{column-gap:8px}.hub-rivalry-shell .hub-rival-records{gap:0}}
+
+/* V26.2: identity and quick controls on the left; ordered profile cards on the right. */
+.social-profile-main .profile-identity-column{display:grid;align-content:start;gap:14px;min-width:0}
+.social-profile-main .profile-identity-column>.profile-identity-card{width:100%;max-width:none;margin:0;box-sizing:border-box}
+.social-profile-main .profile-identity-column>.profile-quick-actions{padding:12px;border-radius:12px;margin:0;box-sizing:border-box;min-width:0}
+.social-profile-main .profile-quick-actions .profile-owner-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.social-profile-main .profile-quick-actions .btn{display:flex;justify-content:center;align-items:center;width:100%;min-width:0;min-height:40px;margin:0;padding:8px 5px;font-size:10px;line-height:1.4;text-align:center;white-space:normal;box-sizing:border-box}
+.social-profile-main .profile-identity-column>.profile-duel-panel{padding:18px;border-radius:12px;min-width:0}
+.social-profile-main .profile-identity-column>.profile-duel-panel h2{font-size:21px;overflow-wrap:anywhere}
+.social-profile-main .profile-action-column>.arena-profile-progress{margin:0;min-width:0;padding:18px 20px;border-radius:12px}
+@media(max-width:600px){.social-profile-main .profile-action-column>.arena-profile-progress{padding:16px}.social-profile-main .profile-quick-actions .btn{font-size:10px}}

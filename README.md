@@ -1,17 +1,17 @@
-# 🔥 CHAMAS FLAMEJANTES V26.1 — PERFIL COMPACTO
+# 🔥 CHAMAS FLAMEJANTES V26.2 — ORDEM DO PERFIL
 
-Pacote completo para atualizar o site no GitHub/Railway. Leia **ATUALIZACAO_V26_1.md** para os detalhes desta revisão.
+Pacote completo para atualizar o site no GitHub/Railway. Leia **ATUALIZACAO_V26_2.md** para os detalhes desta revisão.
 
-- Mural da comunidade removido, incluindo publicações, curtidas, comentários do mural e links de acesso.
-- Favoritas, coleção pessoal e anotações de build orders removidas. O catálogo normal de estratégias e seu checklist continuam disponíveis.
-- **Escolher capa** agora é um botão dentro do card de ações do próprio perfil, junto de **Alterar meus dados** e **Minha agenda**. A faixa larga separada foi removida.
-- Conquistas em linhas compactas. Evolução e rivalidades em cards na mesma coluna dos demais cards do perfil, recolhidos ao abrir a página; clique para expandir.
-- Página de rivalidade também mais estreita. Gráfico interativo, histórico, pontos, emblemas, fotos redondas, presença com ID e botão de copiar preservados.
-- Agendamento, replays e comentários dos replays continuam funcionando.
+- Blocos do perfil nesta ordem: **Histórico público → Compartilhar perfil → Emblemas da Arena → Dupla · 2×2 → Evolução dos pontos → Rivalidades → Conquistas**.
+- **Alterar meus dados**, **Abrir notificações**, **Escolher capa** e **Minha agenda** ficam em um card pequeno, com duas linhas de botões, imediatamente abaixo do card de identidade do próprio perfil da Arena.
+- Removidos o título **Este perfil é seu** e seu texto explicativo.
+- A temporada exibida acompanha o mês atual automaticamente. Os emblemas aparecem uma única vez na página e continuam disponíveis na janela flutuante do perfil.
+- Mantidos os cards compactos, gráfico interativo, histórico, pontos, duplas, fotos redondas, presença com ID e botão de copiar, compartilhamento, agendamentos e replays.
+- Mural e favoritas/anotações continuam removidos. O catálogo normal de build orders e seus checklists permanecem disponíveis.
 
-**Atualização:** envie o conteúdo completo ao GitHub conectado ao Railway, incluindo módulos, templates e `static`. Preserve banco, volume, replays, fotos e variáveis atuais. `/health` deverá indicar `26.1-perfil-compacto`.
+**Atualização:** envie o conteúdo completo ao GitHub conectado ao Railway, incluindo módulos, templates e `static`. Preserve banco, volume, replays, fotos e variáveis atuais. `/health` deverá indicar `26.2-ordem-perfil`.
 
-**Validação:** 134 testes Python e 36 JavaScript passaram. Conferência adicional em Chromium nas larguras 1920, 1024, 768 e 390 px: cards dentro da coluna, sem rolagem horizontal, gráfico funcional, abertura das seções e botão de capa. Google e AoMStats foram simulados nos testes.
+**Validação desta revisão:** 20 testes Python existentes passaram. Conferência em Chromium nas larguras 1920, 1024, 768 e 390 px: ordem dos sete blocos, quatro botões abaixo do perfil, emblemas sem duplicação, gráfico e janelas funcionais, sem rolagem horizontal ou erros de JavaScript. Foram usados banco isolado e integrações externas simuladas.
 
 ---
 

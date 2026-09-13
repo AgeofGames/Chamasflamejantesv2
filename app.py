@@ -5058,7 +5058,7 @@ def site_share_image():
 @app.get("/health")
 def health():
     get_db().execute('SELECT 1').fetchone()
-    return {"version":"26.1-perfil-compacto","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"26.2-ordem-perfil","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 @app.errorhandler(400)
@@ -5088,11 +5088,11 @@ duel_extras.install(app, globals())
 init_db()
 migrate_v6_db()
 duel_extras.start_reminder_worker(app, globals())
-print("🔥 CHAMAS FLAMEJANTES V26.1 — PERFIL COMPACTO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V26.2 — ORDEM DO PERFIL\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V26.1 — PERFIL COMPACTO")
+    print(" 🔥 CHAMAS FLAMEJANTES V26.2 — ORDEM DO PERFIL")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

@@ -298,7 +298,7 @@ class CommunityFlows(unittest.TestCase):
         self.assertIsNotNone(page.select_one('.profile-owner-actions a[href="/meu-perfil/capa"]'))
         self.assertIsNotNone(page.select_one('.profile-identity-avatar'))
         self.assertIsNotNone(page.select_one('[data-copy-match]'))
-        self.assertIsNotNone(page.select_one('#historico-perfil .arena-profile-progress'))
+        self.assertIsNotNone(page.select_one('.profile-action-column>.arena-profile-progress'))
         opened=BeautifulSoup(self.client.get(f'/perfil/{self.players[0]}?evo_modo=x1').data,'html.parser')
         self.assertIsNotNone(opened.select_one('#evolucao[open]'))
         self.login(1)

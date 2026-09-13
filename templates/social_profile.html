@@ -10,6 +10,7 @@
 <section class="social-profile-page">
   <div class="profile-page-links"><a href="{{url_for('x1_page')}}">← Jogadores da Arena</a>{% if is_owner %}<a href="{{url_for('social_logout')}}">Sair da conta</a>{% endif %}</div>
   <div class="social-profile-main">
+    <div class="profile-identity-column">
     <article class="profile-identity-card build-library-card hub-covered"><div class="hub-cover-backdrop" aria-hidden="true" style="--hub-cover-color:{{hub.cover.color}};{% if hub.cover.image %}--hub-cover-image:url('{{hub.cover.image}}'){% endif %}"></div>
       <div class="profile-identity-glow"></div>
       <span class="aom-presence-avatar aom-profile-avatar-shell" data-aom-player="{{profile.id}}">{% if social_avatar_src(profile) %}<img decoding="async" class="profile-identity-avatar" src="{{social_avatar_src(profile)}}" alt="Foto de {{profile.nickname}}">{% else %}<span class="profile-identity-avatar fallback">🔥</span>{% endif %}</span>
@@ -21,17 +22,19 @@
       <dl><div><dt>Elo 1x1</dt><dd>{{profile.elo_1v1 or 'SEM ELO'}}</dd></div><div><dt>Nível</dt><dd>{{profile.normal_level}} • {{profile.normal_level_label}}</dd></div><div><dt>AoMStats</dt><dd>#{{profile.aomstats_profile_id}}</dd></div></dl>
       {% if profile.aomstats_url %}<a class="mini-link" href="{{profile.aomstats_url}}" target="_blank" rel="noopener">ABRIR PERFIL AOMSTATS ↗</a>{% endif %}
     </article>
-    <div class="profile-action-column">
-      {% include '_profile_duo.html' %}
-      <article class="profile-battle-stats"><span class="eyebrow">HISTÓRICO PÚBLICO</span><h2>Números na Arena</h2><div><strong>{{profile.stats.completed}}<small>PARTIDAS</small></strong><strong>{{profile.stats.wins}}<small>VITÓRIAS</small></strong><strong>{{profile.stats.losses}}<small>DERROTAS</small></strong><strong>{{profile.stats.refusals}}<small>FUGAS</small></strong></div><p>{{profile.stats.rate}}% de aproveitamento · {{profile.stats.streak}} vitórias seguidas</p><a class="btn profile-history-link" href="#historico-perfil">VER COM QUEM JOGOU</a></article>
-      {% if is_owner %}<article class="profile-owner-actions"><h3>Este perfil é seu</h3><p>Seus dados ficam organizados nesta página. Abra a edição somente quando quiser trocar a frase, sincronizar o AoMStats ou escolher outra foto.</p><div class="profile-owner-buttons"><a class="btn primary" href="{{url_for('social_profile_edit')}}">ALTERAR MEUS DADOS</a><button class="btn" type="button" data-open-notifications>ABRIR NOTIFICAÇÕES</button><a class="btn" href="{{url_for('hub_cover')}}">🎨 ESCOLHER CAPA</a><a class="btn" href="{{url_for('hub_agenda')}}">📅 MINHA AGENDA</a></div></article>
+      {% if is_owner %}<nav class="profile-owner-actions profile-quick-actions" aria-label="Ações do meu perfil"><div class="profile-owner-buttons"><a class="btn primary" href="{{url_for('social_profile_edit')}}">ALTERAR MEUS DADOS</a><button class="btn" type="button" data-open-notifications>ABRIR NOTIFICAÇÕES</button><a class="btn" href="{{url_for('hub_cover')}}">🎨 ESCOLHER CAPA</a><a class="btn" href="{{url_for('hub_agenda')}}">📅 MINHA AGENDA</a></div></nav>
       {% elif can_challenge %}<article class="profile-duel-panel"><span class="eyebrow">DESAFIO DIRETO</span><h2>Desafiar {{profile.nickname}}</h2>{% include '_arena_challenge_rules.html' %}{% if not challenge_rules or challenge_rules.allowed %}<p>Somente você será o desafiante e somente {{profile.nickname}} poderá aceitar ou recusar.</p><form method="post" action="{{url_for('social_challenge_player',player_id=profile.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><label><span>Mensagem</span><textarea name="message" maxlength="280">Prepare-se para a batalha!</textarea></label><button class="btn primary big">⚔️ ENVIAR DESAFIO</button></form>{% endif %}</article>
       {% elif not social_user %}<article class="profile-duel-panel"><h2>Quer desafiar?</h2><p>Entre com o Google, vincule seu AoMStats e volte a este perfil.</p><a class="btn primary big" href="{{url_for('social_login',next=request.path)}}">ENTRAR COM GOOGLE</a></article>
       {% else %}<article class="profile-duel-panel disabled"><h2>Desafio indisponível</h2><p>Este jogador ainda não ativou o perfil social.</p></article>{% endif %}
+    </div>
+    <div class="profile-action-column">
+      <article class="profile-battle-stats"><span class="eyebrow">HISTÓRICO PÚBLICO</span><h2>Números na Arena</h2><div><strong>{{profile.stats.completed}}<small>PARTIDAS</small></strong><strong>{{profile.stats.wins}}<small>VITÓRIAS</small></strong><strong>{{profile.stats.losses}}<small>DERROTAS</small></strong><strong>{{profile.stats.refusals}}<small>FUGAS</small></strong></div><p>{{profile.stats.rate}}% de aproveitamento · {{profile.stats.streak}} vitórias seguidas</p><a class="btn profile-history-link" href="#historico-perfil">VER COM QUEM JOGOU</a></article>
       <article class="share-panel"><span>COMPARTILHAR PERFIL</span><div class="share-buttons"><a href="{{share.whatsapp}}" target="_blank" rel="noopener">WhatsApp</a><a href="{{share.facebook}}" target="_blank" rel="noopener">Facebook</a><a href="{{share.x}}" target="_blank" rel="noopener">X</a><a href="{{share.telegram}}" target="_blank" rel="noopener">Telegram</a><button type="button" data-native-share data-share-url="{{share.url}}" data-share-title="{{share.title}}">Outras redes</button><button type="button" data-copy-link="{{share.url}}">Copiar link</button></div><small>O link exibe um card com a foto e os dados do jogador.</small></article>
+      {% include '_arena_profile_progress.html' %}
+      {% include '_profile_duo.html' %}
       {% include '_hub_profile.html' %}
     </div>
   </div>
-{% include '_profile_history.html' %}
+{% with profile_badges_separate=true %}{% include '_profile_history.html' %}{% endwith %}
 </section>
 {% endblock %}
