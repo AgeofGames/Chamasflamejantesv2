@@ -1,7 +1,8 @@
-# 🔥 CHAMAS FLAMEJANTES V25.4 — PRESENÇA AOMSTATS
+# 🔥 CHAMAS FLAMEJANTES V25.5 — RANKING COMPLETO
 
-Leia **ATUALIZACAO_V25_4.md** para as novidades. As regras vigentes estão em **Temporadas** no próprio site. Os capítulos antigos abaixo são histórico de versões.
+Leia **ATUALIZACAO_V25_5.md** para as novidades. As regras vigentes estão em **Temporadas** no próprio site. Os capítulos antigos abaixo são histórico de versões.
 
+- Ranking da Arena completo, sem limite de dez jogadores; inclui os perfis ativos com AoMStats que ainda estão sem partidas ou pontos.
 - Luz verde brilhante nas fotos de quem aparece em salas abertas, partidas ranqueadas ou Customs em andamento no AoMStats. Atualização automática, com expiração e indicação de sala ou partida.
 - Pontuação base: +30 por vitória e −30 por derrota, incluindo os resultados já registrados na temporada atual. O recálculo automático corrige o caso de 5 vitórias e 1 derrota normal que mostrava 130 para 120 pontos.
 - O saldo e o progresso atual dos emblemas são reconstruídos na ordem dos resultados. Bônus registrados, históricos, meses encerrados e conquistas anteriores são preservados.
@@ -12,9 +13,9 @@ Leia **ATUALIZACAO_V25_4.md** para as novidades. As regras vigentes estão em **
 - Convite respondido sai das notificações. Aviso de aceite permanece até ser lido. Ler notificações não desfaz a dupla.
 - Notificações automáticas a cada 3 segundos. Históricos, fotos redondas, dez emblemas e conquistas anteriores preservados.
 
-**Atualização:** envie o conteúdo completo deste ZIP ao GitHub conectado ao Railway, incluindo os módulos, templates e arquivos `static`. Preserve banco, volume, uploads e variáveis. `/health` deverá indicar `25.4-presenca-aomstats`.
+**Atualização:** envie o conteúdo completo deste ZIP ao GitHub conectado ao Railway, incluindo os módulos, templates e arquivos `static`. Preserve banco, volume, uploads e variáveis. `/health` deverá indicar `25.5-ranking-completo`.
 
-**Validação:** consulte ATUALIZACAO_V25_4.md. Testes locais com Google e AoMStats simulados. O site publicado ainda precisa receber este pacote.
+**Validação:** confira ATUALIZACAO_V25_5.md. A lista foi conferida em banco local isolado. O site publicado ainda precisa receber este pacote.
 
 ---
 

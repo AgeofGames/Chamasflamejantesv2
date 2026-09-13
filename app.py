@@ -5051,7 +5051,7 @@ def site_share_image():
 @app.get("/health")
 def health():
     get_db().execute('SELECT 1').fetchone()
-    return {"version":"25.4-presenca-aomstats","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"25.5-ranking-completo","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 @app.errorhandler(400)
@@ -5078,11 +5078,11 @@ aom_presence.install_presence(app, get_db)
 
 init_db()
 migrate_v6_db()
-print("🔥 CHAMAS FLAMEJANTES V25.4 — PRESENÇA AOMSTATS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V25.5 — RANKING COMPLETO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V25.4 — PRESENÇA AOMSTATS")
+    print(" 🔥 CHAMAS FLAMEJANTES V25.5 — RANKING COMPLETO")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")
