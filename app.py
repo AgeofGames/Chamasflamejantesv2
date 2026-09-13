@@ -2263,6 +2263,7 @@ def social_notification_items(account_id, limit=12):
            LEFT JOIN arena_team_duels td ON n.arena_url LIKE '/arena/equipes/duelo/%'
              AND td.id=CAST(SUBSTR(n.arena_url,LENGTH('/arena/equipes/duelo/')+1) AS INTEGER)
            WHERE n.account_id=?
+             AND n.arena_url NOT LIKE '/mural/%'
              AND (n.is_read=0 OR (n.kind NOT LIKE 'schedule_%' AND n.kind<>'community_comment'))
              AND (n.duel_id IS NULL OR d.status IN ('pending','accepted','match_pending'))
              AND (n.arena_url NOT LIKE '/arena/equipes/duelo/%'
@@ -5057,7 +5058,7 @@ def site_share_image():
 @app.get("/health")
 def health():
     get_db().execute('SELECT 1').fetchone()
-    return {"version":"26-comunidade-jornada","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"26.1-perfil-compacto","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 @app.errorhandler(400)
@@ -5087,11 +5088,11 @@ duel_extras.install(app, globals())
 init_db()
 migrate_v6_db()
 duel_extras.start_reminder_worker(app, globals())
-print("🔥 CHAMAS FLAMEJANTES V26 — COMUNIDADE E JORNADA\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V26.1 — PERFIL COMPACTO\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V26 — COMUNIDADE E JORNADA")
+    print(" 🔥 CHAMAS FLAMEJANTES V26.1 — PERFIL COMPACTO")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

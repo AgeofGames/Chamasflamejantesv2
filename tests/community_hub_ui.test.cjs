@@ -18,7 +18,7 @@ function setup({forms=[],charts=[],fetcher=async()=>({ok:true,json:async()=>({li
     querySelectorAll:s=>s==='[data-hub-chart]'?charts:s==='[data-hub-composer]'?forms:[],
     createElement:()=>({textContent:'',href:''})};
   const fetch=async(url,options)=>{calls.push({url,options});return fetcher(url,options);};
-  const window={location:{href:'https://site.test/perfil/1',origin:'https://site.test'},fetch,
+  const window={addEventListener:(e,fn)=>events[e]=fn,location:{href:'https://site.test/perfil/1',origin:'https://site.test'},fetch,
     confirm:()=>confirm,setTimeout:(fn,ms)=>{const id=Symbol();timers.set(id,{fn,ms});return id;},clearTimeout:id=>timers.delete(id)};
   vm.runInNewContext(source,{document,window,HTMLFormElement:Form,FormData:class{constructor(form){this.form=form;}},fetch,AbortController,URL});
   const submit=form=>{const event={target:form,defaultPrevented:false,preventDefault(){this.defaultPrevented=true;}};return{event,promise:events.submit(event)};};
@@ -49,40 +49,6 @@ test('chart never creates an off-site duel link and modal initialization is idem
   const state=setup({charts:[c]});c.points[0].events.click();assert.equal(c.detail.links.length,0);
   const original=c.points[0].events.click;state.events['chamas:content']({detail:{container:{querySelectorAll:s=>s==='[data-hub-chart]'?[c]:[]}}});
   assert.equal(c.points[0].events.click,original);
-});
-
-test('composer changes the required fields when selecting a confirmed victory',()=>{
-  const form=new Form('composer'),events={};
-  const kind={value:'estrategia',addEventListener:(k,fn)=>events[k]=fn};
-  Object.assign(form.parts,{'[data-post-kind]':kind,'[data-post-title]':{},'[data-post-victory]':{}});
-  setup({forms:[form]});assert.equal(form.elements.title.required,true);assert.equal(form.elements.body.required,true);
-  kind.value='vitoria';events.change();assert.equal(form.parts['[data-post-title]'].hidden,true);
-  assert.equal(form.elements.title.required,false);assert.equal(form.elements.body.required,false);assert.equal(form.elements.event.required,true);
-  kind.value='novidade';events.change();assert.equal(form.elements.title.required,true);assert.equal(form.elements.event.required,false);
-});
-
-test('like submits desired state with the form CSRF and updates from the server response',async()=>{
-  const form=new Form(),state=setup();const request=state.submit(form);
-  assert.equal(request.event.defaultPrevented,true);await request.promise;
-  assert.equal(state.calls[0].options.credentials,'same-origin');assert.equal(state.calls[0].options.body.form,form);
-  assert.equal(form.elements.liked.value,'0');assert.equal(form.parts['[data-like-count]'].textContent,1);
-  assert.equal(form.parts.button['aria-pressed'],'true');assert.equal(form.parts.button.disabled,false);
-});
-
-test('overlapping like clicks send only one request and timeout releases the control',async()=>{
-  const form=new Form(),state=setup({fetcher:(_,options)=>new Promise((resolve,reject)=>options.signal.addEventListener('abort',()=>reject(new Error('timeout'))))});
-  const first=state.submit(form);await state.submit(form).promise;assert.equal(state.calls.length,1);
-  [...state.timers.values()][0].fn();await first.promise;
-  assert.equal(form.parts.button.disabled,false);assert.equal(form.dataset.likeBusy,undefined);
-  assert.match(form.parts['[data-like-status]'].textContent,/Tente novamente/);
-});
-
-test('login redirects and invalid like responses preserve the last displayed count',async()=>{
-  for(const response of [{ok:true,redirected:true},{ok:true,json:async()=>({count:'invalid',liked:true})}]){
-    const form=new Form(),state=setup({fetcher:async()=>response});await state.submit(form).promise;
-    assert.equal(form.parts['[data-like-count]'].textContent,'0');assert.equal(form.elements.liked.value,'1');
-    assert.equal(form.parts.button.disabled,false);assert.match(form.parts['[data-like-status]'].textContent,/Google/);
-  }
 });
 
 test('cancelled deletion confirmation prevents the original form submission',async()=>{

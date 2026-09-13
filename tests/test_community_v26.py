@@ -62,10 +62,8 @@ class CommunityFlows(unittest.TestCase):
         return self.post(f'/replay/{queue}/{did}/enviar',replay=(io.BytesIO(content or bytes(range(256))*8),name),description='Rever a abertura',game_version='Teste')
 
     def publication(self):
-        self.login(0)
-        response = self.post('/mural/publicar',kind='estrategia',title='Abertura de Zeus',body='Uma estratégia de treino.')
-        self.assertEqual(response.status_code,302)
-        return self.row('SELECT * FROM community_posts ORDER BY id DESC LIMIT 1')['id']
+        # Legacy rows retained when upgrading a V26 database; no public wall routes.
+        return self.execute("INSERT INTO community_posts(author_id,kind,title,body) VALUES(?,'estrategia','Registro anterior','Histórico interno')",(self.players[0],))
 
     def test_rivalry_keeps_complete_history_scores_last_win_and_longest_run(self):
         start = datetime.now(timezone.utc)-timedelta(days=3)
@@ -135,91 +133,11 @@ class CommunityFlows(unittest.TestCase):
             html=self.client.get(path).get_data(as_text=True);self.assertIn(key+'.webp',html)
             self.assertIn('hub-covered',html);self.assertIn('data-aom-player',html)
 
-    def test_build_notes_and_favorites_are_private_per_google_account(self):
-        with site.app.test_request_context():
-            build=site.knowledge_catalog()['builds'][0]
-            path=site.url_for('knowledge_build_page',god_slug=site.knowledge_god_slug(build['god']),build_id=build['id'])
-        self.login(0)
-        marker='Segredo de treino <script>alert(1)</script>'
-        response=self.post('/minhas-builds/'+build['id'],favorite='1',notes=marker,account_id=self.accounts[1])
-        self.assertEqual(response.status_code,302)
-        self.assertIn('Segredo de treino',self.client.get('/minhas-builds').get_data(as_text=True))
-        self.assertNotIn('<script>alert(1)</script>',self.client.get(path).get_data(as_text=True))
-        self.login(1)
-        self.assertNotIn('Segredo de treino',self.client.get('/minhas-builds').get_data(as_text=True))
-        self.assertNotIn('Segredo de treino',self.client.get(path).get_data(as_text=True))
-        self.login(0);self.post('/minhas-builds/'+build['id'],favorite='0',notes='Somente anotação')
-        self.assertIn('Somente anotação',self.client.get('/minhas-builds').get_data(as_text=True))
-        self.post('/minhas-builds/'+build['id'],notes='')
-        self.assertIsNone(self.row('SELECT * FROM community_build_notes'))
 
-    def test_wall_victories_require_a_confirmed_win_and_do_not_duplicate_or_change_score(self):
-        did=self.completed();self.login(1)
-        self.assertEqual(self.post('/mural/publicar',kind='vitoria',event=f'x1:{did}').status_code,403)
-        self.login(0)
-        before=self.row('SELECT * FROM arena_results WHERE player_id=?',(self.players[0],))
-        response=self.post('/mural/publicar',kind='vitoria',event=f'x1:{did}',title='Título falso')
-        self.assertEqual(response.status_code,302)
-        duplicate=self.post('/mural/publicar',kind='vitoria',event=f'x1:{did}')
-        self.assertEqual(duplicate.location,response.location)
-        self.assertEqual(self.row('SELECT COUNT(*) n FROM community_posts')['n'],1)
-        self.assertEqual(self.row('SELECT * FROM arena_results WHERE player_id=?',(self.players[0],)),before)
-        page=BeautifulSoup(self.client.get(response.location).data,'html.parser')
-        self.assertIsNotNone(page.select_one('meta[property="og:image"]'))
-        self.assertNotIn('Título falso',page.get_text());self.assertIn('venceu',page.get_text())
 
-    def test_posts_are_escaped_and_only_owner_or_admin_can_edit_and_remove(self):
-        post_id=self.publication();path=f'/mural/publicacao/{post_id}'
-        self.login(1)
-        for action in ['editar','excluir']:
-            self.assertEqual(self.post(path+'/'+action,title='Invasão',body='Outro autor').status_code,403)
-        self.login(0)
-        self.assertEqual(self.post(path+'/editar',title='Nova estratégia',body='<img src=x onerror=alert(1)>').status_code,302)
-        page=BeautifulSoup(self.client.get(path).data,'html.parser')
-        self.assertFalse(page.select('[onerror]'));self.assertIn('<img',page.get_text())
-        self.login(1)
-        with self.client.session_transaction() as s:s['admin_id']=1
-        self.assertEqual(self.post(path+'/excluir').status_code,302)
-        self.assertEqual(self.client.get(path).status_code,404)
 
-    def test_like_is_idempotent_and_unlike_only_changes_own_like(self):
-        post_id=self.publication();path=f'/mural/publicacao/{post_id}/curtir'
-        self.login(1)
-        for _ in range(2):
-            result=self.client.post(path,data={'_csrf':'csrf-test','liked':'1'},headers={'Accept':'application/json'})
-            self.assertEqual(result.get_json(),{'liked':True,'count':1})
-        self.login(2);self.post(path,liked='1');self.login(1);self.post(path,liked='0')
-        self.assertEqual(self.row('SELECT player_id FROM community_likes')['player_id'],self.players[2])
-        self.assertEqual(self.post(path,liked='toggle').status_code,400)
 
-    def test_comments_notify_author_disappear_on_read_and_require_ownership_to_delete(self):
-        post_id=self.publication();self.login(1)
-        response=self.post(f'/comentar/post/{post_id}',body='Como melhorar o avanço?')
-        self.assertEqual(response.status_code,302)
-        comment=self.row('SELECT * FROM community_comments')
-        self.assertIn('comentario-'+str(comment['id']),response.location)
-        self.login(2);self.assertEqual(self.post(f"/comentario/{comment['id']}/excluir").status_code,403)
-        self.login(0)
-        feed=self.client.get('/api/notificacoes').get_json();self.assertIn('Novo comentário',feed['html'])
-        self.client.get(f'/mural/publicacao/{post_id}')
-        self.assertNotIn('Novo comentário',self.client.get('/api/notificacoes').get_json()['html'])
-        self.login(1);self.post(f"/comentario/{comment['id']}/excluir")
-        self.assertEqual(self.row('SELECT deleted FROM community_comments')['deleted'],1)
 
-    def test_wall_and_comment_pagination_and_rate_limit(self):
-        post_id=self.publication()
-        with site.app.app_context():
-            db=site.get_db()
-            db.executemany("INSERT INTO community_comments(author_id,post_id,body,created_at) VALUES(?,?,?,'2020-01-01')",[(self.players[1],post_id,f'Análise {i}') for i in range(31)])
-            db.executemany("INSERT INTO community_posts(author_id,kind,title,body,created_at) VALUES(?,'novidade',?,?,'2020-01-01')",[(self.players[1],f'Novidade {i}','Texto') for i in range(13)])
-            db.commit()
-        first=BeautifulSoup(self.client.get('/mural').data,'html.parser')
-        self.assertEqual(len(first.select('article.hub-post')),12)
-        self.login(1);response=self.post(f'/comentar/post/{post_id}',body='Comentário na última página')
-        self.assertIn('pagina=2',response.location)
-        self.assertIn('Comentário na última página',self.client.get(response.location).get_data(as_text=True))
-        for i in range(9):self.post(f'/comentar/post/{post_id}',body=f'Pergunta {i}')
-        self.assertEqual(self.post(f'/comentar/post/{post_id}',body='Limite').status_code,429)
 
     def test_scheduling_requires_both_sides_and_rejects_stale_versions(self):
         did=self.accepted();self.assertEqual(self.propose(did).status_code,302)
@@ -319,25 +237,23 @@ class CommunityFlows(unittest.TestCase):
         self.assertEqual(len(list((site.DB_PATH.parent/'arena_replays').glob('*'))),1)
         self.assertEqual(self.row('SELECT COUNT(*) n FROM arena_replays')['n'],1)
 
-    def test_team_victory_posts_and_replays_use_confirmed_roster(self):
+    def test_team_replays_use_confirmed_roster(self):
         import arena_teams
         duel=self.make_duel(2);did=duel['id'];self.login(0)
         with patch.object(arena_teams,'lookup_match',return_value=self.result(2)):
             result=self.post(f'/arena/equipes/duelo/{did}/partida',match_id='99115933')
         self.assertEqual(result.status_code,302)
         self.login(1)
-        self.assertEqual(self.post('/mural/publicar',kind='vitoria',event=f'2v2:{did}').status_code,302)
         response=self.upload(did,queue='2v2');self.assertEqual(response.status_code,302)
         self.assertEqual(self.client.get(response.location).status_code,200)
-        self.login(2);self.assertEqual(self.post('/mural/publicar',kind='vitoria',event=f'2v2:{did}').status_code,403)
         self.login(4);self.assertEqual(self.upload(did,queue='2v2').status_code,403)
 
     def test_new_mutations_require_csrf_and_private_pages_require_login(self):
-        did=self.completed();post_id=self.publication()
-        for url in ['/meu-perfil/capa','/mural/publicar',f'/agenda/x1/{did}/propor',f'/replay/x1/{did}/enviar',f'/mural/publicacao/{post_id}/curtir',f'/comentar/post/{post_id}']:
+        did=self.completed();self.login(0)
+        for url in ['/meu-perfil/capa',f'/agenda/x1/{did}/propor',f'/replay/x1/{did}/enviar','/comentar/replay/1']:
             self.assertEqual(self.client.post(url,data={}).status_code,400,url)
         anon=site.app.test_client()
-        for url in ['/meu-perfil/capa','/minhas-builds','/minha-agenda']:
+        for url in ['/meu-perfil/capa','/minha-agenda']:
             self.assertEqual(anon.get(url).status_code,302,url)
 
     def test_migration_is_additive_idempotent_and_full_ranking_stays_complete(self):
@@ -356,3 +272,54 @@ class CommunityFlows(unittest.TestCase):
         self.assertGreater(len(page.select('.monthly-ranking-row')),25)
         self.assertFalse(page.select('button button'))
         self.assertIsNotNone(page.select_one('.monthly-ranking-row [data-copy-match]'))
+
+
+    def test_removed_wall_and_notes_are_unavailable_even_by_direct_url(self):
+        legacy=self.publication();self.login(0)
+        paths=['/mural','/mural/publicar',f'/mural/publicacao/{legacy}',f'/mural/publicacao/{legacy}/editar',f'/mural/publicacao/{legacy}/excluir',f'/mural/publicacao/{legacy}/curtir',f'/comentar/post/{legacy}','/minhas-builds','/minhas-builds/zeus']
+        for path in paths:
+            for method in ['get','post']:
+                response=getattr(self.client,method)(path,data={'_csrf':'csrf-test'})
+                self.assertEqual(response.status_code,404,(method,path))
+        self.assertEqual(self.row('SELECT deleted FROM community_posts WHERE id=?',(legacy,))['deleted'],0)
+        self.execute("INSERT INTO social_notifications(account_id,kind,message,arena_url) VALUES(?,'community_comment','Aviso anterior',?)",(self.accounts[0],f'/mural/publicacao/{legacy}'))
+        self.assertNotIn('Aviso anterior',self.client.get('/api/notificacoes').get_json()['html'])
+        for path in ['/',f'/perfil/{self.players[0]}','/conhecimento/build-orders','/x1']:
+            html=BeautifulSoup(self.client.get(path).data,'html.parser')
+            self.assertFalse(html.select('a[href^="/mural"], a[href^="/minhas-builds"]'),path)
+
+    def test_journey_stays_inside_profile_column_and_cover_uses_existing_action_card(self):
+        self.completed();self.login(0)
+        page=BeautifulSoup(self.client.get(f'/perfil/{self.players[0]}').data,'html.parser')
+        for feature in ['conquistas','evolucao','rivalidades']:
+            self.assertIsNotNone(page.select_one('.social-profile-main .profile-action-column #'+feature))
+        self.assertEqual(len(page.select('.profile-achievement-row')),3)
+        self.assertFalse(page.select('#evolucao[open], #rivalidades[open], .hub-owner-links'))
+        self.assertIsNotNone(page.select_one('.profile-owner-actions a[href="/meu-perfil/capa"]'))
+        self.assertIsNotNone(page.select_one('.profile-identity-avatar'))
+        self.assertIsNotNone(page.select_one('[data-copy-match]'))
+        self.assertIsNotNone(page.select_one('#historico-perfil .arena-profile-progress'))
+        opened=BeautifulSoup(self.client.get(f'/perfil/{self.players[0]}?evo_modo=x1').data,'html.parser')
+        self.assertIsNotNone(opened.select_one('#evolucao[open]'))
+        self.login(1)
+        other=BeautifulSoup(self.client.get(f'/perfil/{self.players[0]}').data,'html.parser')
+        self.assertFalse(other.select('a[href="/meu-perfil/capa"]'))
+
+    def test_replay_comments_keep_pagination_ownership_and_read_notification(self):
+        did=self.completed();self.login(0);response=self.upload(did)
+        rid=self.row('SELECT id FROM arena_replays')['id']
+        with site.app.app_context():
+            db=site.get_db()
+            db.executemany("INSERT INTO community_comments(author_id,replay_id,body,created_at) VALUES(?,?,?,'2020-01-01')",[(self.players[1],rid,f'Análise {i}') for i in range(31)])
+            db.commit()
+        self.login(1);response=self.post(f'/comentar/replay/{rid}',body='Uma análise nova')
+        self.assertIn('pagina=2',response.location)
+        self.assertIn('Uma análise nova',self.client.get(response.location).get_data(as_text=True))
+        comment=self.row('SELECT id FROM community_comments ORDER BY id DESC LIMIT 1')['id']
+        self.login(2);self.assertEqual(self.post(f'/comentario/{comment}/excluir').status_code,403)
+        self.login(0)
+        self.assertIn('Novo comentário no replay',self.client.get('/api/notificacoes').get_json()['html'])
+        self.client.get(f'/replays/{rid}')
+        self.assertNotIn('Novo comentário no replay',self.client.get('/api/notificacoes').get_json()['html'])
+        self.login(1);self.post(f'/comentario/{comment}/excluir')
+        self.assertEqual(self.row('SELECT deleted FROM community_comments WHERE id=?',(comment,))['deleted'],1)

@@ -21,3 +21,62 @@
 @media(max-width:900px){.hub-wall-layout{grid-template-columns:240px minmax(0,1fr);gap:18px}.hub-build-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hub-cover-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.hub-achievement{padding:18px 14px}.hub-rival-row{gap:12px}.hub-panel{padding:20px}}
 @media(max-width:680px){.hub-shell{width:calc(100% - 28px);padding-top:24px}.hub-profile-journey{width:100%;padding:22px 0}.hub-wall-layout{grid-template-columns:1fr}.hub-wall-layout>aside{position:static}.hub-wall-note{display:none}.hub-composer{margin-bottom:0}.hub-panel{padding:18px;border-radius:12px}.hub-achievements{grid-template-columns:1fr}.hub-achievement{padding-left:82px;min-height:135px}.hub-medallion{position:absolute;left:16px;top:20px}.hub-achievement p{min-height:0}.hub-achievement progress{margin-top:12px}.hub-chart{padding:14px}.hub-chart-heading>strong{font-size:24px}.hub-chart-filters label{min-width:120px}.hub-chart-filters .btn{width:100%}.hub-rival-row{grid-template-columns:1fr auto}.hub-rival-row>.hub-muted{grid-column:1/-1;text-align:left}.hub-rival-records{grid-template-columns:1fr;gap:0}.hub-rival-hero{padding:24px 14px;gap:10px}.hub-rival-avatar{width:64px;height:64px}.hub-rival-hero strong{font-size:42px}.hub-match-row{grid-template-columns:1fr}.hub-cover-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.hub-cover-art{min-height:158px;padding:16px}.hub-cover-art strong{font-size:17px}.hub-build-grid{grid-template-columns:1fr}.hub-post-kind{font-size:8px;padding:5px 7px}.hub-post-author{gap:9px}.hub-post h2{font-size:18px}.hub-post-actions{gap:12px}.hub-replay-row{flex-wrap:wrap}.hub-replay-row>b{margin-left:58px}.hub-schedule-status strong,.hub-agenda-date{font-size:18px}.hub-result-links .btn{width:100%}.hub-owner-links{padding:16px;gap:14px}.hub-owner-links a{font-size:11px}.hub-panel>summary{font-size:14px}.hub-panel>summary>span{font-size:10px}.hub-reading-shell>.mini-link{white-space:normal}}
 @media(prefers-reduced-motion:reduce){.hub-shell *{transition:none!important}}@media print{.hub-owner-links,.hub-chart-filters,.hub-composer,.hub-post-actions,.hub-save-bar{display:none!important}.hub-covered>.hub-cover-backdrop{display:none}.hub-panel{break-inside:avoid}.hub-shell{width:100%}}
+
+/* V26.1: keep the journey in the existing profile card column. */
+.social-profile-main .profile-action-column{min-width:0}
+.social-profile-main .hub-profile-journey{width:100%;max-width:100%;min-width:0;margin:0;padding:0;display:grid;gap:14px}
+.social-profile-main .profile-journey-card{width:100%;max-width:100%;box-sizing:border-box;margin:0;padding:18px 20px;overflow:hidden;border-radius:12px}
+.social-profile-main .profile-journey-card>summary{font-size:14px;line-height:1.5;padding:2px 0}
+.social-profile-main .profile-journey-card>summary>span{font-size:10px}
+.social-profile-main .profile-journey-card[open]>summary{margin-bottom:12px;padding-bottom:12px}
+.social-profile-main .profile-owner-buttons{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.social-profile-main .profile-owner-buttons .btn{margin:0;min-height:38px;padding:10px 12px;font-size:11px;white-space:normal}
+.profile-achievements-list{display:grid;gap:0}
+.profile-achievement-row{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid #ffffff0e;min-width:0}
+.profile-achievement-row:last-child{border:0;padding-bottom:2px}
+.profile-achievement-row:first-child{padding-top:2px}
+.profile-achievement-icon{display:grid;place-items:center;flex:0 0 34px;height:34px;margin-top:2px;border-radius:50%;border:1px solid #cfa45650;background:#d9a2420b;color:#f1c476;font:20px Georgia,serif}
+.profile-achievement-row.locked .profile-achievement-icon{border-color:#ffffff20;background:#ffffff03;color:#8495a5}
+.profile-achievement-info{min-width:0;flex:1}
+.hub-profile-journey .profile-achievement-info h3{margin:0;color:#e8dcc9;font:600 13px/1.4 Inter,system-ui,sans-serif}
+.profile-achievement-info h3>span{margin-left:9px;color:#87d3ab;font-size:11px}
+.hub-profile-journey .profile-achievement-info p{margin:5px 0 8px;font:400 11px/1.5 Inter,system-ui,sans-serif;color:#a6b3bf}
+.profile-achievement-progress{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.profile-achievement-progress progress{width:90px;max-width:35%;height:3px;margin:0;border:0;border-radius:4px;accent-color:#d6ab5b;background:#ffffff12}
+.profile-achievement-progress progress::-webkit-progress-bar{background:#ffffff12;border-radius:4px}
+.profile-achievement-progress progress::-webkit-progress-value{background:#d6ab5b;border-radius:4px}
+.profile-achievement-progress a,.profile-achievement-progress small{font-size:9px;line-height:1.5;color:#b7a081}
+.hub-profile-journey .hub-chart-filters{margin:10px 0 14px;gap:8px}
+.hub-profile-journey .hub-chart-filters label{margin:0;font-size:10px;gap:5px;min-width:100px}
+.hub-profile-journey .hub-chart-filters select{padding:8px;font-size:11px;min-height:36px}
+.hub-profile-journey .hub-chart-filters .btn{min-height:36px;padding:8px 10px;font-size:10px}
+.hub-profile-journey .hub-chart{padding:12px;overflow:hidden}
+.hub-profile-journey .hub-chart-heading>strong{font-size:23px}
+.hub-profile-journey .hub-chart-heading strong small{font-size:9px}
+.hub-profile-journey .hub-chart-heading>span{font-size:10px}
+.hub-profile-journey .hub-chart svg{max-height:182px;min-height:110px;overflow:hidden}
+.hub-profile-journey .hub-chart-detail{min-height:0;font-size:11px;padding-top:10px;margin-top:8px}
+.hub-profile-journey .hub-chart-detail>a{white-space:normal}
+.hub-profile-journey .hub-ledger>summary{font-size:11px;padding:12px 0 0}
+.hub-profile-journey .hub-rival-list{max-height:330px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.hub-profile-journey .hub-rival-row{grid-template-columns:minmax(0,1fr) auto;gap:5px 12px;padding:11px 12px}
+.hub-profile-journey .hub-rival-person{grid-template-columns:32px minmax(0,1fr);column-gap:10px;font-size:12px;grid-row:span 2}
+.hub-profile-journey .hub-rival-person>img,.profile-rival-fallback{grid-row:span 2;width:32px;height:32px;border-radius:50%}
+.profile-rival-fallback{display:grid;place-items:center;background:#ffffff06;color:#bf9862;border:1px solid #c8a67530}
+.hub-profile-journey .hub-rival-person small{font-size:9px;margin-top:3px}
+.hub-profile-journey .hub-rival-row>b{font-size:20px;text-align:right}
+.profile-rival-link{grid-column:2;font-size:9px;color:#cdaa7b;text-align:right}
+.hub-profile-journey .profile-rivalry-caption{font-size:10px;line-height:1.5;margin:0 0 12px;color:#92a2b3}
+.hub-profile-journey .hub-empty{padding:8px 0;font-size:12px;margin:0}
+.hub-rivalry-shell{width:min(740px,calc(100% - 36px))}
+.hub-rivalry-shell .hub-page-head{padding:14px 0 20px}
+.hub-rivalry-shell h1{font-size:clamp(23px,3vw,30px)}
+.hub-rivalry-shell .hub-rival-hero{padding:22px 16px}
+.hub-rivalry-shell .hub-rival-avatar{width:58px;height:58px}
+.hub-rivalry-shell .hub-rival-hero h2{font-size:16px;margin:12px 0 7px}
+.hub-rivalry-shell .hub-rival-hero strong{font-size:38px}
+.hub-rivalry-shell .hub-panel{padding:18px}
+.hub-rivalry-shell .hub-rival-records{gap:14px}
+.hub-rivalry-shell .hub-rival-records p{font-size:11px}
+.hub-covers-shell{width:min(900px,calc(100% - 36px))}
+@media(max-width:600px){.social-profile-main .profile-journey-card{padding:16px}.social-profile-main .profile-owner-buttons .btn{font-size:10px}.hub-profile-journey .hub-chart-filters .btn{width:auto}.hub-profile-journey .hub-rival-row{gap:4px 10px}.hub-profile-journey .hub-rival-person{column-gap:8px}.hub-rivalry-shell .hub-rival-records{gap:0}}

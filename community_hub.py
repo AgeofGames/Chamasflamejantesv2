@@ -1,19 +1,17 @@
-"""Public community features and account-private training notes, backed by existing results."""
+"""Player journey and replay discussion, backed by existing results."""
 from collections import defaultdict
 from datetime import datetime, timezone
 import math
-import re
-import sqlite3
-from flask import abort, flash, g, jsonify, redirect, render_template, request, session, url_for
+from flask import abort, flash, g, redirect, render_template, request, session, url_for
 import arena_seasons
-
-KINDS={'estrategia':'Estratégia','novidade':'Novidade','vitoria':'Vitória'}
 
 def current_account(api):
     if 'hub_account' not in g:g.hub_account=api['current_social_account']()
     return g.hub_account
 
 def init_schema(db):
+    # Retain legacy wall/note tables for upgrades; these features have no routes.
+    # Existing replay comments share this schema and must remain intact.
     statements=[
       '''CREATE TABLE IF NOT EXISTS community_profile_settings(player_id INTEGER PRIMARY KEY REFERENCES players(id) ON DELETE CASCADE,cover_key TEXT NOT NULL DEFAULT 'chamas')''',
       '''CREATE TABLE IF NOT EXISTS community_build_notes(account_id INTEGER NOT NULL REFERENCES social_accounts(id) ON DELETE CASCADE,build_id TEXT NOT NULL,favorite INTEGER NOT NULL DEFAULT 0,notes TEXT NOT NULL DEFAULT '',updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,PRIMARY KEY(account_id,build_id))''',
@@ -130,10 +128,7 @@ def install(app,api):
         setting=db().execute('SELECT cover_key FROM community_profile_settings WHERE player_id=?',(player_id,)).fetchone();choices=covers()
         data=dict(rivals=rivals,achievements=achievements(rows,rivals),cover=next((c for c in choices if setting and c['key']==setting['cover_key']),choices[0]),months=months,queues=arena_seasons.QUEUES,evolution=evolution(rows,queue,month) if not compact else None)
         cache[key]=data;return data
-    def build_note(build_id):
-        a=account();row=db().execute('SELECT * FROM community_build_notes WHERE account_id=? AND build_id=?',(a['account_id'],build_id)).fetchone() if a else None
-        return dict(row) if row else dict(favorite=0,notes='')
-    app.jinja_env.globals.update(hub_profile=profile_hub,hub_build_note=build_note,hub_kinds=KINDS)
+    app.jinja_env.globals['hub_profile']=profile_hub
     app.jinja_env.filters['br_date']=local_date
 
     @app.route('/meu-perfil/capa',methods=['GET','POST'])
@@ -156,134 +151,38 @@ def install(app,api):
         pages=max(1,math.ceil(len(rival['history'])/25));page=min(max(1,request.args.get('pagina',1,type=int) or 1),pages)
         return render_template('hub_rivalry.html',a=a,b=b,rival=rival,page=page,pages=pages,entries=list(reversed(rival['history']))[(page-1)*25:page*25])
 
-    @app.get('/minhas-builds')
-    @api['social_login_required']
-    def hub_builds():
-        saved={r['build_id']:dict(r) for r in db().execute('SELECT * FROM community_build_notes WHERE account_id=?',(account()['account_id'],))};items=[]
-        for b in api['knowledge_catalog']().get('builds',[]):
-            note=saved.get(b['id'])
-            if note and (note['favorite'] or note['notes']):items.append(dict(build=b,note=note,url=url_for('knowledge_build_page',god_slug=api['knowledge_god_slug'](b['god']),build_id=b['id']),image=url_for('static',filename='knowledge/gods/'+api['knowledge_image_name'](b['god'])+'.webp')))
-        items.sort(key=lambda i:i['note']['updated_at'],reverse=True)
-        return render_template('hub_builds.html',items=items)
+    install_replay_comments(app,api,db,account,pid,protected)
 
-    @app.post('/minhas-builds/<build_id>')
-    @api['social_login_required']
-    def hub_save_build(build_id):
-        api['require_csrf']();b=next((b for b in api['knowledge_catalog']().get('builds',[]) if b['id']==build_id),None)
-        if not b:abort(404)
-        notes=request.form.get('notes','').strip();favorite=int(request.form.get('favorite')=='1');aid=account()['account_id']
-        if len(notes)>6000:abort(400,'Use até 6.000 caracteres nas anotações.')
-        if not notes and not favorite:db().execute('DELETE FROM community_build_notes WHERE account_id=? AND build_id=?',(aid,build_id))
-        else:db().execute('''INSERT INTO community_build_notes(account_id,build_id,favorite,notes) VALUES(?,?,?,?) ON CONFLICT(account_id,build_id) DO UPDATE SET favorite=excluded.favorite,notes=excluded.notes,updated_at=CURRENT_TIMESTAMP''',(aid,build_id,favorite,notes))
-        db().commit();flash('Favorito e anotações salvos na sua conta.','success')
-        return redirect(url_for('knowledge_build_page',god_slug=api['knowledge_god_slug'](b['god']),build_id=build_id,_anchor='minhas-anotacoes'))
-    install_wall(app,api,db,account,pid,protected)
 
-def install_wall(app,api,db,account,pid,protected):
-    from duel_extras import event_info,event_image
-    select='''SELECT c.*,p.nickname,p.nickname_color,p.avatar_url,p.avatar_file,p.is_active,
-      (SELECT COUNT(*) FROM community_likes l WHERE l.post_id=c.id) likes,
-      EXISTS(SELECT 1 FROM community_likes l WHERE l.post_id=c.id AND l.player_id=?) liked,
-      (SELECT COUNT(*) FROM community_comments m WHERE m.post_id=c.id AND m.deleted=0) comment_count
-      FROM community_posts c JOIN players p ON p.id=c.author_id'''
-    def post_data(post_id=None,row=None):
-        if row is None:row=db().execute(select+' WHERE c.id=? AND c.deleted=0',(pid(),post_id)).fetchone()
-        if row is None:abort(404)
-        data=dict(row);data['event']=event_info(db(),data['queue'],data['event_id']) if data['kind']=='vitoria' else None
-        if data['event']:data['event']['image']=event_image(data['event'])
-        return data
-    def can_edit(author):return bool(session.get('admin_id') or pid()==author)
-    def rate_limit(table,seconds,limit):
-        count=db().execute(f"SELECT COUNT(*) FROM {table} WHERE author_id=? AND created_at>=datetime('now',?)",(pid(),f'-{seconds} seconds')).fetchone()[0]
-        if count>=limit:abort(429,'Muitos envios em pouco tempo. Aguarde um pouco para publicar novamente.')
-    @app.get('/mural')
-    def hub_wall():
-        kind=request.args.get('tipo','todos');kind=kind if kind in KINDS else 'todos'
-        where='c.deleted=0'+(' AND c.kind=?' if kind!='todos' else '');params=(kind,) if kind!='todos' else ()
-        total=db().execute('SELECT COUNT(*) FROM community_posts c WHERE '+where,params).fetchone()[0];pages=max(1,math.ceil(total/12));page=min(max(1,request.args.get('pagina',1,type=int) or 1),pages)
-        posts=[post_data(row=r) for r in db().execute(select+' WHERE '+where+' ORDER BY c.id DESC LIMIT 12 OFFSET ?',(pid(),*params,(page-1)*12)).fetchall()]
-        wins=[]
-        if pid():
-            for r in db().execute('SELECT queue,event_id FROM arena_results WHERE player_id=? AND won=1 ORDER BY julianday(recorded_at) DESC,rowid DESC LIMIT 30',(pid(),)):
-                event=event_info(db(),r['queue'],r['event_id'])
-                if event and event['status']=='completed' and pid() in event['winners']:wins.append(event)
-        chosen=request.args.get('partida','');match=re.fullmatch(r'(x1|2v2|3v3):(\d+)',chosen)
-        if match and pid():
-            e=event_info(db(),match.group(1),int(match.group(2)))
-            if e and e['status']=='completed' and pid() in e['winners']:
-                if not any(w['queue']==e['queue'] and w['id']==e['id'] for w in wins):wins.insert(0,e)
-            else:chosen=''
-        else:chosen=''
-        return render_template('hub_wall.html',posts=posts,kind=kind,page=page,pages=pages,wins=wins,chosen=chosen,can_edit=can_edit)
-    @app.post('/mural/publicar')
+def install_replay_comments(app,api,db,account,pid,protected):
+    """The wall is retired. Only comments on completed duel replays remain public."""
+    from duel_extras import event_info
+
+    def replay_target(replay_id):
+        row=db().execute('SELECT * FROM arena_replays WHERE id=? AND deleted=0',(replay_id,)).fetchone()
+        e=event_info(db(),row['queue'],row['event_id']) if row else None
+        if not e or e['status']!='completed':abort(404)
+        return row['uploader_id'],url_for('hub_replay',replay_id=replay_id)
+
+    @app.post('/comentar/replay/<int:target_id>')
     @protected
-    def hub_publish():
-        api['require_csrf']();kind=request.form.get('kind');title=request.form.get('title','').strip();body=request.form.get('body','').strip();queue,event_id=None,None
-        if kind not in KINDS:abort(400,'Escolha o tipo de publicação.')
-        if kind=='vitoria':
-            match=re.fullmatch(r'(x1|2v2|3v3):(\d+)',request.form.get('event',''))
-            if not match:abort(400,'Escolha uma vitória confirmada.')
-            queue,event_id=match.group(1),int(match.group(2));e=event_info(db(),queue,event_id)
-            if not e or e['status']!='completed' or pid() not in e['winners']:abort(403,'Essa vitória deve estar confirmada e pertencer ao seu perfil.')
-            title=e['title']
-        elif not 3<=len(title)<=120 or not body:abort(400,'Escreva um título de 3 a 120 caracteres e o texto da publicação.')
-        if len(body)>3000:abort(400,'Use até 3.000 caracteres.')
-        db().execute('BEGIN IMMEDIATE');rate_limit('community_posts',600,10)
-        try:post_id=db().execute('INSERT INTO community_posts(author_id,kind,title,body,queue,event_id) VALUES(?,?,?,?,?,?)',(pid(),kind,title,body,queue,event_id)).lastrowid
-        except sqlite3.IntegrityError:
-            db().rollback();existing=db().execute('SELECT id FROM community_posts WHERE author_id=? AND queue=? AND event_id=? AND deleted=0',(pid(),queue,event_id)).fetchone()
-            if not existing:raise
-            post_id=existing['id']
-        db().commit();return redirect(url_for('hub_post',post_id=post_id))
-    @app.get('/mural/publicacao/<int:post_id>')
-    def hub_post(post_id):
-        data=post_data(post_id)
-        if account():read_notices(db(),account()['account_id'],url_for('hub_post',post_id=post_id))
-        return render_template('hub_post.html',post=data,can_edit=can_edit,discussion=comments(db(),'post',post_id,request.args.get('pagina',1,type=int) or 1))
-    @app.post('/mural/publicacao/<int:post_id>/editar')
-    def hub_edit_post(post_id):
-        api['require_csrf']();data=post_data(post_id)
-        if not can_edit(data['author_id']):abort(403)
-        title=data['title'] if data['kind']=='vitoria' else request.form.get('title','').strip();body=request.form.get('body','').strip()
-        if data['kind']!='vitoria' and (not 3<=len(title)<=120 or not body):abort(400,'Confira o título e o texto.')
-        if len(body)>3000:abort(400,'Use até 3.000 caracteres.')
-        db().execute('UPDATE community_posts SET title=?,body=?,edited_at=CURRENT_TIMESTAMP WHERE id=?',(title,body,post_id));db().commit();return redirect(url_for('hub_post',post_id=post_id))
-    @app.post('/mural/publicacao/<int:post_id>/excluir')
-    def hub_delete_post(post_id):
-        api['require_csrf']();data=post_data(post_id)
-        if not can_edit(data['author_id']):abort(403)
-        db().execute('UPDATE community_posts SET deleted=1 WHERE id=?',(post_id,));db().execute('DELETE FROM social_notifications WHERE arena_url=?',(url_for('hub_post',post_id=post_id),));db().commit();flash('Publicação removida.','success');return redirect(url_for('hub_wall'))
-    @app.post('/mural/publicacao/<int:post_id>/curtir')
-    @protected
-    def hub_like(post_id):
-        api['require_csrf']();post_data(post_id);action=request.form.get('liked')
-        if action not in ('0','1'):abort(400)
-        if action=='1':db().execute('INSERT OR IGNORE INTO community_likes(post_id,player_id) VALUES(?,?)',(post_id,pid()))
-        else:db().execute('DELETE FROM community_likes WHERE post_id=? AND player_id=?',(post_id,pid()))
-        db().commit();count=db().execute('SELECT COUNT(*) FROM community_likes WHERE post_id=?',(post_id,)).fetchone()[0]
-        if request.accept_mimetypes.best=='application/json':return jsonify(liked=action=='1',count=count)
-        return redirect(url_for('hub_post',post_id=post_id))
-    def target(kind,target_id):
-        if kind=='post':return post_data(target_id)['author_id'],url_for('hub_post',post_id=target_id)
-        if kind=='replay':
-            row=db().execute('SELECT * FROM arena_replays WHERE id=? AND deleted=0',(target_id,)).fetchone();e=event_info(db(),row['queue'],row['event_id']) if row else None
-            if not e or e['status']!='completed':abort(404)
-            return row['uploader_id'],url_for('hub_replay',replay_id=target_id)
-        abort(404)
-    @app.post('/comentar/<kind>/<int:target_id>')
-    @protected
-    def hub_comment(kind,target_id):
-        api['require_csrf']();author,path=target(kind,target_id);body=request.form.get('body','').strip()
+    def hub_comment(target_id):
+        api['require_csrf']();author,path=replay_target(target_id);body=request.form.get('body','').strip()
         if not 1<=len(body)<=1500:abort(400,'Escreva um comentário de até 1.500 caracteres.')
-        db().execute('BEGIN IMMEDIATE');rate_limit('community_comments',60,10);column='post_id' if kind=='post' else 'replay_id'
-        cid=db().execute(f'INSERT INTO community_comments(author_id,{column},body) VALUES(?,?,?)',(pid(),target_id,body)).lastrowid
-        if author!=pid():notify(db(),author,pid(),path,'Novo comentário na sua publicação.' if kind=='post' else 'Novo comentário no replay que você enviou.')
-        total=db().execute(f'SELECT COUNT(*) FROM community_comments WHERE {column}=? AND deleted=0',(target_id,)).fetchone()[0]
+        db().execute('BEGIN IMMEDIATE')
+        count=db().execute("SELECT COUNT(*) FROM community_comments WHERE author_id=? AND created_at>=datetime('now','-60 seconds')",(pid(),)).fetchone()[0]
+        if count>=10:abort(429,'Muitos envios em pouco tempo. Aguarde um pouco para comentar novamente.')
+        cid=db().execute('INSERT INTO community_comments(author_id,replay_id,body) VALUES(?,?,?)',(pid(),target_id,body)).lastrowid
+        if author!=pid():notify(db(),author,pid(),path,'Novo comentário no replay que você enviou.')
+        total=db().execute('SELECT COUNT(*) FROM community_comments WHERE replay_id=? AND deleted=0',(target_id,)).fetchone()[0]
         db().commit();return redirect(path+f'?pagina={max(1,math.ceil(total/30))}#comentario-{cid}')
+
     @app.post('/comentario/<int:comment_id>/excluir')
     def hub_delete_comment(comment_id):
-        api['require_csrf']();row=db().execute('SELECT * FROM community_comments WHERE id=? AND deleted=0',(comment_id,)).fetchone()
+        api['require_csrf']()
+        row=db().execute('SELECT * FROM community_comments WHERE id=? AND deleted=0 AND replay_id IS NOT NULL',(comment_id,)).fetchone()
         if not row:abort(404)
-        if not can_edit(row['author_id']):abort(403)
-        _,path=target('post' if row['post_id'] else 'replay',row['post_id'] or row['replay_id'])
-        db().execute('UPDATE community_comments SET deleted=1 WHERE id=?',(comment_id,));db().commit();return redirect(path+'#comentarios')
+        if not session.get('admin_id') and pid()!=row['author_id']:abort(403)
+        _,path=replay_target(row['replay_id'])
+        db().execute('UPDATE community_comments SET deleted=1 WHERE id=?',(comment_id,));db().commit()
+        return redirect(path+'#comentarios')

@@ -1,3 +1,5 @@
+> Histórico da V26. O mural, as favoritas e as anotações foram removidos na V26.1. Consulte ATUALIZACAO_V26_1.md para o comportamento atual.
+
 # V26 — Comunidade, jornada do jogador e ID da partida detectada
 
 Esta atualização reúne os oito recursos pedidos e acrescenta a identificação da partida à presença do AoMStats. Mantém o banco existente, resultados, fotos, duplas, torneios, mapas, build orders e as dez artes dos emblemas.

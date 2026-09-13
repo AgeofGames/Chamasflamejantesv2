@@ -1,23 +1,17 @@
-# 🔥 CHAMAS FLAMEJANTES V26 — COMUNIDADE E JORNADA
+# 🔥 CHAMAS FLAMEJANTES V26.1 — PERFIL COMPACTO
 
-Pacote completo do site para GitHub/Railway. Leia **ATUALIZACAO_V26.md** para conhecer os recursos e a instalação.
+Pacote completo para atualizar o site no GitHub/Railway. Leia **ATUALIZACAO_V26_1.md** para os detalhes desta revisão.
 
-- Presença do AoMStats com luz verde; quando houver uma partida detectada, mostra o ID e o botão **Copiar ID**, com atualização e expiração automáticas.
-- Rivalidades X1 com placar, histórico, última vitória e maior sequência de cada jogador.
-- Gráfico mensal de evolução dos pontos, com vitórias, derrotas, bônus por Elo e saldo após cada partida.
-- Mural com estratégias, novidades, cards de vitórias confirmadas, comentários e curtidas.
-- Agendamento de X1, duplas e trios, com aceite dos dois lados e lembretes nas notificações do site.
-- Conquistas permanentes: primeira vitória, cinco vitórias seguidas na mesma modalidade e vitória sobre Elo maior registrado no duelo.
-- Capas de perfil com as artes dos deuses e panteões, mantendo foto redonda e emblemas.
-- Build orders favoritas e anotações privadas, salvas na conta Google.
-- Replays dos duelos concluídos: envio pelos participantes, download público e comentários para análise.
-- Ranking completo, tag “Mais desafiado”, dupla no perfil, notificações automáticas e todos os recursos anteriores preservados.
+- Mural da comunidade removido, incluindo publicações, curtidas, comentários do mural e links de acesso.
+- Favoritas, coleção pessoal e anotações de build orders removidas. O catálogo normal de estratégias e seu checklist continuam disponíveis.
+- **Escolher capa** agora é um botão dentro do card de ações do próprio perfil, junto de **Alterar meus dados** e **Minha agenda**. A faixa larga separada foi removida.
+- Conquistas em linhas compactas. Evolução e rivalidades em cards na mesma coluna dos demais cards do perfil, recolhidos ao abrir a página; clique para expandir.
+- Página de rivalidade também mais estreita. Gráfico interativo, histórico, pontos, emblemas, fotos redondas, presença com ID e botão de copiar preservados.
+- Agendamento, replays e comentários dos replays continuam funcionando.
 
-**Pontuação:** +30 por vitória e −30 por derrota como base; os bônus por Elo e demais regras permanecem. O piso é zero, sem dívida acumulada. Históricos e emblemas anteriores são preservados.
+**Atualização:** envie o conteúdo completo ao GitHub conectado ao Railway, incluindo módulos, templates e `static`. Preserve banco, volume, replays, fotos e variáveis atuais. `/health` deverá indicar `26.1-perfil-compacto`.
 
-**Atualização:** envie o conteúdo completo ao GitHub conectado ao Railway, incluindo os módulos, templates e arquivos `static`. Preserve banco, volume, uploads e variáveis. `/health` deverá indicar `26-comunidade-jornada`. Os replays ficam na pasta `arena_replays`, no mesmo volume do banco.
-
-**Validação:** 137 testes Python e 40 JavaScript passaram. As consultas externas foram simuladas; as novas telas foram verificadas por renderização de HTML e testes de interação em JavaScript. O navegador de teste não estava disponível neste ambiente. O site publicado ainda precisa receber este pacote.
+**Validação:** 134 testes Python e 36 JavaScript passaram. Conferência adicional em Chromium nas larguras 1920, 1024, 768 e 390 px: cards dentro da coluna, sem rolagem horizontal, gráfico funcional, abertura das seções e botão de capa. Google e AoMStats foram simulados nos testes.
 
 ---
 

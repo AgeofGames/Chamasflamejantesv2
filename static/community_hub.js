@@ -26,29 +26,19 @@
         });
       });
     });
-    root.querySelectorAll('[data-hub-composer]').forEach(form=>{
-      if(form.dataset.hubReady)return;form.dataset.hubReady='1';
-      const kind=form.querySelector('[data-post-kind]');
-      const update=()=>{const victory=kind.value==='vitoria';form.querySelector('[data-post-title]').hidden=victory;form.querySelector('[data-post-victory]').hidden=!victory;form.elements.title.required=!victory;form.elements.title.minLength=victory?0:3;form.elements.event.required=victory;form.elements.body.required=!victory;};
-      kind.addEventListener('change',update);update();
-    });
   };
-  document.addEventListener('submit',async event=>{
+  document.addEventListener('submit',event=>{
     const form=event.target;if(event.defaultPrevented||!(form instanceof HTMLFormElement))return;
     if(form.dataset.hubConfirm&&!window.confirm(form.dataset.hubConfirm)){event.preventDefault();return;}
-    if(!form.matches('[data-hub-like]')||!window.fetch)return;
-    event.preventDefault();if(form.dataset.likeBusy)return;
-    const button=form.querySelector('button'),note=form.querySelector('[data-like-status]'),controller=new AbortController();
-    const timer=window.setTimeout(()=>controller.abort(),8000);form.dataset.likeBusy='1';button.disabled=true;note.textContent='';
-    try{
-      const response=await fetch(form.action,{method:'POST',credentials:'same-origin',headers:{'Accept':'application/json'},body:new FormData(form),signal:controller.signal});
-      if(!response.ok||response.redirected)throw new Error('request');const result=await response.json();
-      if(!Number.isInteger(result.count)||typeof result.liked!=='boolean')throw new Error('response');
-      form.elements.liked.value=result.liked?'0':'1';form.querySelector('[data-like-count]').textContent=result.count;
-      form.querySelector('[data-like-label]').textContent=result.liked?'Curtido':'Curtir';button.setAttribute('aria-pressed',String(result.liked));
-    }catch(_){note.textContent='Não foi possível atualizar a curtida. Tente novamente; se sua sessão expirou, entre com o Google.';}
-    finally{window.clearTimeout(timer);delete form.dataset.likeBusy;button.disabled=false;}
   });
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>init(document));else init(document);
+  const openLinkedPanel=()=>{
+    const id=window.location.hash?.slice(1);
+    if(!['conquistas','evolucao','rivalidades'].includes(id))return;
+    const panel=document.getElementById(id);
+    if(panel?.matches('details.profile-journey-card'))panel.open=true;
+  };
+  const ready=()=>{init(document);openLinkedPanel();};
+  window.addEventListener('hashchange',openLinkedPanel);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ready);else ready();
   document.addEventListener('chamas:content',event=>init(event.detail?.container||document));
 })();
