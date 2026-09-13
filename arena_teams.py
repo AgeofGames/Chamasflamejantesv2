@@ -60,6 +60,16 @@ def install_teams(app, api):
           AND status IN ('pending','accepted','match_pending') LIMIT 1""",(tid,tid)).fetchone())
         return data
 
+    def profile_duo(pid):
+        row = membership(pid, 2)
+        if row:
+            data = team(row['id'])
+            if data['ready']:
+                return data
+        return None
+
+    app.jinja_env.globals['arena_profile_duo'] = profile_duo
+
     def duel(did):
         row = db().execute('SELECT * FROM arena_team_duels WHERE id=?',(did,)).fetchone()
         if not row or row['status']=='cancelled': abort(404)
@@ -156,7 +166,11 @@ def install_teams(app, api):
             return redirect(url_for('teams_profile',tid=tid))
         db().execute('UPDATE arena_team_members SET state=?,responded_at=CURRENT_TIMESTAMP WHERE team_id=? AND player_id=?',
                      ('accepted' if answer=='accept' else 'declined',tid,pid))
-        notify(data['captain_id'],pid,url_for('teams_profile',tid=tid),f"{account()['nickname']} {'aceitou' if answer=='accept' else 'recusou'} o convite para {data['name']}.")
+        db().execute("DELETE FROM social_notifications WHERE account_id=? AND arena_url=? AND kind='team_invite'",
+                     (account()['account_id'],url_for('teams_profile',tid=tid)))
+        notify(data['captain_id'],pid,url_for('teams_profile',tid=tid),
+               f"{account()['nickname']} {'aceitou' if answer=='accept' else 'recusou'} o convite para {data['name']}.",
+               'team_accepted' if answer=='accept' else 'team')
         db().commit(); return redirect(url_for('teams_profile',tid=tid))
 
     @app.post('/arena/equipe/<int:tid>/convidar')
@@ -178,18 +192,27 @@ def install_teams(app, api):
     @protected
     def teams_leave(tid):
         csrf(); pid=viewer_id(); db().execute('BEGIN IMMEDIATE'); data=team(tid)
-        if data['archived'] or pid not in {m['player_id'] for m in data['members']}: db().rollback(); abort(403)
+        if data['archived'] or pid not in {m['player_id'] for m in data['members'] if m['state']=='accepted'}: db().rollback(); abort(403)
         if data['busy']:
             db().rollback(); flash('Conclua o duelo ativo antes de alterar a equipe. Um desafio sem aceite pode ser cancelado pelo capitão.','error')
         else:
-            if data['captain_id']==pid:
+            if data['size']==2 or data['captain_id']==pid:
                 db().execute('UPDATE arena_teams SET archived=1 WHERE id=?',(tid,))
                 for m in data['members']:
-                    if m['player_id']!=pid: notify(m['player_id'],pid,url_for('teams_profile',tid=tid),f"A equipe {data['name']} foi encerrada. Seu histórico foi preservado.")
+                    if m['player_id']!=pid:
+                        notify(m['player_id'],pid,url_for('teams_profile',tid=tid),
+                               f"A {'dupla' if data['size']==2 else 'equipe'} {data['name']} foi desfeita. Seu histórico foi preservado.",
+                               'team_closed')
             else:
                 db().execute("UPDATE arena_team_members SET state='left' WHERE team_id=? AND player_id=?",(tid,pid))
                 notify(data['captain_id'],pid,url_for('teams_profile',tid=tid),f"{account()['nickname']} saiu da equipe {data['name']}.")
             db().commit()
+            flash('Dupla desfeita. Os perfis foram atualizados e o histórico foi preservado.' if data['size']==2
+                  else 'Equipe atualizada. O histórico foi preservado.','success')
+        if request.form.get('return_to')=='profile':
+            return redirect(url_for('social_profile',player_id=pid))
+        if request.form.get('return_to')=='arena':
+            return redirect(url_for('teams_arena',modo=f"{data['size']}v{data['size']}"))
         return redirect(url_for('teams_profile',tid=tid))
 
     @app.post('/arena/equipe/<int:tid>/desafiar')

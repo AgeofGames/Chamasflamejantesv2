@@ -1,4 +1,6 @@
-# Chamas Flamejantes V25 — pontos, desafios e notificações
+# Chamas Flamejantes V25 / V25.1 — pontos, desafios e notificações
+
+A V25.1 aplica piso zero sem dívida. Leia também ATUALIZACAO_V25_1.md.
 
 ## Publicação
 
@@ -7,7 +9,7 @@ Este ZIP contém o site completo, baseado na V24.2, com os dez emblemas, fotos r
 1. Extraia o ZIP e envie seu conteúdo ao repositório que já está conectado ao Railway, incluindo `arena_rules.py`, `arena_seasons.py`, `arena_teams.py`, `app.py`, `templates` e `static`.
 2. Mantenha o banco SQLite, o volume, os uploads e as variáveis atuais. O ZIP não inclui um banco para substituir seus dados.
 3. Aguarde a implantação. A migração é automática na primeira inicialização da V25.
-4. Confira `/health`: a versão deve ser `25-pontos-notificacoes`.
+4. Confira `/health`: a versão deve ser `25.1-piso-zero`.
 
 Não há novas credenciais nem serviço adicional para configurar. O pacote foi testado localmente; a implantação no seu GitHub/Railway não foi executada pelo assistente.
 
@@ -33,7 +35,7 @@ Cada duelo concluído tem um extrato público com o ganho/perda de cada jogador 
 
 ## Correção do saldo e dos emblemas
 
-Com a regra base, **6 vitórias e 4 derrotas = 6×30 − 4×20 = 100 pontos**, em qualquer ordem. O ranking exibe pelo menos zero, mas mantém o saldo negativo no extrato; derrotas ocorridas quando a tela mostra zero não são apagadas. Não existe mais descarte de pontos ao chegar a 999.
+Com a regra base, **6 vitórias seguidas e depois 4 derrotas = 100 pontos**. Na V25.1, cada partida é calculada na ordem da confirmação, com piso zero real: derrotas não deixam dívida. Em zero, a próxima vitória normal já dá 30 pontos, e os bônus por Elo continuam integrais. O extrato mostra o desconto efetivamente aplicado quando a derrota ultrapassaria os pontos disponíveis. Não há descarte de pontos ao chegar a 999.
 
 O progresso do emblema é separado do saldo. Os ganhos e perdas também movimentam esse progresso, limitado entre Brasa e Imortal. Três derrotas seguidas ou quatro acumuladas podem rebaixar o emblema, sem tirar pontos adicionais do ranking. Se a própria derrota já causar o rebaixamento, não existe uma segunda queda. Os contadores reiniciam após o gatilho. Vitórias zeram a sequência, mas mantêm as derrotas acumuladas. O perfil informa o progresso necessário para recuperar o próximo emblema.
 
@@ -65,8 +67,8 @@ Antes de recalcular, o banco conserva as tabelas de pontuação anteriores em `a
 
 ## Validação
 
-- 81 testes Python e 20 JavaScript, em banco isolado e sem serviços externos reais.
-- Migração a partir das tabelas da V24: reprodução de 129 pontos com 6 vitórias e 4 derrotas e correção para 100, sem modificar os duelos.
+- 85 testes Python e 20 JavaScript, em banco isolado e sem serviços externos reais.
+- Migração a partir das tabelas da V24: o caso de 129 pontos, com uma derrota inicial, cinco vitórias, três derrotas e mais uma vitória, passa a 120 com o piso zero da V25.1, sem modificar os duelos.
 - Limites 100/101/199/200/299/300, bônus simétrico, Elo registrado por desafio e pontuação base do vencedor favorito.
 - Limites diários nos dois sentidos, cancelamento, modalidades compartilhadas, fronteira de Brasília e concorrência pela última vaga.
 - Proteção 1300/1000, confronto invertido, Elo desconhecido e proteção contra médias de equipe que escondem adversários proibidos.

@@ -1,5 +1,7 @@
-CHAMAS FLAMEJANTES V25 — PONTOS E NOTIFICAÇÕES
-Health: 25-pontos-notificacoes
+CHAMAS FLAMEJANTES V25.1 — PISO ZERO
+Health: 25.1-piso-zero
+Piso zero sem dívida: a próxima vitória normal a partir de zero rende 30 pontos.
+Correção dos saldos da temporada atual, na ordem das partidas, com histórico preservado.
 Notificações ativas com atualização automática a cada 3 segundos.
 Duelo encerrado sai das notificações e permanece no histórico do perfil.
 Base +30 por vitória, −20 por derrota. Bônus de azarão conforme diferença de Elo.
@@ -10,5 +12,5 @@ Três desafios por dia entre os mesmos adversários, somando sentidos e modalida
 Cancelamentos e recusas contam no limite. Dia de Brasília.
 Bloqueio entre Elo 1300 ou mais e Elo 1000 ou menos, nos dois sentidos.
 Fotos redondas, dez emblemas, torneios, perfis, equipes e cards preservados.
-81 testes Python e 20 JavaScript passaram, com consultas externas simuladas.
-Instruções completas e regras em ATUALIZACAO_V25.md.
+85 testes Python e 20 JavaScript passaram, com consultas externas simuladas.
+Instruções em ATUALIZACAO_V25_1.md e regras completas em ATUALIZACAO_V25.md.

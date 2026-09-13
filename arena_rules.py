@@ -29,7 +29,27 @@ def outcome_points(winner_rating=None, loser_rating=None):
         if gap > 100:
             bonus = 90 + 30 * max(0, int(gap // 100) - 1)
             return bonus, -bonus
-    return 30, -20
+    return 30, -30
+
+
+def most_challenged(db, when=None):
+    """Incoming X1 challenges this Brasília month; all tied leaders share the tag."""
+    now = when or datetime.now(timezone.utc)
+    if isinstance(now, str):
+        now = datetime.fromisoformat(now.replace('Z', '+00:00'))
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=timezone.utc)
+    start = now.astimezone(ZONE).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    end = start.replace(year=start.year+1, month=1) if start.month == 12 else start.replace(month=start.month+1)
+    rows = db.execute('''SELECT d.challenged_id, COUNT(*) received
+      FROM social_duels d JOIN players p ON p.id=d.challenged_id
+      WHERE julianday(d.requested_at)>=julianday(?) AND julianday(d.requested_at)<julianday(?)
+        AND d.status IN ('pending','accepted','match_pending','completed','refused')
+        AND d.challenger_id<>d.challenged_id AND p.is_active=1
+        AND COALESCE(p.aomstats_profile_id,'')<>'' AND COALESCE(p.aomstats_url,'')<>''
+      GROUP BY d.challenged_id''', (start.isoformat(), end.isoformat())).fetchall()
+    maximum = max((r['received'] for r in rows), default=0)
+    return {r['challenged_id']: r['received'] for r in rows if r['received'] == maximum}
 
 
 def player_ratings(db, ids, queue='x1'):

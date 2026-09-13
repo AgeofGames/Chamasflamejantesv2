@@ -67,9 +67,8 @@ def record_result(db, queue, event_id, winners, losers, when=None):
         old = db.execute('SELECT * FROM arena_standings WHERE season=? AND queue=? AND player_id=?',(season,queue,pid)).fetchone()
         won = pid in winners
         delta = win_delta if won else loss_delta
-        # Keep the full arithmetic balance: losses at zero are not silently erased.
-        balance = old['score_balance'] + delta
-        points = max(0, balance)
+        # A defeat can spend available points only. No debt carries into a win.
+        balance = points = max(0, old['points'] + delta)
         emblem_points = min(999, max(0, old['emblem_points'] + delta))
         streak = 0 if won else old['loss_streak']+1
         bank = old['loss_bank'] if won else old['loss_bank']+1
@@ -86,8 +85,8 @@ def record_result(db, queue, event_id, winners, losers, when=None):
            points_delta,rating_self,rating_opponent,rules_version,balance_before,balance_after,emblem_before,emblem_after)
           VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
           (queue,event_id,pid,season,int(won),old['points'],points,int(demoted),str(when),delta,
-           winner_elo if won else loser_elo,loser_elo if won else winner_elo,25,
-           old['score_balance'],balance,old['emblem_points'],emblem_points))
+           winner_elo if won else loser_elo,loser_elo if won else winner_elo,252,
+           old['points'],balance,old['emblem_points'],emblem_points))
 
 
 def init_v25_structure(db):
@@ -159,6 +158,48 @@ def migrate_v25(db):
                        (arena_rules.average(ratings.get(p) for p in a),arena_rules.average(ratings.get(p) for p in b),row['id']))
     db.execute("INSERT INTO site_meta(key,value) VALUES('arena_v25_migrated',?)",(utc_now().isoformat(),))
 
+
+def migrate_v25_1(db):
+    """Replay the open month with a real zero floor; preserve match evidence."""
+    if db.execute("SELECT 1 FROM site_meta WHERE key='arena_v25_1_migrated'").fetchone():
+        return
+    current = period()
+    closed = db.execute('SELECT closed_at FROM arena_seasons WHERE season=?',(current,)).fetchone()
+    if not closed or not closed['closed_at']:
+        for table in ('arena_standings','arena_results'):
+            db.execute(f'CREATE TABLE IF NOT EXISTS {table}_before_v25_1 AS SELECT * FROM {table}')
+        rows = db.execute('''SELECT * FROM arena_results WHERE season=?
+          ORDER BY julianday(recorded_at),rowid''',(current,)).fetchall()
+        balances = {}
+        for row in rows:
+            key = (row['queue'],row['player_id'])
+            before = balances.get(key,0)
+            delta = row['points_delta'] if row['points_delta'] is not None else (30 if row['won'] else -20)
+            after = max(0,before+delta)
+            balances[key] = after
+            db.execute('''UPDATE arena_results SET points_before=?,points_after=?,balance_before=?,balance_after=?,
+              rules_version=251 WHERE queue=? AND event_id=? AND player_id=?''',
+              (before,after,before,after,row['queue'],row['event_id'],row['player_id']))
+        # Any standing without a ledger still loses its former hidden debt.
+        db.execute('UPDATE arena_standings SET score_balance=MAX(0,points) WHERE season=?',(current,))
+        for (queue,pid),points in balances.items():
+            db.execute('''UPDATE arena_standings SET points=?,score_balance=?
+              WHERE season=? AND queue=? AND player_id=?''',(points,points,current,queue,pid))
+    db.execute("INSERT INTO site_meta(key,value) VALUES('arena_v25_1_migrated',?)",(utc_now().isoformat(),))
+
+
+def migrate_v25_2(db):
+    """Classify prior acceptance notices without changing any recorded score."""
+    if db.execute("SELECT 1 FROM site_meta WHERE key='arena_v25_2_migrated'").fetchone():
+        return
+    db.execute('''UPDATE social_notifications AS n SET kind='team_accepted'
+      WHERE n.kind='team' AND EXISTS (
+        SELECT 1 FROM arena_teams t WHERE n.arena_url='/arena/equipe/' || t.id
+          AND substr(n.message,-length(' aceitou o convite para ' || t.name || '.'))
+            =' aceitou o convite para ' || t.name || '.')''')
+    db.execute("INSERT INTO site_meta(key,value) VALUES('arena_v25_2_migrated',?)",(utc_now().isoformat(),))
+
+
 def init_arena(db):
     db.executescript((Path(__file__).parent/'arena_schema.sql').read_text())
     db.execute('BEGIN IMMEDIATE')
@@ -178,6 +219,8 @@ def init_arena(db):
                 continue
         db.execute("INSERT INTO site_meta(key,value) VALUES('arena_v24_imported','1')")
     migrate_v25(db)
+    migrate_v25_1(db)
+    migrate_v25_2(db)
     close_seasons(db)
 
 def standings(db, queue='x1', season=None):

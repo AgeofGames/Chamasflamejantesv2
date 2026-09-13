@@ -2071,11 +2071,21 @@ def social_roster():
     return g.social_roster
 
 
+def social_most_challenged(player_id):
+    if 'arena_most_challenged' not in g:
+        g.arena_most_challenged = arena_rules.most_challenged(get_db())
+    return g.arena_most_challenged.get(player_id, 0)
+
+
+app.jinja_env.globals['social_most_challenged'] = social_most_challenged
+
+
 def social_player_payload(player):
     if not player:
         return None
     data = {k: player[k] for k in player.keys()}
     data["stats"] = social_profile_stats(player["id"])
+    data['most_challenged_count'] = social_most_challenged(player['id'])
     return data
 
 
@@ -2251,7 +2261,9 @@ def social_notification_items(account_id, limit=12):
              AND (n.arena_url NOT LIKE '/arena/equipes/duelo/%'
                   OR td.status IN ('pending','accepted','match_pending'))
              AND (n.arena_url NOT LIKE '/arena/equipe/%'
-                  OR (t.archived=0 AND (n.kind<>'team_invite' OR tm.state='invited')))
+                  OR (t.id IS NOT NULL AND n.kind IN ('team_accepted','team_closed') AND n.is_read=0)
+                  OR (t.archived=0 AND n.kind NOT IN ('team_accepted','team_closed')
+                      AND (n.kind<>'team_invite' OR tm.state='invited')))
            ORDER BY n.id DESC LIMIT ?""",
         (account_id, int(limit)),
     ).fetchall()
@@ -5037,7 +5049,7 @@ def site_share_image():
 @app.get("/health")
 def health():
     get_db().execute('SELECT 1').fetchone()
-    return {"version":"25-pontos-notificacoes","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"25.2-duplas-tags","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 @app.errorhandler(400)
@@ -5063,11 +5075,11 @@ install_teams(app, globals())
 
 init_db()
 migrate_v6_db()
-print("🔥 CHAMAS FLAMEJANTES V25 — PONTOS E NOTIFICAÇÕES\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+print("🔥 CHAMAS FLAMEJANTES V25.2 — DUPLAS E TAGS\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V25 — PONTOS E NOTIFICAÇÕES")
+    print(" 🔥 CHAMAS FLAMEJANTES V25.2 — DUPLAS E TAGS")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

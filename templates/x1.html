@@ -2,6 +2,7 @@
 {% block title %}Arena X1 • Chamas Flamejantes{% endblock %}
 {% block meta_description %}Jogadores da comunidade, desafios públicos e resultados verificados pelo AoMStats na Arena X1.{% endblock %}
 {% block content %}
+{% from '_arena_social_tags.html' import challenged_tag %}
 <section class="page-hero compact social-arena-hero">
   {% include "_arena_tabs.html" %}<span class="eyebrow">DUELOS DA COMUNIDADE</span>
   <h1>ARENA X1</h1>
@@ -47,6 +48,7 @@
       <article class="social-player-card build-library-card" data-player-name="{{p.nickname|lower}}">
         <button class="social-player-avatar profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=p.id)}}" aria-label="Abrir perfil de {{p.nickname}}">{% if social_avatar_src(p) %}<img loading="lazy" decoding="async" src="{{social_avatar_src(p)}}" alt="Foto de {{p.nickname}}">{% else %}<span>🔥</span>{% endif %}</button>
         <div class="social-player-card-body"><small>{% if p.social_enabled %}PERFIL ATIVO{% else %}PERFIL DA COMUNIDADE{% endif %}</small><h3{% if player_name_color(p) %} style="color:{{player_name_color(p)}}"{% endif %}>{{p.nickname}}</h3>
+          {{challenged_tag(p.most_challenged_count)}}
           {% if p.quote %}<blockquote>“{{p.quote}}”</blockquote>{% endif %}
           <div class="social-player-mini-stats"><span><b>{{p.stats.wins}}</b> vitórias</span><span><b>{{p.stats.losses}}</b> derrotas</span><span><b>{{p.elo_1v1 or '—'}}</b> Elo</span></div>
           <a class="open-build" href="{{url_for('social_profile',player_id=p.id)}}"><span>{{'VER PERFIL E DESAFIAR' if p.social_enabled else 'VER PERFIL'}}</span><b>→</b></a>

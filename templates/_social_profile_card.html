@@ -1,3 +1,4 @@
+{% from '_arena_social_tags.html' import challenged_tag %}
 <article class="profile-popover-card build-library-card">
   <div class="profile-popover-top">
     <span class="profile-popover-avatar" aria-label="Foto de {{profile.nickname}}">
@@ -5,10 +6,12 @@
     </span>
     <div><small>JOGADOR DA ARENA</small><h2{% if player_name_color(profile) %} style="color:{{player_name_color(profile)}}"{% endif %}>{{profile.nickname}}</h2><span class="profile-online-badge">{% if profile.social_enabled %}● PERFIL ATIVO{% else %}PERFIL DA COMUNIDADE{% endif %}</span></div>
   </div>
+  {{challenged_tag(profile.most_challenged_count)}}
   {% if profile.quote %}<blockquote>“{{profile.quote}}”</blockquote>{% else %}<blockquote class="muted">Este jogador ainda não adicionou uma frase.</blockquote>{% endif %}
   <dl class="profile-stats-grid"><div><dt>Partidas</dt><dd>{{profile.stats.completed}}</dd></div><div><dt>Vitórias</dt><dd>{{profile.stats.wins}}</dd></div><div><dt>Derrotas</dt><dd>{{profile.stats.losses}}</dd></div><div><dt>Fugas</dt><dd>{{profile.stats.refusals}}</dd></div></dl>
   <p class="arena-history-note">Elo 1x1: <strong>{{profile.elo_1v1 or 'SEM ELO'}}</strong> · {{profile.stats.rate}}% de aproveitamento</p>
   <div class="profile-popover-links"><a class="btn" href="{{url_for('social_profile',player_id=profile.id)}}">VER PERFIL COMPLETO</a>{% if profile.aomstats_url %}<a class="mini-link" href="{{profile.aomstats_url}}" target="_blank" rel="noopener">AoMStats ↗</a>{% endif %}</div>
+  {% include '_profile_duo.html' %}
   {% include '_profile_history.html' %}
   {% if can_challenge %}
   {% include '_arena_challenge_rules.html' %}

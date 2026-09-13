@@ -5,6 +5,7 @@
 <meta property="og:type" content="profile"><meta property="og:site_name" content="Chamas Flamejantes"><meta property="og:title" content="{{profile.nickname}} • Arena X1"><meta property="og:description" content="{{profile.stats.wins}} vitórias • {{profile.stats.losses}} derrotas • {{profile.elo_1v1 or 'SEM ELO'}}"><meta property="og:url" content="{{profile_url}}"><meta property="og:image" content="{{public_base_url}}{{url_for('social_profile_share_image',player_id=profile.id)}}"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
 {% endblock %}
 {% block content %}
+{% from '_arena_social_tags.html' import challenged_tag %}
 <section class="social-profile-page">
   <div class="profile-page-links"><a href="{{url_for('x1_page')}}">← Jogadores da Arena</a>{% if is_owner %}<a href="{{url_for('social_logout')}}">Sair da conta</a>{% endif %}</div>
   <div class="social-profile-main">
@@ -12,12 +13,14 @@
       <div class="profile-identity-glow"></div>
       {% if social_avatar_src(profile) %}<img decoding="async" class="profile-identity-avatar" src="{{social_avatar_src(profile)}}" alt="Foto de {{profile.nickname}}">{% else %}<span class="profile-identity-avatar fallback">🔥</span>{% endif %}
       <small>PERFIL DA ARENA X1</small><h1{% if player_name_color(profile) %} style="color:{{player_name_color(profile)}}"{% endif %}>{{profile.nickname}}</h1>
+      {{challenged_tag(profile.most_challenged_count)}}
       {% if profile.quote %}<blockquote>“{{profile.quote}}”</blockquote>{% else %}<blockquote class="muted">Sem frase por enquanto.</blockquote>{% endif %}
       <div class="profile-account-status">{% if profile.social_enabled %}<b>●</b> CONTA GOOGLE ATIVA{% else %}PERFIL DA COMUNIDADE{% endif %}</div>
       <dl><div><dt>Elo 1x1</dt><dd>{{profile.elo_1v1 or 'SEM ELO'}}</dd></div><div><dt>Nível</dt><dd>{{profile.normal_level}} • {{profile.normal_level_label}}</dd></div><div><dt>AoMStats</dt><dd>#{{profile.aomstats_profile_id}}</dd></div></dl>
       {% if profile.aomstats_url %}<a class="mini-link" href="{{profile.aomstats_url}}" target="_blank" rel="noopener">ABRIR PERFIL AOMSTATS ↗</a>{% endif %}
     </article>
     <div class="profile-action-column">
+      {% include '_profile_duo.html' %}
       <article class="profile-battle-stats"><span class="eyebrow">HISTÓRICO PÚBLICO</span><h2>Números na Arena</h2><div><strong>{{profile.stats.completed}}<small>PARTIDAS</small></strong><strong>{{profile.stats.wins}}<small>VITÓRIAS</small></strong><strong>{{profile.stats.losses}}<small>DERROTAS</small></strong><strong>{{profile.stats.refusals}}<small>FUGAS</small></strong></div><p>{{profile.stats.rate}}% de aproveitamento · {{profile.stats.streak}} vitórias seguidas</p><a class="btn profile-history-link" href="#historico-perfil">VER COM QUEM JOGOU</a></article>
       {% if is_owner %}<article class="profile-owner-actions"><h3>Este perfil é seu</h3><p>Seus dados ficam organizados nesta página. Abra a edição somente quando quiser trocar a frase, sincronizar o AoMStats ou escolher outra foto.</p><a class="btn primary" href="{{url_for('social_profile_edit')}}">ALTERAR MEUS DADOS</a><button class="btn" type="button" data-open-notifications>ABRIR NOTIFICAÇÕES</button></article>
       {% elif can_challenge %}<article class="profile-duel-panel"><span class="eyebrow">DESAFIO DIRETO</span><h2>Desafiar {{profile.nickname}}</h2>{% include '_arena_challenge_rules.html' %}{% if not challenge_rules or challenge_rules.allowed %}<p>Somente você será o desafiante e somente {{profile.nickname}} poderá aceitar ou recusar.</p><form method="post" action="{{url_for('social_challenge_player',player_id=profile.id)}}"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><label><span>Mensagem</span><textarea name="message" maxlength="280">Prepare-se para a batalha!</textarea></label><button class="btn primary big">⚔️ ENVIAR DESAFIO</button></form>{% endif %}</article>

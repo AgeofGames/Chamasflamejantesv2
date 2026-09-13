@@ -1,0 +1,13 @@
+{% macro challenged_tag(count) -%}
+{% if count %}<span class="most-challenged-tag" title="{{count}} desafios X1 recebidos neste mês · Brasília. Empates compartilham a tag.">Mais desafiado</span>{% endif %}
+{%- endmacro %}
+
+{% macro leave_team(team, origin='team') -%}
+{% if social_user and not team.archived and social_user.player_id in team.members|selectattr('state','equalto','accepted')|map(attribute='player_id')|list %}
+<form method="post" action="{{url_for('teams_leave',tid=team.id)}}" class="arena-team-leave">
+ <input type="hidden" name="_csrf" value="{{csrf_token()}}"><input type="hidden" name="return_to" value="{{origin}}">
+ <button class="btn" {% if team.busy %}disabled{% endif %}>{{'Desfazer dupla' if team.size==2 else 'Encerrar equipe' if social_user.player_id==team.captain_id else 'Sair da equipe'}}</button>
+ {% if team.busy %}<small>Conclua o duelo ativo antes de alterar a equipe. O capitão pode cancelar um desafio ainda sem aceite.</small>{% endif %}
+</form>
+{% endif %}
+{%- endmacro %}

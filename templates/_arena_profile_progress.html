@@ -8,7 +8,7 @@
   <span class="profile-emblem-points">{{rank.points}} <small>pontos</small></span>
   <span class="profile-rank-meter" role="progressbar" aria-label="Progresso no nível {{rank.badge.name}}" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{rank.badge.progress}}"><span style="width:{{rank.badge.progress}}%"></span></span>
   <small>{{'Nível máximo conquistado' if rank.badge.level==10 else (100-rank.badge.progress)~' pts de progresso para o próximo emblema'}}</small>
-  {% if rank.score_balance is defined and rank.score_balance<0 %}<small>Saldo do mês: {{rank.score_balance}} pts · recuperar antes de pontuar</small>{% endif %}<small>{{rank.wins}} vitórias · {{rank.losses}} derrotas</small>
+  <small>{{rank.wins}} vitórias · {{rank.losses}} derrotas</small>
  </span>
  <small class="profile-emblem-record">{% if rank.wins+rank.losses %}Derrotas: {{rank.loss_streak}}/3 seguidas · {{rank.loss_bank}}/4 acumuladas{% else %}Aguardando a primeira partida confirmada{% endif %}</small>
 </a>

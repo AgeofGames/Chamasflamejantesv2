@@ -20,7 +20,7 @@
       {% else %}<strong>{{d.challenger.nickname}} desafiou {{d.challenged.nickname}}</strong><small>{{social_duel_label(d.status)}}</small>{% endif %}
       {% if d.match_id %}<span class="arena-match-id">PARTIDA #{{d.match_id}}</span>{% elif d.status=='accepted' %}<small>Desafio aceito · aguardando ID</small>{% endif %}
       {% if d.match_map %}<small>{{d.match_map}}{% if d.match_duration %} · {{d.match_duration}}{% endif %}</small>{% endif %}
-      {% if d.opponent is defined %}{% for entry in d.scoring %}{% if entry.player_id==profile.id and entry.points_delta is not none %}<small class="arena-history-points">{{'+' if entry.points_delta>0 else ''}}{{entry.points_delta}} pontos nesta partida</small>{% endif %}{% endfor %}{% endif %}
+      {% if d.opponent is defined %}{% for entry in d.scoring %}{% if entry.player_id==profile.id and entry.points_delta is not none %}{% set applied=entry.points_after-entry.points_before %}<small class="arena-history-points">{{'+' if applied>0 else ''}}{{applied}} pontos nesta partida</small>{% endif %}{% endfor %}{% endif %}
     </a>
     {% set stamp = d.finished_at or d.responded_at or d.requested_at %}
     <div class="arena-history-meta"><time datetime="{{stamp.replace(' ','T')}}Z">{{stamp[8:10]}}/{{stamp[5:7]}}/{{stamp[:4]}} · {{stamp[11:16]}} UTC</time><a href="{{d.public_url}}">VER DUELO ↗</a></div>

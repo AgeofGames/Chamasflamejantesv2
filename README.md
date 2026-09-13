@@ -1,17 +1,18 @@
-# 🔥 CHAMAS FLAMEJANTES V25 — PONTOS E NOTIFICAÇÕES
+# 🔥 CHAMAS FLAMEJANTES V25.2 — DUPLAS E TAGS
 
-Leia **ATUALIZACAO_V25.md** para publicar e conferir as regras vigentes. Os capítulos antigos abaixo são histórico de versões; as regras da V25 prevalecem.
+Leia **ATUALIZACAO_V25_2.md** para as novidades. As regras vigentes estão em **Temporadas** no próprio site. Os capítulos antigos abaixo são histórico de versões.
 
-- Notificações de desafios ativos atualizadas automaticamente a cada 3 segundos, com histórico preservado nos perfis.
-- Pontuação base +30/−20; vitória do menor Elo com diferença superior a 100 vale +90/−90, aumentando 30 a cada nova faixa de 100.
-- Saldo auditável por partida e correção automática da temporada corrente. Rebaixamento de emblema separado dos pontos.
-- Três desafios por par de adversários ao dia, em ambos os sentidos e somando modalidades. Cancelamentos não liberam a cota.
-- Bloqueio entre Elo 1300 ou mais e Elo 1000 ou menos. Regras e exemplos visíveis em Temporadas.
-- Fotos redondas e os dez emblemas da V24.2 preservados.
+- Pontuação base: +30 por vitória e −30 por derrota para os próximos resultados confirmados. Extratos já registrados conservam seus pontos.
+- Piso zero sem dívida: mesmo com 1 vitória e 7 derrotas, uma vitória normal partindo de zero dá 30 pontos.
+- Bônus por diferença de Elo, três desafios por adversário ao dia, bloqueio de Elo e emblemas permanecem.
+- Tag “Mais desafiado” para os líderes em desafios X1 recebidos no mês, compartilhada em empates.
+- Dupla formada visível nos dois perfis e na janela flutuante. Qualquer integrante pode desfazê-la no próprio perfil, no 2×2 ou na página da equipe, desde que não haja duelo ativo.
+- Convite respondido sai das notificações. Aviso de aceite permanece até ser lido. Ler notificações não desfaz a dupla.
+- Notificações automáticas a cada 3 segundos. Históricos, fotos redondas, dez emblemas e conquistas anteriores preservados.
 
-**Atualização:** envie o conteúdo completo deste ZIP ao GitHub conectado ao Railway, incluindo os módulos, templates e arquivos `static`. Preserve banco, volume, uploads e variáveis. `/health` deverá indicar `25-pontos-notificacoes`.
+**Atualização:** envie o conteúdo completo deste ZIP ao GitHub conectado ao Railway, incluindo os módulos, templates e arquivos `static`. Preserve banco, volume, uploads e variáveis. `/health` deverá indicar `25.2-duplas-tags`.
 
-**Validação:** 81 testes Python e 20 JavaScript. Testes locais com serviços externos simulados. O site publicado ainda precisa receber este pacote.
+**Validação:** consulte ATUALIZACAO_V25_2.md. Testes locais com Google e AoMStats simulados. O site publicado ainda precisa receber este pacote.
 
 ---
 

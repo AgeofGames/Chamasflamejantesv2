@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Temporadas e emblemas • Chamas Flamejantes{% endblock %}
 {% block content %}
+{% from '_arena_social_tags.html' import challenged_tag %}
 <section class="arena-team-shell">
  {% include '_arena_tabs.html' %}<header class="arena-team-heading"><span class="eyebrow">CONQUISTE SEU LUGAR</span><h1>Temporadas da Arena</h1><p>De Brasa a Imortal. Dez emblemas, uma nova disputa a cada mês.</p></header>
  <form class="season-filter" method="get"><label>Modalidade<select name="modo">{% for key,label in queues.items() %}<option value="{{key}}"{% if key==queue %} selected{% endif %}>{{label}}</option>{% endfor %}</select></label><label>Temporada<select name="mes">{% for month in months %}<option value="{{month}}"{% if month==season %} selected{% endif %}>{{month[5:]}}/{{month[:4]}}</option>{% endfor %}</select></label><button class="btn primary">Ver ranking</button></form>
@@ -13,7 +14,7 @@
    {% if social_avatar_src(r) %}<img class="rank-avatar" src="{{social_avatar_src(r)}}" width="34" height="34" loading="lazy" decoding="async" alt="">{% else %}<span class="rank-avatar rank-avatar-fallback" aria-hidden="true">{{r.nickname[:1]|upper}}</span>{% endif %}
   {% if r.is_active %}</a>{% else %}</span>{% endif %}
   {% if r.is_active %}<a href="{{url_for('social_profile',player_id=r.player_id)}}" class="rank-name-badge profile-popup-trigger" data-profile-card-url="{{url_for('social_profile_card',player_id=r.player_id)}}">{% else %}<span class="rank-name-badge">{% endif %}
-   <span class="rank-player-name"{% if r.nickname_color %} style="color:{{r.nickname_color}}"{% endif %}>{{r.nickname}}</span><img class="rank-emblem" src="{{url_for('static',filename=r.badge.thumbnail)}}" width="34" height="34" loading="lazy" decoding="async" alt="Emblema {{r.badge.name}}" title="{{r.badge.name}} · nível {{r.badge.level}}">
+   <span class="rank-player-name"{% if r.nickname_color %} style="color:{{r.nickname_color}}"{% endif %}>{{r.nickname}}{% if season==current %}{{challenged_tag(social_most_challenged(r.player_id))}}{% endif %}</span><img class="rank-emblem" src="{{url_for('static',filename=r.badge.thumbnail)}}" width="34" height="34" loading="lazy" decoding="async" alt="Emblema {{r.badge.name}}" title="{{r.badge.name}} · nível {{r.badge.level}}">
   {% if r.is_active %}</a>{% else %}</span>{% endif %}
   <strong>{{r.points}} <small>pts</small></strong><small>{{r.wins}} V · {{r.losses}} D</small>
  </article>{% else %}<div class="empty"><p>Aguardando a primeira partida confirmada desta temporada.</p></div>{% endfor %}

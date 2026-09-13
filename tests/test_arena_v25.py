@@ -35,25 +35,26 @@ class ArenaRulesTests(unittest.TestCase):
             return self.post(f"/duelo/{duel['id']}/partida",match_id='99115933')
 
     def test_bonus_boundaries_and_expected_winner(self):
-        for gap, expected in [(0,(30,-20)),(99,(30,-20)),(100,(30,-20)),
+        for gap, expected in [(0,(30,-30)),(99,(30,-30)),(100,(30,-30)),
                               (101,(90,-90)),(199,(90,-90)),(200,(120,-120)),
                               (299,(120,-120)),(300,(150,-150)),(400,(180,-180))]:
             with self.subTest(gap=gap):
                 self.assertEqual(rules.outcome_points(1000,1000+gap),expected)
-                self.assertEqual(rules.outcome_points(1000+gap,1000),(30,-20))
-        self.assertEqual(rules.outcome_points(None,1800),(30,-20))
-        self.assertEqual(rules.outcome_points(0,1200),(30,-20))
+                self.assertEqual(rules.outcome_points(1000+gap,1000),(30,-30))
+        self.assertEqual(rules.outcome_points(None,1800),(30,-30))
+        self.assertEqual(rules.outcome_points(0,1200),(30,-30))
 
-    def test_six_wins_four_losses_are_100_regardless_of_order(self):
-        for order in [[True]*6+[False]*4,[False]*4+[True]*6,[True,False]*4+[True]*2]:
+    def test_six_wins_four_losses_respect_the_zero_floor_in_match_order(self):
+        for order,expected in [([True]*6+[False]*4,60),([False]*4+[True]*6,180),([True,False]*4+[True]*2,60)]:
             with site.app.app_context():
                 db=site.get_db(); db.execute('DELETE FROM arena_results'); db.execute('DELETE FROM arena_standings')
                 a,b=self.players[:2]
                 for event,won in enumerate(order):
                     seasons.record_result(db,'x1',event,[a if won else b],[b if won else a])
                 rank=db.execute('SELECT * FROM arena_standings WHERE player_id=?',(a,)).fetchone()
-                self.assertEqual((rank['points'],rank['score_balance'],rank['wins'],rank['losses']),(100,100,6,4))
-                self.assertEqual(db.execute('SELECT SUM(points_delta) FROM arena_results WHERE player_id=?',(a,)).fetchone()[0],100)
+                self.assertEqual((rank['points'],rank['score_balance'],rank['wins'],rank['losses']),(expected,expected,6,4))
+                self.assertEqual(db.execute('SELECT SUM(points_delta) FROM arena_results WHERE player_id=?',(a,)).fetchone()[0],60)
+                self.assertEqual(db.execute('SELECT SUM(points_after-points_before) FROM arena_results WHERE player_id=?',(a,)).fetchone()[0],expected)
                 db.commit()
 
     def test_snapshot_bonus_is_immutable_and_history_keeps_statement(self):
@@ -71,7 +72,7 @@ class ArenaRulesTests(unittest.TestCase):
     def test_higher_elo_winning_uses_base_points(self):
         self.ratings(1200,1000); duel=self.create_challenge(); self.finish(duel)
         self.assertEqual(self.row('SELECT points_delta FROM arena_results WHERE won=1')['points_delta'],30)
-        self.assertEqual(self.row('SELECT points_delta FROM arena_results WHERE won=0')['points_delta'],-20)
+        self.assertEqual(self.row('SELECT points_delta FROM arena_results WHERE won=0')['points_delta'],-30)
 
     def test_1300_boundary_unknown_and_reverse_direction(self):
         for a,b,allowed in [(1299,1000,True),(1300,1000,False),(1300,800,False),
@@ -180,7 +181,7 @@ class ArenaRulesTests(unittest.TestCase):
             for table in ['arena_standings','arena_results','arena_awards']:db.execute(f'DROP TABLE {table}_before_v25')
             db.commit();seasons.init_arena(db);db.commit()
             corrected=db.execute('SELECT * FROM arena_standings WHERE player_id=? AND season=?',(a,current)).fetchone()
-            self.assertEqual((corrected['points'],corrected['wins'],corrected['losses']),(100,6,4))
+            self.assertEqual((corrected['points'],corrected['wins'],corrected['losses']),(60,6,4))
             self.assertEqual(db.execute('SELECT points FROM arena_standings_before_v25 WHERE player_id=? AND season=?',(a,current)).fetchone()[0],129)
             self.assertEqual([tuple(r) for r in db.execute('SELECT * FROM arena_awards')],awards)
             before=[tuple(r) for r in db.execute('SELECT * FROM arena_results ORDER BY queue,event_id,player_id')]
@@ -228,7 +229,7 @@ class ArenaRulesTests(unittest.TestCase):
             original_duels=[tuple(r) for r in db.execute('SELECT * FROM social_duels ORDER BY id')]
             db.commit();seasons.init_arena(db);db.commit()
             rank=db.execute('SELECT * FROM arena_standings WHERE player_id=?',(a,)).fetchone()
-            self.assertEqual((rank['points'],rank['wins'],rank['losses']),(100,6,4))
+            self.assertEqual((rank['points'],rank['wins'],rank['losses']),(90,6,4))
             self.assertEqual(db.execute('SELECT points FROM arena_standings_before_v25 WHERE player_id=?',(a,)).fetchone()[0],129)
             self.assertEqual([tuple(r)[:-3] for r in db.execute('SELECT * FROM social_duels ORDER BY id')],original_duels)
             self.assertEqual(db.execute('PRAGMA foreign_key_check').fetchall(),[])

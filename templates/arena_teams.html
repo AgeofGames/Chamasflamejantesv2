@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Arena {{'Duplas' if size==2 else 'Trios'}} • Chamas Flamejantes{% endblock %}
 {% block content %}
+{% from '_arena_social_tags.html' import leave_team with context %}
 <section class="page-hero compact social-arena-hero">
  {% include '_arena_tabs.html' %}<span class="eyebrow">JUNTOS NA BATALHA</span><h1>ARENA {{'DUPLAS' if size==2 else 'TRIOS'}}</h1>
  <p>Forme sua equipe, convide seus parceiros e desafie outro elenco. Cada integrante precisa aceitar o convite. O capitão responde aos desafios.</p>
@@ -8,7 +9,7 @@
 </section>
 <section class="section arena-community-layout">
  <div class="arena-players-panel">
-  {% if mine %}<div class="arena-my-teams"><h2>Minhas equipes e convites</h2>{% for t in mine %}<a href="{{url_for('teams_profile',tid=t.id)}}"><strong>{{t.name}}</strong><small>{{t.size}}×{{t.size}} · {{'Pronta' if t.ready else 'Aguardando integrantes'}} →</small></a>{% endfor %}</div>{% endif %}
+  {% if mine %}<div class="arena-my-teams"><h2>Minhas equipes e convites</h2>{% for t in mine %}<article class="arena-my-team"><a href="{{url_for('teams_profile',tid=t.id)}}"><strong>{{t.name}}</strong><small>{{t.size}}×{{t.size}} · {{'Pronta' if t.ready else 'Aguardando integrantes'}} →</small></a>{{leave_team(t,'arena')}}</article>{% endfor %}</div>{% endif %}
   <div class="section-head"><div><span class="eyebrow">ENCONTRE OUTRO ELENCO</span><h2>{{'Duplas' if size==2 else 'Trios'}} da comunidade</h2></div></div>
   <div class="arena-team-grid">{% for t in teams %}<a class="arena-team-card" href="{{url_for('teams_profile',tid=t.id)}}"><small>{{'EM DUELO' if t.busy else 'PRONTA PARA DESAFIOS' if t.ready else 'EM FORMAÇÃO'}}</small><h3>{{t.name}}</h3><div class="arena-avatar-stack">{% for m in t.members %}{% if social_avatar_src(m) %}<img src="{{social_avatar_src(m)}}" alt="{{m.nickname}}" loading="lazy" width="42" height="42">{% else %}<span>🔥</span>{% endif %}{% endfor %}</div><p>{{t.accepted}}/{{t.size}} integrantes confirmados</p><b>Ver equipe e desafiar →</b></a>{% else %}<div class="empty"><h3>A primeira equipe pode ser a sua</h3><p>Convide {{'um amigo' if size==2 else 'dois amigos'}} para começar.</p></div>{% endfor %}</div>
   {% if pages>1 %}<nav class="arena-history-pagination">{% if page>1 %}<a href="{{url_for('teams_arena',modo=queue,pagina=page-1)}}">← Anterior</a>{% endif %}<span>{{page}} / {{pages}}</span>{% if page<pages %}<a href="{{url_for('teams_arena',modo=queue,pagina=page+1)}}">Próxima →</a>{% endif %}</nav>{% endif %}

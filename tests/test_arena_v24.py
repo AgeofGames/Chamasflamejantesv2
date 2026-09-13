@@ -42,8 +42,8 @@ class SeasonTests(unittest.TestCase):
             for i in range(6): self.play(db,i)
             for i in range(6,9): self.play(db,i,False)
             row=db.execute('SELECT * FROM arena_standings WHERE player_id=?',(self.players[0],)).fetchone()
-            self.assertEqual((row['points'],row['loss_streak'],row['loss_bank']),(120,0,0))
-            self.assertEqual(row['emblem_points'],99)
+            self.assertEqual((row['points'],row['loss_streak'],row['loss_bank']),(90,0,0))
+            self.assertEqual(row['emblem_points'],90)
             self.assertEqual((row['wins'],row['losses']),(6,3))
 
     def test_four_losses_with_wins_between_still_demote(self):
@@ -52,7 +52,7 @@ class SeasonTests(unittest.TestCase):
             for i in range(8): self.play(db,i)
             for i,win in enumerate([False,True,False,True,False,True,False],8): self.play(db,i,win)
             row=db.execute('SELECT * FROM arena_standings WHERE player_id=?',(self.players[0],)).fetchone()
-            self.assertEqual(row['points'],250)
+            self.assertEqual(row['points'],210)
             self.assertEqual(row['emblem_points'],199)
             self.assertEqual(row['loss_bank'],0)
 
@@ -61,7 +61,7 @@ class SeasonTests(unittest.TestCase):
             db=site.get_db()
             for i in range(8): self.play(db,i)
             for i in range(8,11): self.play(db,i,False)
-            self.assertEqual(db.execute('SELECT points FROM arena_standings WHERE player_id=?',(self.players[0],)).fetchone()[0],180)
+            self.assertEqual(db.execute('SELECT points FROM arena_standings WHERE player_id=?',(self.players[0],)).fetchone()[0],150)
 
     def test_score_floor_no_ceiling_and_ten_distinct_badges(self):
         with site.app.app_context():
