@@ -10,6 +10,7 @@ from flask import abort, flash, redirect, render_template, request, url_for, jso
 from aomstats_matches import lookup_match
 import arena_seasons
 import arena_rules
+import arena_balance
 from share_cards import render_team_card
 
 ACTIVE = ('pending','accepted','match_pending')
@@ -291,6 +292,14 @@ def install_teams(app, api):
         expected=[{m['profile_id'] for m in data[side]} for side in ('a','b')]
         try: result=lookup_match(mid,set.union(*expected),expected_teams=expected)
         except ValueError as exc: return match_reply(did,str(exc))
+        evidence = {}
+        if result['state'] == 'completed':
+            winning_profiles = set(result['winner_profile_ids'])
+            if winning_profiles in expected:
+                a_wins = winning_profiles == expected[0]
+                winner_elo, loser_elo = (data['rating_a'], data['rating_b']) if a_wins else (data['rating_b'], data['rating_a'])
+                if winner_elo is not None and loser_elo is not None and 0 < winner_elo < 1000 <= loser_elo:
+                    evidence = arena_balance.prepare_activity(db(), winning_profiles, arena_seasons.period())
         # Network lookup occurs before the write lock. Compare the snapshot again.
         db().execute('BEGIN IMMEDIATE')
         fresh=db().execute('SELECT * FROM arena_team_duels WHERE id=?',(did,)).fetchone()
@@ -304,6 +313,8 @@ def install_teams(app, api):
                 db().rollback(); return match_reply(did,'O resultado não corresponde aos elencos deste duelo.')
             side='a' if wins==expected[0] else 'b'
         try:
+            for profile_id, activity in evidence.items():
+                arena_balance.store_activity(db(), profile_id, activity)
             db().execute('''UPDATE arena_team_duels SET match_id=?,match_url=?,match_error=?,match_payload=?,submitted_by=?,
               status=?,winner_side=?,finished_at=CASE WHEN ? THEN CURRENT_TIMESTAMP ELSE '' END WHERE id=?''',
               (mid,result['match_url'],result.get('message',''),json.dumps(result,ensure_ascii=False),pid,
@@ -313,6 +324,7 @@ def install_teams(app, api):
                 losers=[m['player_id'] for m in data['members'] if m['side']!=side]
                 confirmed_at=db().execute('SELECT finished_at FROM arena_team_duels WHERE id=?',(did,)).fetchone()[0]
                 arena_seasons.record_result(db(),f"{data['size']}v{data['size']}",did,winners,losers,confirmed_at)
+                arena_balance.reconcile(db())
                 for m in data['members']:
                     notify(m['player_id'],pid,url_for('teams_duel',did=did),f"Resultado confirmado: {data['name_a'] if side=='a' else data['name_b']} venceu. Ranking atualizado.")
             elif mid!=data['match_id']:

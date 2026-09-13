@@ -1,5 +1,13 @@
-CHAMAS FLAMEJANTES V27 — SEO E GOOGLE
-Health: 27.0-seo-google
+CHAMAS FLAMEJANTES V28 — EQUILÍBRIO DA ARENA
+Health: 28.0-equilibrio-arena
+Regra especial: +40/-40 até 100 de diferença; +50/-50 acima de 100, com limite 50.
+Menor Elo abaixo de 1000 contra adversário de 1000+; mínimo de 8 ranqueadas no mês.
+Revisão retroativa com evidências mensais, auditoria, piso zero e atualização de saldos.
+Painel Pontos da Arena para acompanhar a revisão.
+Sem comprovação suficiente, o resultado aguarda e preserva a pontuação anterior.
+Leia ATUALIZACAO_V28.md antes de atualizar o site.
+
+Recursos anteriores da V27 incluídos:
 Títulos e descrições próprios para as páginas públicas.
 Endereços principais, nome do site, logo e navegação estruturada.
 Sitemap ampliado e mapa do site para pessoas e buscadores.

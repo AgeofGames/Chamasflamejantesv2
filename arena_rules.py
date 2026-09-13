@@ -21,11 +21,14 @@ def rating(value):
     return float(value) if value is not None and 0 < float(value) <= 5000 else None
 
 
-def outcome_points(winner_rating=None, loser_rating=None):
-    """At exactly 100 use base points; 101..199 = 90; 200..299 = 120."""
+def outcome_points(winner_rating=None, loser_rating=None, ranked_games=None):
+    """V28 benefit overrides the existing formula only for an eligible upset."""
     winner_rating, loser_rating = rating(winner_rating), rating(loser_rating)
     if winner_rating is not None and loser_rating is not None:
         gap = loser_rating - winner_rating
+        if winner_rating < 1000 <= loser_rating and ranked_games is not None and ranked_games >= 8:
+            bonus = 40 if gap <= 100 else 50
+            return bonus, -bonus
         if gap > 100:
             bonus = 90 + 30 * max(0, int(gap // 100) - 1)
             return bonus, -bonus

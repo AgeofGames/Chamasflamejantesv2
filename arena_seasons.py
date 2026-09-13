@@ -4,6 +4,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 import json
 import arena_rules
+import arena_balance
 
 ZONE = ZoneInfo('America/Sao_Paulo')
 TIERS = (
@@ -72,7 +73,9 @@ def record_result(db, queue, event_id, winners, losers, when=None):
         raise ValueError('Resultado da Arena inválido.')
     db.execute('INSERT OR IGNORE INTO arena_seasons(season) VALUES(?)', (season,))
     winner_elo, loser_elo = arena_rules.event_ratings(db, queue, event_id, winners)
-    win_delta, loss_delta = arena_rules.outcome_points(winner_elo, loser_elo)
+    benefit = arena_balance.benefit_context(db, queue, event_id, winners, winner_elo, loser_elo, season)
+    win_delta, loss_delta = arena_rules.outcome_points(
+        winner_elo, loser_elo, benefit['count'] if benefit['eligible'] else None)
     for pid in sorted(winners | losers):
         if db.execute('SELECT 1 FROM arena_results WHERE queue=? AND event_id=? AND player_id=?',
                       (queue,event_id,pid)).fetchone():
@@ -91,11 +94,15 @@ def record_result(db, queue, event_id, winners, losers, when=None):
            new['loss_streak'],new['loss_bank'],season,queue,pid))
         db.execute('''INSERT INTO arena_results
           (queue,event_id,player_id,season,won,points_before,points_after,demoted,recorded_at,
-           points_delta,rating_self,rating_opponent,rules_version,balance_before,balance_after,emblem_before,emblem_after)
-          VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+                points_delta,rating_self,rating_opponent,rules_version,balance_before,balance_after,emblem_before,emblem_after,
+                benefit_applied,ranked_games_month,benefit_month)
+          VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
           (queue,event_id,pid,season,int(won),old['points'],new['points'],new['demoted'],str(when),delta,
-           winner_elo if won else loser_elo,loser_elo if won else winner_elo,253,
-           old['points'],new['score_balance'],old['emblem_points'],new['emblem_points']))
+           winner_elo if won else loser_elo,loser_elo if won else winner_elo,280 if benefit['eligible'] else 253,
+           old['points'],new['score_balance'],old['emblem_points'],new['emblem_points'],
+           int(benefit['eligible']),benefit['count'] if benefit['candidate'] else None,
+           season if benefit['candidate'] else None))
+    arena_balance.queue_review(db, queue, event_id)
 
 
 def init_v25_structure(db):
@@ -255,6 +262,7 @@ def init_arena(db):
     db.executescript((Path(__file__).parent/'arena_schema.sql').read_text())
     db.execute('BEGIN IMMEDIATE')
     init_v25_structure(db)
+    arena_balance.init_schema(db)
     columns = {r['name'] for r in db.execute('PRAGMA table_info(social_notifications)')}
     if 'arena_url' not in columns:
         db.execute("ALTER TABLE social_notifications ADD COLUMN arena_url TEXT NOT NULL DEFAULT ''")
@@ -273,6 +281,7 @@ def init_arena(db):
     migrate_v25_1(db)
     migrate_v25_2(db)
     migrate_v25_3(db)
+    arena_balance.reconcile(db)
     close_seasons(db)
 
 def standings(db, queue='x1', season=None):

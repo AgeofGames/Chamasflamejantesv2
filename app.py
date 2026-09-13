@@ -21,6 +21,7 @@ import requests
 from aomstats_matches import lookup_match, parse_match_page
 import arena_seasons
 import arena_rules
+import arena_balance
 import aom_presence
 import community_hub
 import duel_extras
@@ -3928,6 +3929,12 @@ def verify_social_duel_match(duel, fetched_result=None):
         }
         winner_id = mapping[result["winner_profile_id"]]
         loser_id = mapping[result["loser_profile_id"]]
+        winner_elo, loser_elo = arena_rules.event_ratings(db, 'x1', duel['id'], {winner_id})
+        evidence = {}
+        if winner_elo is not None and loser_elo is not None and 0 < winner_elo < 1000 <= loser_elo:
+            evidence = arena_balance.prepare_activity(db, [str(result['winner_profile_id'])], arena_seasons.period())
+        for profile_id, activity in evidence.items():
+            arena_balance.store_activity(db, profile_id, activity)
         changed = db.execute(
             """UPDATE social_duels SET status='completed',winner_id=?,loser_id=?,match_url=?,
                match_payload=?,match_error='',last_checked_at=CURRENT_TIMESTAMP,finished_at=CURRENT_TIMESTAMP
@@ -3937,6 +3944,7 @@ def verify_social_duel_match(duel, fetched_result=None):
         if changed.rowcount:
             confirmed_at = db.execute('SELECT finished_at FROM social_duels WHERE id=?',(duel['id'],)).fetchone()[0]
             arena_seasons.record_result(db, 'x1', duel['id'], [winner_id], [loser_id], confirmed_at)
+            arena_balance.reconcile(db)
             winner = get_social_player(winner_id)
             create_social_notification(winner_id, loser_id, duel["id"], "result", "Vitória confirmada pelo AoMStats! 🔥")
             create_social_notification(loser_id, winner_id, duel["id"], "result", f"Resultado confirmado: {winner['nickname']} venceu o duelo.")
@@ -4968,7 +4976,7 @@ def site_share_image():
 @app.get("/health")
 def health():
     get_db().execute('SELECT 1').fetchone()
-    return {"version":"27.0-seo-google","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
+    return {"version":"28.0-equilibrio-arena","database":"ok","google_oauth":"configured" if GOOGLE_OAUTH_CONFIGURED else "not-configured"}
 
 
 @app.errorhandler(400)
@@ -4996,15 +5004,17 @@ community_hub.install(app, globals())
 duel_extras.install(app, globals())
 from site_seo import install_seo
 install_seo(app, globals())
+arena_balance.install(app, globals())
 
 init_db()
 migrate_v6_db()
 duel_extras.start_reminder_worker(app, globals())
-print("🔥 CHAMAS FLAMEJANTES V27 — SEO E GOOGLE\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
+arena_balance.start_worker(app, globals())
+print("🔥 CHAMAS FLAMEJANTES V28 — EQUILÍBRIO DA ARENA\nDATABASE: SQLITE\nSTATUS: READY",flush=True)
 
 if __name__ == "__main__":
     print("\n" + "=" * 68)
-    print(" 🔥 CHAMAS FLAMEJANTES V27 — SEO E GOOGLE")
+    print(" 🔥 CHAMAS FLAMEJANTES V28 — EQUILÍBRIO DA ARENA")
     print(" Site:   http://127.0.0.1:5000")
     print(" Painel: http://127.0.0.1:5000/admin")
     print(" Primeiro painel: abra /setup se ainda não existir um administrador")

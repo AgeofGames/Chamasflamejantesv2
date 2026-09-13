@@ -3,7 +3,7 @@
 {% block content %}
 <section class="admin-head">
   <div><span class="eyebrow">PAINEL ADMINISTRATIVO V6</span><h1>Central de torneios</h1><p>Crie vários torneios, mas só abra ao público quando estiver pronto.</p></div>
-  <div class="admin-actions"><form method="post" action="{{ url_for('admin_refresh_all_avatars') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn secondary">🖼 ATUALIZAR PERFIS</button></form><a class="btn secondary" href="{{url_for('admin_seo')}}">GOOGLE / SEO</a><a class="btn secondary" href="{{ url_for('admin_backup') }}">BACKUP SQLITE</a><a class="btn danger-outline" href="{{ url_for('admin_logout') }}">SAIR</a></div>
+  <div class="admin-actions"><form method="post" action="{{ url_for('admin_refresh_all_avatars') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn secondary">🖼 ATUALIZAR PERFIS</button></form><a class="btn secondary" href="{{url_for('admin_arena_points')}}">PONTOS DA ARENA</a><a class="btn secondary" href="{{url_for('admin_seo')}}">GOOGLE / SEO</a><a class="btn secondary" href="{{ url_for('admin_backup') }}">BACKUP SQLITE</a><a class="btn danger-outline" href="{{ url_for('admin_logout') }}">SAIR</a></div>
 </section>
 
 <section class="section admin-section"><div class="stat-grid four-stats"><div class="stat"><small>Torneios abertos</small><strong>{{ open_tournaments|selectattr('registration_open')|list|length }}</strong></div><div class="stat"><small>Em andamento</small><strong>{{ running_tournaments|length }}</strong></div><div class="stat"><small>Finalizados</small><strong>{{ history_tournaments|length }}</strong></div><div class="stat"><small>Comunidade</small><strong>{{ community_members|length }}</strong></div></div></section>

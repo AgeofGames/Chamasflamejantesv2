@@ -14,6 +14,7 @@ _initial = tempfile.TemporaryDirectory(prefix='chamas-v22-import-')
 os.environ['DATABASE_PATH'] = str(Path(_initial.name) / 'initial.sqlite')
 os.environ.setdefault('FFA_SECRET_KEY', 'isolated-test-key')
 os.environ.setdefault('ARENA_REMINDERS_ENABLED','0')
+os.environ.setdefault('ARENA_ACTIVITY_ENABLED','0')
 import app as site
 from bs4 import BeautifulSoup
 from PIL import Image

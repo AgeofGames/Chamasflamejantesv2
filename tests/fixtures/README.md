@@ -1,5 +1,7 @@
 # Amostras do AoMStats
 
+`aomstats_activity_v28.html` conserva somente os campos necessários dos registros de partidas do [perfil ranqueado](https://aomstats.io/profile/1076869557?leaderboard=1), obtidos em 13/09/2026. É uma amostra da estrutura serializada, sem execução de JavaScript; a contagem verificada é uma evidência parcial, não um total mensal completo. Campos e modalidades: [documentação do AoMStats](https://aomstats.io/api).
+
 Trechos públicos de HTML observados no navegador em 09/09/2026, usados para reproduzir a estrutura real dos cards. Imagens não foram baixadas; as referências presentes no HTML não são abertas pelos testes.
 
 - `aomstats_custom_43115933.html`: [perfil Customs/Quickplay](https://aomstats.io/profile/1076869557?leaderboard=0), partida 43115933 — Mirage, 6:08, Makise_Kurisu_00 venceu Andre3rr.

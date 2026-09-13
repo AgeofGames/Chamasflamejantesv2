@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Pontos da Arena • {{site.title}}{% endblock %}
+{% block content %}
+<section class="admin-head">
+ <div><span class="eyebrow">ARENA CUSTOMS / QUICKPLAY · V28</span><h1>Revisão dos pontos</h1>
+ <p>A atividade nas ranqueadas confirma o benefício nas partidas da Arena. O Elo oficial do jogo não é alterado.</p></div>
+ <a class="btn secondary" href="{{url_for('admin')}}">VOLTAR AO PAINEL</a>
+</section>
+<section class="section admin-section">
+ <div class="stat-grid">
+  <div class="stat"><small>Benefício aplicado</small><strong>{{totals.get('applied',0)}}</strong></div>
+  <div class="stat"><small>Aguardando atividade confirmada</small><strong>{{totals.get('pending',0)}}</strong></div>
+  <div class="stat"><small>Sem perfil histórico identificado</small><strong>{{totals.get('missing_profile',0)}}</strong></div>
+ </div>
+ <div class="arena-season-rules">
+  <h2>Como funciona a revisão</h2>
+  <p>O menor Elo deve estar abaixo de 1000 e o adversário em 1000 ou mais. Se o menor vencer e tiver pelo menos 8 ranqueadas no mês: até 100 de diferença, +40/−40; acima de 100, +50/−50. O calendário é o de Brasília.</p>
+  <p>O site verifica automaticamente a atividade e revê as partidas pendentes. Uma falha de consulta ou a ausência de registros não confirma oito partidas. O histórico disponível no AoMStats pode não incluir todas as partidas antigas; nesses casos, a pontuação original é mantida até haver comprovação.</p>
+  <p>Em duplas e trios, vale o Elo médio registrado de cada lado e cada integrante do lado de menor Elo precisa cumprir as 8 ranqueadas.</p>
+  <form method="post"><input type="hidden" name="_csrf" value="{{csrf_token()}}"><button class="btn primary">VERIFICAR NOVAMENTE</button></form>
+ </div>
+ <div class="arena-rules-table"><table><thead><tr><th>Partida</th><th>Mês</th><th>Modalidade</th><th>Ranqueadas comprovadas</th><th>Situação</th></tr></thead><tbody>
+ {% for r in reviews %}
+ <tr><td><a href="{{url_for('social_duel',duel_id=r.event_id) if r.queue=='x1' else url_for('teams_duel',did=r.event_id)}}">#{{r.match_id or r.event_id}}</a></td>
+ <td>{{r.season}}</td><td>{{r.queue|upper}}</td><td>{% for profile,count in r.counts %}AoMStats #{{profile}}: {{count}} / 8{% if not loop.last %}<br>{% endif %}{% else %}Perfil original indisponível{% endfor %}</td>
+ <td>{{'Benefício aplicado' if r.status=='applied' else 'Sem perfil histórico' if r.status=='missing_profile' else 'Aguardando comprovação'}}</td></tr>
+ {% else %}<tr><td colspan="5">Ainda não há partidas com o menor Elo abaixo de 1000 vencendo um adversário de 1000 ou mais.</td></tr>{% endfor %}
+ </tbody></table></div>
+ {% if reviews|length==100 %}<p>Mostrando as 100 partidas mais recentes. Os totais incluem todo o histórico.</p>{% endif %}
+</section>
+{% endblock %}
