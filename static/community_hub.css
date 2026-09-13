@@ -91,3 +91,19 @@
 .social-profile-main .profile-identity-column>.profile-duel-panel h2{font-size:21px;overflow-wrap:anywhere}
 .social-profile-main .profile-action-column>.arena-profile-progress{margin:0;min-width:0;padding:18px 20px;border-radius:12px}
 @media(max-width:600px){.social-profile-main .profile-action-column>.arena-profile-progress{padding:16px}.social-profile-main .profile-quick-actions .btn{font-size:10px}}
+
+/* V26.3: the complete match history follows the same column as the profile cards. */
+.social-profile-main .profile-action-column>.profile-public-history{width:100%;max-width:100%;min-width:0;box-sizing:border-box;margin:0;padding:18px 20px}
+.social-profile-main .profile-public-history>header{flex-wrap:wrap;gap:6px 12px;margin-bottom:14px}
+.social-profile-main .profile-public-history h3{font-size:20px;line-height:1.4}
+.social-profile-main .profile-public-history>header>span{font-size:11px}
+.social-profile-main .arena-history-filters{gap:6px;margin-bottom:14px}
+.social-profile-main .arena-history-filters a{min-height:36px;padding:8px 10px;font-size:11px;gap:6px}
+.social-profile-main .arena-history-record{min-width:0;grid-template-columns:minmax(0,.85fr) minmax(0,1.15fr);gap:10px 14px;padding:12px}
+.social-profile-main .arena-history-player{font-size:12px}
+.social-profile-main .arena-history-player>img,.social-profile-main .arena-history-avatar{width:34px;height:34px;flex-basis:34px}
+.social-profile-main .arena-history-result strong{font-size:13px}
+.social-profile-main .arena-history-result small,.social-profile-main .arena-match-id{overflow-wrap:anywhere}
+.social-profile-main .arena-history-meta{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px 12px;text-align:left;font-size:10px}
+@media(max-width:900px){.social-profile-main .arena-history-record{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.social-profile-main .profile-action-column>.profile-public-history{padding:16px}}

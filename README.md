@@ -1,7 +1,8 @@
-# 🔥 CHAMAS FLAMEJANTES V26.2 — ORDEM DO PERFIL
+# 🔥 CHAMAS FLAMEJANTES V26.3 — HISTÓRICO COMPACTO
 
-Pacote completo para atualizar o site no GitHub/Railway. Leia **ATUALIZACAO_V26_2.md** para os detalhes desta revisão.
+Pacote completo para atualizar o site no GitHub/Railway. Leia **ATUALIZACAO_V26_3.md** para os detalhes desta revisão.
 
+- **Com quem jogou** agora fica na mesma coluna, largura e alinhamento de **Conquistas**, imediatamente abaixo desse card. As linhas dos confrontos também acompanham a largura disponível.
 - Blocos do perfil nesta ordem: **Histórico público → Compartilhar perfil → Emblemas da Arena → Dupla · 2×2 → Evolução dos pontos → Rivalidades → Conquistas**.
 - **Alterar meus dados**, **Abrir notificações**, **Escolher capa** e **Minha agenda** ficam em um card pequeno, com duas linhas de botões, imediatamente abaixo do card de identidade do próprio perfil da Arena.
 - Removidos o título **Este perfil é seu** e seu texto explicativo.
@@ -9,9 +10,9 @@ Pacote completo para atualizar o site no GitHub/Railway. Leia **ATUALIZACAO_V26_
 - Mantidos os cards compactos, gráfico interativo, histórico, pontos, duplas, fotos redondas, presença com ID e botão de copiar, compartilhamento, agendamentos e replays.
 - Mural e favoritas/anotações continuam removidos. O catálogo normal de build orders e seus checklists permanecem disponíveis.
 
-**Atualização:** envie o conteúdo completo ao GitHub conectado ao Railway, incluindo módulos, templates e `static`. Preserve banco, volume, replays, fotos e variáveis atuais. `/health` deverá indicar `26.2-ordem-perfil`.
+**Atualização:** envie o conteúdo completo ao GitHub conectado ao Railway, incluindo módulos, templates e `static`. Preserve banco, volume, replays, fotos e variáveis atuais. `/health` deverá indicar `26.3-historico-compacto`.
 
-**Validação desta revisão:** 20 testes Python existentes passaram. Conferência em Chromium nas larguras 1920, 1024, 768 e 390 px: ordem dos sete blocos, quatro botões abaixo do perfil, emblemas sem duplicação, gráfico e janelas funcionais, sem rolagem horizontal ou erros de JavaScript. Foram usados banco isolado e integrações externas simuladas.
+**Validação desta revisão:** 5 testes Python existentes passaram, cobrindo perfis, filtros e paginação do histórico. Conferência em Chromium nas larguras 1920, 1024, 768 e 390 px: histórico alinhado ao card anterior, sem rolagem horizontal, filtros de vitórias e derrotas funcionais. Foram usados banco isolado e integrações externas simuladas.
 
 ---
 
