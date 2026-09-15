@@ -1,20 +1,4 @@
-# 🔥 CHAMAS FLAMEJANTES V28 — EQUILÍBRIO DA ARENA
-
-Pacote completo para atualizar o site no GitHub/Railway. Leia **ATUALIZACAO_V28.md** para instalar e acompanhar a revisão dos pontos.
-
-- Benefício de +40/−40 até 100 de diferença e +50/−50 acima de 100, limitado a 50, quando o menor Elo abaixo de 1000 vence um adversário de 1000 ou mais e comprova 8 ranqueadas no mês.
-- Contagem mensal por registros de partidas ranqueadas do AoMStats; o Elo oficial não é alterado.
-- Revisão automática do histórico elegível, com cópia dos valores anteriores, auditoria e piso zero.
-- Painel **Pontos da Arena** para acompanhar benefícios aplicados e partidas que aguardam comprovação.
-- SEO, perfis compactos, imagens, equipes, torneios e demais recursos da V27 incluídos.
-
-**Atualização:** envie o conteúdo completo ao repositório conectado ao Railway. Preserve banco, volume, uploads e variáveis. `/health` deverá indicar **28.0-equilibrio-arena**. O histórico público do AoMStats pode estar incompleto; partidas sem comprovação suficiente mantêm a pontuação anterior e ficam pendentes.
-
-**Validação:** 159 testes Python e 36 JavaScript passaram em banco isolado. Não houve publicação nem alteração do banco real nesta entrega.
-
----
-
-## V27 — SEO e Google
+# 🔥 CHAMAS FLAMEJANTES V27 — SEO E GOOGLE
 
 Pacote completo para atualizar o site no GitHub/Railway. Leia **ATUALIZACAO_V27.md** para publicar e configurar o Google Search Console.
 

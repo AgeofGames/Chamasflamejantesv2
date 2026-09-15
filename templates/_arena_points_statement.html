@@ -4,7 +4,6 @@
  <div class="arena-rules-table"><table><thead><tr><th>Jogador</th><th>Pontos aplicados</th><th>Pontos após a partida</th></tr></thead><tbody>
  {% for entry in duel.scoring %}{% set applied=entry.points_after-entry.points_before %}<tr><td>{{entry.nickname}}</td><td>{{'+' if applied>0 else ''}}{{applied}} pts{% if entry.rules_version>=251 and entry.points_delta is not none and applied!=entry.points_delta %}<small class="arena-muted"> · Regra: {{entry.points_delta}} pts, limitada pelo piso zero</small>{% endif %}</td><td>{{entry.points_after}} pts</td></tr>{% endfor %}
  </tbody></table></div>
- {% if duel.scoring[0].benefit_applied %}<p><strong>Benefício de atividade mensal aplicado:</strong> menor Elo abaixo de 1000 contra Elo 1000+, com {{duel.scoring[0].ranked_games_month}} ranqueadas comprovadas em {{duel.scoring[0].benefit_month}}. Ganho e perda limitados a 40 ou 50, conforme a diferença de Elo.</p>{% endif %}
  <p>{% if duel.scoring[0].rating_self is not none and duel.scoring[0].rating_opponent is not none %}Elo registrado para o cálculo: {{duel.scoring[0].rating_self|round(2)}} × {{duel.scoring[0].rating_opponent|round(2)}}.{% else %}Sem Elo histórico disponível para bônus; pontuação base da temporada.{% endif %} O rebaixamento de emblema não tira pontos extras do ranking. A partir da V25.1, a pontuação nunca fica negativa.</p>
  <a href="{{url_for('arena_seasons_page',_anchor='regras')}}">Entenda a pontuação →</a>
 </section>

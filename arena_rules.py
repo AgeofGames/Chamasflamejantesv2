@@ -21,14 +21,28 @@ def rating(value):
     return float(value) if value is not None and 0 < float(value) <= 5000 else None
 
 
-def outcome_points(winner_rating=None, loser_rating=None, ranked_games=None):
-    """V28 benefit overrides the existing formula only for an eligible upset."""
+def outcome_points(winner_rating=None, loser_rating=None):
+    """
+    Balanceamento especial:
+    - Quando um jogador abaixo de 1000 vence um jogador com 1000+ Elo:
+      até 100 de diferença: +40/-40
+      acima de 100 até 200: +50/-50
+      acima de 200: +50/-50
+    As demais partidas continuam usando a regra normal.
+    """
     winner_rating, loser_rating = rating(winner_rating), rating(loser_rating)
+
+    if winner_rating is not None and loser_rating is not None:
+        # Vitória do Elo menor contra Elo 1000+
+        if winner_rating < 1000 <= loser_rating:
+            gap = loser_rating - winner_rating
+            if gap <= 100:
+                return 40, -40
+            return 50, -50
+
+    # Regra antiga mantida para os demais confrontos
     if winner_rating is not None and loser_rating is not None:
         gap = loser_rating - winner_rating
-        if winner_rating < 1000 <= loser_rating and ranked_games is not None and ranked_games >= 8:
-            bonus = 40 if gap <= 100 else 50
-            return bonus, -bonus
         if gap > 100:
             bonus = 90 + 30 * max(0, int(gap // 100) - 1)
             return bonus, -bonus
