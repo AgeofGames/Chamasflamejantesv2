@@ -251,37 +251,35 @@ def migrate_v25_3(db):
     db.execute("INSERT INTO site_meta(key,value) VALUES('arena_v25_3_migrated',?)",(utc_now().isoformat(),))
 
 
-
-def migrate_v27_elo_rebalance(db):
-    """Recalcula todo o histórico usando a nova regra de balanceamento Elo."""
-    if db.execute("SELECT 1 FROM site_meta WHERE key='arena_v27_elo_rebalanced'").fetchone():
+def migrate_v27_fixed_points(db):
+    """Reconstrói o histórico usando somente +30 vitória e -30 derrota."""
+    if db.execute("SELECT 1 FROM site_meta WHERE key='arena_v27_fixed_points'").fetchone():
         return
+    for table in ('arena_standings','arena_results','arena_awards'):
+        db.execute(f'CREATE TABLE IF NOT EXISTS {table}_before_v27_fixed AS SELECT * FROM {table}')
+    seasons = db.execute("SELECT DISTINCT season FROM arena_results").fetchall()
+    for season_row in seasons:
+        season = season_row['season']
+        events = db.execute(
+            "SELECT queue,event_id,recorded_at FROM arena_results WHERE season=? GROUP BY queue,event_id ORDER BY julianday(recorded_at),event_id",
+            (season,)).fetchall()
+        old_results = db.execute(
+            "SELECT queue,event_id,player_id,won FROM arena_results_before_v27_fixed WHERE season=?",
+            (season,)).fetchall()
+        grouped = {}
+        for row in old_results:
+            grouped.setdefault((row['queue'], row['event_id']), []).append(row)
+        db.execute("DELETE FROM arena_results WHERE season=?", (season,))
+        db.execute("DELETE FROM arena_standings WHERE season=?", (season,))
+        for event in events:
+            rows = grouped.get((event['queue'], event['event_id']), [])
+            record_result(db, event['queue'], event['event_id'],
+                          [r['player_id'] for r in rows if r['won']],
+                          [r['player_id'] for r in rows if not r['won']],
+                          event['recorded_at'])
+    db.execute("INSERT INTO site_meta(key,value) VALUES('arena_v27_fixed_points',?)",
+               (utc_now().isoformat(),))
 
-    for table in ('arena_standings','arena_results'):
-        db.execute(f"CREATE TABLE IF NOT EXISTS {table}_before_v27_elo AS SELECT * FROM {table}")
-
-    events = db.execute("""SELECT queue,event_id,season,MIN(recorded_at) recorded_at
-        FROM arena_results
-        GROUP BY queue,event_id,season
-        ORDER BY julianday(recorded_at), event_id""").fetchall()
-
-    history=[]
-    for event in events:
-        rows=db.execute('SELECT player_id,won FROM arena_results WHERE queue=? AND event_id=?',
-                        (event['queue'],event['event_id'])).fetchall()
-        winners=[r['player_id'] for r in rows if r['won']]
-        losers=[r['player_id'] for r in rows if not r['won']]
-        history.append((event,winners,losers))
-
-    db.execute('DELETE FROM arena_results')
-    db.execute('DELETE FROM arena_standings')
-
-    for event,winners,losers in history:
-        record_result(db,event['queue'],event['event_id'],winners,losers,event['recorded_at'])
-        db.execute("UPDATE arena_results SET rules_version=270 WHERE queue=? AND event_id=?",
-                   (event['queue'],event['event_id']))
-
-    db.execute("INSERT INTO site_meta(key,value) VALUES('arena_v27_elo_rebalanced',?)",(utc_now().isoformat(),))
 
 def init_arena(db):
     db.executescript((Path(__file__).parent/'arena_schema.sql').read_text())
@@ -305,7 +303,7 @@ def init_arena(db):
     migrate_v25_1(db)
     migrate_v25_2(db)
     migrate_v25_3(db)
-    migrate_v27_elo_rebalance(db)
+    migrate_v27_fixed_points(db)
     close_seasons(db)
 
 def standings(db, queue='x1', season=None):

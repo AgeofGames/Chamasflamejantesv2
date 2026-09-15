@@ -22,30 +22,9 @@ def rating(value):
 
 
 def outcome_points(winner_rating=None, loser_rating=None):
+    """Sistema fixo: toda vitória vale +30 e toda derrota vale -30.
+    O Elo não altera mais a pontuação.
     """
-    Balanceamento especial:
-    - Quando um jogador abaixo de 1000 vence um jogador com 1000+ Elo:
-      até 100 de diferença: +40/-40
-      acima de 100 até 200: +50/-50
-      acima de 200: +50/-50
-    As demais partidas continuam usando a regra normal.
-    """
-    winner_rating, loser_rating = rating(winner_rating), rating(loser_rating)
-
-    if winner_rating is not None and loser_rating is not None:
-        # Vitória do Elo menor contra Elo 1000+
-        if winner_rating < 1000 <= loser_rating:
-            gap = loser_rating - winner_rating
-            if gap <= 100:
-                return 40, -40
-            return 50, -50
-
-    # Regra antiga mantida para os demais confrontos
-    if winner_rating is not None and loser_rating is not None:
-        gap = loser_rating - winner_rating
-        if gap > 100:
-            bonus = 90 + 30 * max(0, int(gap // 100) - 1)
-            return bonus, -bonus
     return 30, -30
 
 
